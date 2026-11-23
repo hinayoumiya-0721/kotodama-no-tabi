@@ -4164,14 +4164,43 @@ select:focus {
 
 #nav-bar {
   top: 52px;
-  padding: 6px 12px;
-  gap: 5px;
+  padding: 6px 10px;
+  gap: 4px;
 }
 
 .nav-btn {
   min-height: 36px;
-  padding: 5px 11px;
-  font-size: 0.82rem;
+  padding: 5px 9px;
+  font-size: 0.8rem;
+}
+
+@media (min-width: 820px) {
+  #nav-bar {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (min-width: 820px) and (max-width: 1120px) {
+  #nav-bar {
+    padding: 5px 8px;
+    gap: 3px;
+  }
+  .nav-btn {
+    min-height: 34px;
+    padding: 4px 7px;
+    font-size: 0.74rem;
+  }
+}
+
+@media (min-width: 1121px) {
+  #nav-bar {
+    padding: 6px 12px;
+    gap: 5px;
+  }
+  .nav-btn {
+    padding: 5px 10px;
+    font-size: 0.81rem;
+  }
 }
 
 /* 2. Battle 100vh Single-Screen Compact Layout on Desktop (1280x720+) */
@@ -4428,4 +4457,301 @@ select:focus {
   border: 1px solid rgba(212, 175, 55, 0.5);
   color: var(--gold-bright, #fde68a);
   font-size: 0.86rem;
+}
+
+/* ==========================================================================
+ * Question Bank Progress Dashboard & Unified Boss Defeated State
+ * ========================================================================== */
+.qbank-progress-box,
+.explore-qbank-meter {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.qbank-progress-label {
+  font-size: 0.78rem;
+  color: var(--text-sub, #cbd5e1);
+  line-height: 1.4;
+}
+
+.qbank-progress-label b {
+  color: var(--cyan-bright, #7dd3fc);
+}
+
+.qbank-bar {
+  height: 16px;
+  border-color: rgba(56, 189, 248, 0.42);
+}
+
+.qbank-bar .stat-bar-fill {
+  background: linear-gradient(90deg, #0284c7 0%, #38bdf8 55%, #d4af37 100%);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+}
+
+.btn-danger.btn-boss-defeated {
+  background: linear-gradient(135deg, #3f2e12 0%, #7c2d12 52%, #9a3412 100%);
+  border-color: rgba(251, 191, 36, 0.7);
+  color: #fef3c7;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.28);
+}
+
+.btn-danger.btn-boss-defeated:hover:not(:disabled) {
+  background: linear-gradient(135deg, #573e16 0%, #9a3412 55%, #b45309 100%);
+  border-color: #fde68a;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.42);
+}
+
+/* ----------------------------------------------------------------------------
+ * 22. Mistake Notebook (#view-notes) & Nav Badge
+ * ---------------------------------------------------------------------------- */
+.nav-notes-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  border: 1px solid rgba(254, 202, 202, 0.55);
+  color: #fff;
+  font-size: 0.71rem;
+  font-weight: 800;
+  line-height: 1.25;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+}
+
+.nav-notes-badge.hidden {
+  display: none;
+}
+
+.btn-crimson {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 55%, #7f1d1d 100%);
+  border: 1px solid rgba(252, 165, 165, 0.6);
+  color: #fff5f5;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(185, 28, 28, 0.35);
+}
+
+.btn-crimson:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 55%, #991b1b 100%);
+  border-color: #fecaca;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-crimson:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.notes-view-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.notes-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.notes-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.notes-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notes-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 0.85rem;
+  color: var(--text-sub);
+}
+
+.notes-stat-pill.pending {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(127, 29, 29, 0.24);
+  color: #fecaca;
+}
+
+.notes-stat-pill.mastered {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(6, 78, 59, 0.24);
+  color: #a7f3d0;
+}
+
+.notes-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.notes-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.notes-filter-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 58px;
+}
+
+.notes-filter-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(23, 30, 48, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.notes-filter-btn:hover {
+  border-color: var(--gold-dim);
+  color: var(--text-main);
+}
+
+.notes-filter-btn.active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--gold-bright);
+  color: var(--gold-bright);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.22);
+}
+
+.notes-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mistake-note-card {
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(170deg, rgba(24, 30, 48, 0.96), rgba(14, 18, 30, 0.98));
+  border: 1px solid rgba(239, 68, 68, 0.36);
+  border-left: 4px solid var(--crimson);
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.mistake-note-card.is-mastered {
+  border-color: rgba(16, 185, 129, 0.38);
+  border-left-color: var(--emerald, #10b981);
+  opacity: 0.92;
+}
+
+.mistake-note-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.mistake-note-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mistake-note-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mistake-note-stem {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(10, 14, 24, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 10px;
+}
+
+.mistake-choice-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mistake-choice-box {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.mistake-choice-wrong {
+  background: rgba(127, 29, 29, 0.28);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+}
+
+.mistake-choice-correct {
+  background: rgba(6, 78, 59, 0.28);
+  border: 1px solid rgba(16, 185, 129, 0.52);
+  color: #a7f3d0;
+}
+
+.mistake-note-explain {
+  font-size: 0.86rem;
+  color: var(--text-sub);
+  line-height: 1.65;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.18);
+}
+
+.notes-empty-card {
+  padding: 36px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.notes-empty-icon {
+  font-size: 2.5rem;
+}
+
+#view-battle .battle-arena.revenge-battle-stage {
+  border-color: rgba(192, 132, 252, 0.55);
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.2), inset 0 0 28px rgba(88, 28, 135, 0.18);
 }

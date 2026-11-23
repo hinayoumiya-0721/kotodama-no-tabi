@@ -755,7 +755,10 @@
         defeatedBosses: [],
         unlockedAllOverride: false,
         clearedReadings: [],
-        shrineBest: {}
+        shrineBest: {},
+        solvedByJlpt: { N4: [], N3: [], N2: [], N1: [] },
+        bagByJlpt: { N4: [], N3: [], N2: [], N1: [] },
+        cycleCountsByJlpt: { N4: 0, N3: 0, N2: 0, N1: 0 }
       },
       npc: {
         mayor: { affection: 0, talkedIds: [], claimedMilestones: [] },
@@ -790,6 +793,7 @@
         defeatedEnemies: []
       },
       mistakes: [],
+      wrongNotes: {},
       achievements: [],
       settings: {
         furigana: true,
@@ -873,6 +877,15 @@
     out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(rpr.clearedReadings.map(String))) : [];
     out.progress.shrineBest = rpr.shrineBest && typeof rpr.shrineBest === 'object' ? Object.assign({}, rpr.shrineBest) : {};
 
+    const rsj = rpr.solvedByJlpt && typeof rpr.solvedByJlpt === 'object' ? rpr.solvedByJlpt : {};
+    const rbg = rpr.bagByJlpt && typeof rpr.bagByJlpt === 'object' ? rpr.bagByJlpt : {};
+    const rcc = rpr.cycleCountsByJlpt && typeof rpr.cycleCountsByJlpt === 'object' ? rpr.cycleCountsByJlpt : {};
+    JLPT_LEVELS.forEach((lvl) => {
+      out.progress.solvedByJlpt[lvl] = Array.isArray(rsj[lvl]) ? Array.from(new Set(rsj[lvl].map(String))) : [];
+      out.progress.bagByJlpt[lvl] = Array.isArray(rbg[lvl]) ? Array.from(new Set(rbg[lvl].map(String))) : [];
+      out.progress.cycleCountsByJlpt[lvl] = Math.max(0, Math.floor(Number(rcc[lvl]) || 0));
+    });
+
     // NPCs
     const rnpc = raw.npc && typeof raw.npc === 'object' ? raw.npc : {};
     ['mayor', 'merchant', 'scholar', 'priest'].forEach((nid) => {
@@ -918,7 +931,7 @@
     out.stats.encounteredEnemies = Array.isArray(rst.encounteredEnemies) ? Array.from(new Set(rst.encounteredEnemies.map(String))) : [];
     out.stats.defeatedEnemies = Array.isArray(rst.defeatedEnemies) ? Array.from(new Set(rst.defeatedEnemies.map(String))) : [];
 
-    // Mistakes
+    // Mistakes (legacy array)
     if (Array.isArray(raw.mistakes)) {
       out.mistakes = raw.mistakes
         .filter((m) => m && typeof m.questionId === 'string')
@@ -927,6 +940,23 @@
           count: Math.max(1, Math.floor(Number(m.count) || 1)),
           lastWrongAt: typeof m.lastWrongAt === 'string' ? m.lastWrongAt : new Date().toISOString()
         }));
+    }
+
+    // Wrong Notes (言霊錯題筆記 - backwards compatible with old saves)
+    out.wrongNotes = {};
+    if (raw.wrongNotes && typeof raw.wrongNotes === 'object' && !Array.isArray(raw.wrongNotes)) {
+      Object.keys(raw.wrongNotes).forEach((qid) => {
+        const entry = raw.wrongNotes[qid];
+        if (!entry || typeof entry !== 'object') return;
+        const id = typeof entry.id === 'string' && entry.id ? entry.id : String(qid);
+        out.wrongNotes[id] = {
+          id,
+          wrongCount: Math.max(1, Math.floor(Number(entry.wrongCount) || 1)),
+          lastWrongAt: typeof entry.lastWrongAt === 'string' ? entry.lastWrongAt : new Date().toISOString(),
+          playerLastChoice: entry.playerLastChoice !== undefined ? entry.playerLastChoice : null,
+          mastered: Boolean(entry.mastered)
+        };
+      });
     }
 
     // Achievements
@@ -979,6 +1009,12 @@
   let mapSelectedRegionId = 'r1';
   let exploreLogs = [];
   let explorePendingEvent = null;
+  let crossRegionNotifiedKeys = new Set();
+  let uiNotesFilter = {
+    jlpt: 'all',
+    type: 'all',
+    status: 'all'
+  };
 
   let battle = {
     active: false,
@@ -1399,6 +1435,124 @@
     }
   }
 
+  function ensureWrongNotesMap() {
+    if (!state.wrongNotes || typeof state.wrongNotes !== 'object' || Array.isArray(state.wrongNotes)) {
+      state.wrongNotes = {};
+    }
+    return state.wrongNotes;
+  }
+
+  function recordWrongNote(questionId, playerLastChoice = null) {
+    if (!questionId) return;
+    const notes = ensureWrongNotesMap();
+    const nowIso = new Date().toISOString();
+    const prev = notes[questionId];
+    if (prev) {
+      prev.wrongCount = Math.max(1, Number(prev.wrongCount) || 1) + 1;
+      prev.lastWrongAt = nowIso;
+      if (playerLastChoice !== undefined && playerLastChoice !== null) {
+        prev.playerLastChoice = playerLastChoice;
+      }
+      prev.mastered = false;
+    } else {
+      notes[questionId] = {
+        id: questionId,
+        wrongCount: 1,
+        lastWrongAt: nowIso,
+        playerLastChoice: playerLastChoice !== undefined ? playerLastChoice : null,
+        mastered: false
+      };
+    }
+    if (getQuestionById(questionId)) {
+      logMistake(questionId);
+    }
+    updateNavMistakeBadge();
+  }
+
+  function markWrongNoteMastered(questionId) {
+    if (!questionId || !state.wrongNotes || !state.wrongNotes[questionId]) return false;
+    const entry = state.wrongNotes[questionId];
+    const wasUnmastered = !entry.mastered;
+    entry.mastered = true;
+    updateNavMistakeBadge();
+    return wasUnmastered;
+  }
+
+  function resolveWrongNoteQuestion(noteId) {
+    if (!noteId) return null;
+    const rawQ = getQuestionById(noteId);
+    if (rawQ) {
+      return { source: 'battle', rd: null, q: normalizeQuestion(rawQ) };
+    }
+    const rdMatch = String(noteId).match(/^(rd_[a-zA-Z0-9]+)_q(\d+)$/);
+    if (rdMatch) {
+      const rd = getReadingById(rdMatch[1]);
+      const qIdx = Number(rdMatch[2]);
+      if (rd && Array.isArray(rd.questions) && rd.questions[qIdx]) {
+        const rq = rd.questions[qIdx];
+        const opts = (rq.options || []).map((o) => (typeof o === 'object' ? (o.jp || o.text || '') : String(o)));
+        const ansIdx = clamp(Number(rq.answerIndex ?? rq.answer ?? 0), 0, Math.max(0, opts.length - 1));
+        const excerpt = rd.paragraphs && rd.paragraphs[0] ? (rd.paragraphs[0].html || '') : '';
+        return {
+          source: 'reading',
+          rd,
+          qIdx,
+          q: {
+            id: noteId,
+            regionId: rd.unlockRegionId || 'r1',
+            jlpt: rd.jlpt || 'N4',
+            difficulty: 1,
+            type: 'reading_comp',
+            typeLabel: `長文閱讀・${rq.category || '理解'}`,
+            promptZh: rq.prompt || rq.promptZh || '閱讀理解測驗',
+            promptJp: `<div class="text-cyan" style="font-size:0.88rem;margin-bottom:4px;">📚 出自長文副本《${escapeHtml(rd.title || rd.id)}》（${escapeHtml(rd.jlpt || 'N4')}）</div>${excerpt ? `<div style="font-size:0.86rem;line-height:1.55;">${excerpt}</div>` : ''}`,
+            fullRubyJp: `<div>《${escapeHtml(rd.title || rd.id)}》</div>`,
+            tts: '',
+            options: opts,
+            answerIndex: ansIdx,
+            kanaReading: '',
+            correctDisplay: opts[ansIdx] || '',
+            wrongReason: rq.wrongReason || '請對照長文副本內容再仔細確認。',
+            explanation: rq.explanation || '請回顧該篇長文關鍵段落。',
+            hint: rq.wrongReason || '請回顧長文副本中的關鍵依據句。',
+            chunks: []
+          }
+        };
+      }
+    }
+    return null;
+  }
+
+  function getWrongNoteCategory(q) {
+    if (!q) return 'conjugation';
+    if (q.type === 'reading_comp') return 'reading_comp';
+    if (q.type === 'reading') return 'reading';
+    if (q.type === 'particle') return 'particle';
+    if (q.type === 'reorder' || (q.typeLabel && String(q.typeLabel).includes('句子重組'))) return 'reorder';
+    return 'conjugation';
+  }
+
+  function getWrongNotesSummary() {
+    const notes = ensureWrongNotesMap();
+    const list = Object.values(notes).filter((entry) => entry && resolveWrongNoteQuestion(entry.id));
+    const unmastered = list.filter((e) => !e.mastered).length;
+    const mastered = list.length - unmastered;
+    return { total: list.length, unmastered, mastered, entries: list };
+  }
+
+  function updateNavMistakeBadge() {
+    const badge = $('nav-notes-badge');
+    if (!badge) return;
+    const { unmastered } = getWrongNotesSummary();
+    if (unmastered > 0) {
+      badge.textContent = `(${unmastered})`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.textContent = '(0)';
+      badge.classList.add('hidden');
+    }
+  }
+
   // ============================================================================
   // 8. Toast & Modal Utilities
   // ============================================================================
@@ -1529,6 +1683,9 @@
     }
 
     syncDifficultyControls();
+    if (currentView === 'explore') {
+      renderExplore();
+    }
     if (hasActiveSession) autoSave();
 
     if (!options.silent) {
@@ -1548,6 +1705,9 @@
       updateBattleUI();
     }
     syncDifficultyControls();
+    if (currentView === 'explore') {
+      renderExplore();
+    }
     if (hasActiveSession) autoSave();
     if (!options.silent) {
       showToast(`⚡ 動態自適應起步難度已設為【從 ${next} 起步】`, 'info');
@@ -1587,6 +1747,7 @@
     applyFuriganaSetting();
     syncAudioButtons();
     syncDifficultyControls();
+    updateNavMistakeBadge();
   }
 
   function updateChromeVisibility(viewName) {
@@ -1665,6 +1826,7 @@
       case 'inventory': renderInventory(); break;
       case 'quests': renderQuests(); break;
       case 'codex': renderCodex(); break;
+      case 'notes': renderNotes(); break;
       default: break;
     }
 
@@ -2470,12 +2632,75 @@
   // ============================================================================
   // 12. World Map & Region Exploration
   // ============================================================================
+  function getQuestionBankProgressSummary(regionIdOverride) {
+    const allRaw = getQuestions();
+    const regionId = regionIdOverride || (state && state.progress && state.progress.currentRegionId) || 'r1';
+    const byJlpt = {};
+    JLPT_LEVELS.forEach((lvl) => {
+      byJlpt[lvl] = { total: 0, solved: 0, regionTotal: 0, regionSolved: 0 };
+    });
+
+    const solvedSets = {};
+    JLPT_LEVELS.forEach((lvl) => {
+      const arr = (state && state.progress && state.progress.solvedByJlpt && state.progress.solvedByJlpt[lvl]) || [];
+      solvedSets[lvl] = new Set(arr);
+    });
+
+    allRaw.forEach((q) => {
+      const lvl = normalizeJlptLevel(q.jlpt, q.regionId);
+      const bucket = byJlpt[lvl];
+      if (!bucket) return;
+      bucket.total += 1;
+      const isSolved = solvedSets[lvl].has(q.id);
+      if (isSolved) bucket.solved += 1;
+      if (q.regionId === regionId) {
+        bucket.regionTotal += 1;
+        if (isSolved) bucket.regionSolved += 1;
+      }
+    });
+
+    const totalAll = allRaw.length;
+    const solvedAll = JLPT_LEVELS.reduce((acc, lvl) => acc + byJlpt[lvl].solved, 0);
+    const modeCfg = getDifficultyModeConfig((state && state.settings && state.settings.difficultyMode) || 'adaptive');
+
+    if (modeCfg.targetJlpt && byJlpt[modeCfg.targetJlpt]) {
+      const b = byJlpt[modeCfg.targetJlpt];
+      const regRem = Math.max(0, b.regionTotal - b.regionSolved);
+      const pct = b.total > 0 ? Math.min(100, Math.round((b.solved / b.total) * 100)) : 0;
+      const crossNote = regRem === 0 && b.regionTotal > 0 ? '已開啟跨區題庫' : `本區餘 ${regRem} 題`;
+      return {
+        modeId: modeCfg.id,
+        targetJlpt: modeCfg.targetJlpt,
+        solved: b.solved,
+        total: b.total,
+        totalAll,
+        pct,
+        byJlpt,
+        summaryText: `目前難度已破題：<b>${b.solved} / ${b.total}</b> 題（${crossNote}）｜全題庫 ${totalAll} 題`
+      };
+    }
+
+    const pct = totalAll > 0 ? Math.min(100, Math.round((solvedAll / totalAll) * 100)) : 0;
+    const detailChips = JLPT_LEVELS.map((l) => `${l} ${byJlpt[l].solved}/${byJlpt[l].total}`).join('・');
+    return {
+      modeId: modeCfg.id,
+      targetJlpt: null,
+      solved: solvedAll,
+      total: totalAll,
+      totalAll,
+      pct,
+      byJlpt,
+      summaryText: `全題庫已破題：<b>${solvedAll} / ${totalAll}</b> 題（${detailChips}）`
+    };
+  }
+
   function renderMapDifficultyBar() {
     const bar = $('map-difficulty-bar');
     if (!bar) return;
     const modeId = (state && state.settings && state.settings.difficultyMode) || 'adaptive';
     const startJlpt = (state && state.settings && state.settings.adaptiveStartJlpt) || 'N4';
     const cfg = getDifficultyModeConfig(modeId);
+    const qProgress = getQuestionBankProgressSummary(mapSelectedRegionId || state.progress.currentRegionId);
     bar.classList.toggle('mode-n1-active', modeId === 'fixed_n1');
 
     bar.innerHTML = `
@@ -2501,6 +2726,13 @@
             <button type="button" class="btn btn-sm adaptive-start-btn ${startJlpt === 'N3' ? 'active' : ''}" data-map-start="N3">N3 起步</button>
           </div>
         ` : ''}
+      </div>
+      <div class="qbank-progress-box">
+        <div class="qbank-progress-label">📚 ${qProgress.summaryText}</div>
+        <div class="stat-bar qbank-bar">
+          <div class="stat-bar-fill" style="width: ${qProgress.pct}%;"></div>
+          <span class="stat-bar-text">${qProgress.pct}% (${qProgress.solved}/${qProgress.total})</span>
+        </div>
       </div>
     `;
 
@@ -2541,6 +2773,7 @@
           if (!rid) return;
           Audio.playSFX('click');
           mapSelectedRegionId = rid;
+          renderMapDifficultyBar();
           renderMapRegionDetail(rid);
         });
       });
@@ -2630,7 +2863,8 @@
     const region = getRegionById(state.progress.currentRegionId) || getRegions()[0];
     if (!region) return;
     const pct = clamp(state.progress.regionExplore[region.id] || 0, 0, 100);
-    const bossReady = pct >= 100 || state.progress.defeatedBosses.includes(region.id);
+    const bossDefeated = state.progress.defeatedBosses.includes(region.id);
+    const bossReady = pct >= 100 || bossDefeated;
     const boss = getRegionBoss(region.id);
 
     if ($('explore-region-title')) $('explore-region-title').textContent = region.name;
@@ -2638,31 +2872,60 @@
     if ($('explore-progress-text')) $('explore-progress-text').textContent = `${pct}%`;
     if ($('explore-progress-bar')) $('explore-progress-bar').style.width = `${pct}%`;
 
+    // Question Bank Progress Dashboard inside Region Explore Card
+    const progressCard = document.querySelector('#view-explore .explore-progress-card');
+    if (progressCard) {
+      let qbankEl = $('explore-qbank-meter');
+      if (!qbankEl) {
+        qbankEl = document.createElement('div');
+        qbankEl.id = 'explore-qbank-meter';
+        qbankEl.className = 'explore-qbank-meter';
+        progressCard.appendChild(qbankEl);
+      }
+      const qProg = getQuestionBankProgressSummary(region.id);
+      qbankEl.innerHTML = `
+        <div class="qbank-progress-label">📚 ${qProg.summaryText}</div>
+        <div class="stat-bar qbank-bar">
+          <div class="stat-bar-fill" style="width: ${qProg.pct}%;"></div>
+          <span class="stat-bar-text">${qProg.pct}% (${qProg.solved}/${qProg.total})</span>
+        </div>
+      `;
+    }
+
     const bossBtn = $('btn-explore-boss');
     if (bossBtn) {
       bossBtn.disabled = !bossReady;
-      bossBtn.classList.toggle('aura-pulse', bossReady);
-      bossBtn.textContent = bossReady
-        ? `👹 挑戰 Boss：${boss ? boss.name : '區域首領'}`
-        : '🔒 區域 Boss（探索達 100% 解鎖）';
+      bossBtn.classList.toggle('aura-pulse', bossReady && !bossDefeated);
+      bossBtn.classList.toggle('btn-boss-defeated', bossReady && bossDefeated);
+      if (!bossReady) {
+        bossBtn.textContent = '🔒 區域 Boss（探索達 100% 解鎖）';
+      } else if (bossDefeated) {
+        bossBtn.textContent = '🔄 再次挑戰 Boss（已討伐）';
+      } else {
+        bossBtn.textContent = `⚔️ 挑戰區域 Boss：${boss ? boss.name : '區域首領'}`;
+      }
     }
 
     const stepBtn = $('btn-explore-step');
     if (stepBtn) {
       stepBtn.disabled = Boolean(explorePendingEvent);
-      stepBtn.textContent = pct >= 100 ? '👹 直面區域 Boss！' : '🧭 前進探索 (+25%)';
+      stepBtn.textContent = pct >= 100 ? '🧭 繼續巡邏探索（遇怪・事件）' : '🧭 前進探索 (+25%)';
     }
 
     if (!explorePendingEvent) {
       if ($('explore-visual')) $('explore-visual').innerHTML = Art.exploreVisual(region, pct >= 100 ? 'boss' : 'step');
       if ($('explore-event-title')) {
         $('explore-event-title').textContent = pct >= 100
-          ? `⚠️ ${boss ? boss.name : '區域 Boss'} 正在深處等待`
+          ? (bossDefeated
+              ? `🏆 ${boss ? boss.name : '區域 Boss'} 已被討伐`
+              : `⚠️ ${boss ? boss.name : '區域 Boss'} 正在深處等待`)
           : `${region.name}・荒野行進`;
       }
       if ($('explore-event-desc')) {
         $('explore-event-desc').textContent = pct >= 100
-          ? '區域探索已達 100%！你可以直接點擊「挑戰 Boss」迎戰守護首領，或先整備道具與技能。'
+          ? (bossDefeated
+              ? '此區域首領已被你擊敗！可點擊下方「🔄 再次挑戰 Boss（已討伐）」重溫對決，或繼續巡邏探索本區魔物與題庫。'
+              : '區域探索已達 100%！請點擊下方紅色「⚔️ 挑戰區域 Boss」按鈕迎戰守護首領，或先整備道具與技能。')
           : (region.desc || '點擊「前進探索」深入探索領域，可能遭遇魔物、古代寶箱、路邊事件或營火休憩。');
       }
       if ($('explore-event-choices')) $('explore-event-choices').innerHTML = '';
@@ -2677,24 +2940,19 @@
     if (!region) return;
 
     const prevPct = clamp(state.progress.regionExplore[region.id] || 0, 0, 100);
-    if (prevPct >= 100) {
-      triggerRegionBossBattle(region.id);
-      return;
-    }
-
     const nextPct = Math.min(100, prevPct + 25);
     state.progress.regionExplore[region.id] = nextPct;
     autoSave();
 
-    // Reaching 100% triggers Boss Awakening alert!
-    if (nextPct >= 100) {
+    // Reaching 100% for the first time triggers Boss Awakening alert!
+    if (prevPct < 100 && nextPct >= 100) {
       const boss = getRegionBoss(region.id);
       Audio.playSFX('boss_enter');
       addExploreLog(`🔥 探索度達到 100%！強大魔氣湧現——區域首領【${boss ? boss.name : 'Boss'}】現身了！`, 'battle');
       renderExplore();
       if ($('explore-visual')) $('explore-visual').innerHTML = Art.exploreVisual(region, 'boss');
       if ($('explore-event-title')) $('explore-event-title').textContent = `💀 區域首領現身：${boss ? boss.name : 'Boss'}`;
-      if ($('explore-event-desc')) $('explore-event-desc').textContent = '深處的古老封印已鬆動！點擊「挑戰 Boss」或再次前進即可展開首領對決！';
+      if ($('explore-event-desc')) $('explore-event-desc').textContent = '深處的古老封印已鬆動！請點擊下方紅色「⚔️ 挑戰區域 Boss」按鈕展開首領對決！';
       showToast(`⚠️ 區域探索 100%！【${boss ? boss.name : '區域 Boss'}】已可挑戰！`, 'warning');
       return;
     }
@@ -3052,7 +3310,8 @@
       return;
     }
 
-    if (!state.stats.encounteredEnemies.includes(enemy.id)) {
+    const isTraining = Boolean(options.isWrongNoteTraining);
+    if (!isTraining && !state.stats.encounteredEnemies.includes(enemy.id)) {
       state.stats.encounteredEnemies.push(enemy.id);
     }
 
@@ -3063,11 +3322,20 @@
       getAdaptiveRegionFloorIdx(battleRegionId),
       state.settings.adaptiveStartJlpt === 'N3' ? 1 : 0
     );
+    const trainingQueue = isTraining && Array.isArray(options.trainingQueue)
+      ? options.trainingQueue.slice()
+      : [];
 
     battle = {
       active: true,
       enemy,
       regionId: battleRegionId,
+      isWrongNoteTraining: isTraining,
+      trainingQueue,
+      trainingTotal: trainingQueue.length,
+      masteredIdsInRun: [],
+      trainingExpEarned: 0,
+      trainingGoldEarned: 0,
       enemyHp: enemyMaxHp,
       enemyMaxHp,
       enemyBreak: breakMax,
@@ -3170,7 +3438,9 @@
     const region = getRegionById(battle.regionId);
 
     if ($('battle-region-label')) {
-      $('battle-region-label').textContent = `${region ? region.name : '戰場'}｜${enemy.isBoss ? '💀 BOSS 戰' : '⚔️ 遭遇戰'}`;
+      $('battle-region-label').textContent = battle.isWrongNoteTraining
+        ? `📓 錯題特訓・記憶試煉（進度 ${battle.masteredIdsInRun.length}/${battle.trainingTotal}）`
+        : `${region ? region.name : '戰場'}｜${enemy.isBoss ? '💀 BOSS 戰' : '⚔️ 遭遇戰'}`;
     }
     if ($('battle-combo-badge')) {
       $('battle-combo-badge').textContent = `🔥 Combo x${battle.combo}`;
@@ -3183,11 +3453,13 @@
 
     const activeMode = getDifficultyModeConfig(state.settings.difficultyMode);
     const activeJlpt = getEffectiveBattleJlpt();
-    const isDemonRealm = activeMode.id === 'fixed_n1';
+    const isDemonRealm = activeMode.id === 'fixed_n1' && !battle.isWrongNoteTraining;
     if ($('battle-difficulty-badge')) {
-      const diffText = activeMode.id === 'adaptive'
-        ? `難度：動態自適應（當前 ${activeJlpt}）`
-        : `難度：${activeMode.label}`;
+      const diffText = battle.isWrongNoteTraining
+        ? `專攻未攻克錯題（剩餘 ${Math.max(0, battle.trainingTotal - battle.masteredIdsInRun.length)} 題）`
+        : activeMode.id === 'adaptive'
+          ? `難度：動態自適應（當前 ${activeJlpt}）`
+          : `難度：${activeMode.label}`;
       $('battle-difficulty-badge').textContent = diffText;
     }
     if ($('battle-n1-bonus-badge')) {
@@ -3219,7 +3491,10 @@
 
     // Enemy side
     const arenaEl = document.querySelector('#view-battle .battle-arena');
-    if (arenaEl) arenaEl.classList.toggle('boss-battle-stage', Boolean(enemy.isBoss));
+    if (arenaEl) {
+      arenaEl.classList.toggle('boss-battle-stage', Boolean(enemy.isBoss));
+      arenaEl.classList.toggle('revenge-battle-stage', Boolean(battle.isWrongNoteTraining));
+    }
     const enemyCard = document.querySelector('#view-battle .combatant-card.enemy-side');
     if (enemyCard) enemyCard.classList.toggle('boss-card', Boolean(enemy.isBoss));
 
@@ -3298,64 +3573,134 @@
     return JLPT_LEVELS[idx];
   }
 
+  function ensureShuffleBagForJlpt(targetJlpt) {
+    const allRaw = getQuestions();
+    const allForJlpt = allRaw.filter((q) => normalizeJlptLevel(q.jlpt, q.regionId) === targetJlpt);
+    if (allForJlpt.length === 0) return [];
+
+    if (!state.progress.solvedByJlpt) state.progress.solvedByJlpt = { N4: [], N3: [], N2: [], N1: [] };
+    if (!state.progress.bagByJlpt) state.progress.bagByJlpt = { N4: [], N3: [], N2: [], N1: [] };
+    if (!state.progress.cycleCountsByJlpt) state.progress.cycleCountsByJlpt = { N4: 0, N3: 0, N2: 0, N1: 0 };
+
+    const qMap = new Map(allForJlpt.map((q) => [q.id, q]));
+    let solved = Array.isArray(state.progress.solvedByJlpt[targetJlpt])
+      ? state.progress.solvedByJlpt[targetJlpt].filter((id) => qMap.has(id))
+      : [];
+    let solvedSet = new Set(solved);
+
+    let unsolvedIds = allForJlpt.map((q) => q.id).filter((id) => !solvedSet.has(id));
+    if (unsolvedIds.length === 0) {
+      // Player conquered EVERY question in this JLPT tier! Reset and reshuffle for next round
+      solved = [];
+      solvedSet = new Set();
+      state.progress.solvedByJlpt[targetJlpt] = [];
+      state.progress.cycleCountsByJlpt[targetJlpt] = (state.progress.cycleCountsByJlpt[targetJlpt] || 0) + 1;
+      unsolvedIds = allForJlpt.map((q) => q.id);
+      const freshBag = shuffleArray(unsolvedIds);
+      state.progress.bagByJlpt[targetJlpt] = freshBag;
+      showToast(`🎉 已刷完【${targetJlpt}】全部 ${allForJlpt.length} 題一輪！題庫已重新洗牌！`, 'gold');
+      return freshBag.map((id) => qMap.get(id)).filter(Boolean);
+    }
+
+    const unsolvedSet = new Set(unsolvedIds);
+    const existingBag = Array.isArray(state.progress.bagByJlpt[targetJlpt])
+      ? state.progress.bagByJlpt[targetJlpt].filter((id) => unsolvedSet.has(id))
+      : [];
+    const inBagSet = new Set(existingBag);
+    const missing = shuffleArray(unsolvedIds.filter((id) => !inBagSet.has(id)));
+    const mergedBag = existingBag.concat(missing);
+    state.progress.solvedByJlpt[targetJlpt] = solved;
+    state.progress.bagByJlpt[targetJlpt] = mergedBag;
+
+    return mergedBag.map((id) => qMap.get(id)).filter(Boolean);
+  }
+
+  function recordQuestionOutcomeInShuffleBag(q, isCorrect) {
+    if (!q || !q.id) return;
+    const lvl = normalizeJlptLevel(q.jlpt, q.regionId);
+    if (!state.progress.solvedByJlpt) state.progress.solvedByJlpt = { N4: [], N3: [], N2: [], N1: [] };
+    if (!state.progress.bagByJlpt) state.progress.bagByJlpt = { N4: [], N3: [], N2: [], N1: [] };
+
+    const solved = Array.isArray(state.progress.solvedByJlpt[lvl]) ? state.progress.solvedByJlpt[lvl] : [];
+    const bag = Array.isArray(state.progress.bagByJlpt[lvl]) ? state.progress.bagByJlpt[lvl] : [];
+
+    if (isCorrect) {
+      if (!solved.includes(q.id)) solved.push(q.id);
+      state.progress.solvedByJlpt[lvl] = solved;
+      state.progress.bagByJlpt[lvl] = bag.filter((id) => id !== q.id);
+    } else {
+      // Keep unsolved and rotate to the back of the shuffle bag so it won't repeat immediately
+      const rotated = bag.filter((id) => id !== q.id);
+      rotated.push(q.id);
+      state.progress.bagByJlpt[lvl] = rotated;
+    }
+  }
+
   function pickBattleQuestion() {
+    if (battle.isWrongNoteTraining) {
+      const notes = ensureWrongNotesMap();
+      const lastId = battle.currentQ ? battle.currentQ.id : null;
+      // Only pick unmastered wrong notes from trainingQueue
+      let pendingIds = (battle.trainingQueue || []).filter((id) => {
+        const e = notes[id];
+        return e && !e.mastered && resolveWrongNoteQuestion(id);
+      });
+      if (pendingIds.length === 0) {
+        // Double-check live wrongNotes map in case queue exhausted cleanly
+        pendingIds = Object.values(notes)
+          .filter((e) => e && !e.mastered && resolveWrongNoteQuestion(e.id))
+          .map((e) => e.id);
+      }
+      if (pendingIds.length === 0) return null;
+      let nextId = pendingIds.find((id) => id !== lastId);
+      if (!nextId) nextId = pendingIds[0];
+      const resolved = resolveWrongNoteQuestion(nextId);
+      return resolved ? resolved.q : null;
+    }
+
     const allRaw = getQuestions();
     if (allRaw.length === 0) return null;
 
     const targetJlpt = getEffectiveBattleJlpt();
+    const bagQuestions = ensureShuffleBagForJlpt(targetJlpt);
+    const lastId = battle.currentQ ? battle.currentQ.id : null;
     const usedSet = new Set(battle.usedQuestionIds);
-    const getJlptOf = (q) => normalizeJlptLevel(q.jlpt, q.regionId);
-    const filterUnused = (list) => list.filter((q) => !usedSet.has(q.id));
 
-    // If struggling (>=2 consecutive wrong), review a mistake strictly matching targetJlpt
-    if (battle.consecutiveWrong >= 2 && state.mistakes.length > 0) {
-      const mistakePool = state.mistakes
-        .map((m) => getQuestionById(m.questionId))
-        .filter((q) => q && !usedSet.has(q.id) && getJlptOf(q) === targetJlpt);
-      if (mistakePool.length > 0) {
-        return normalizeQuestion(mistakePool[Math.floor(Math.random() * mistakePool.length)]);
+    // Filter out questions already asked in this battle unless only those remain in unseen pool
+    let candidates = bagQuestions.filter((q) => !usedSet.has(q.id));
+    if (candidates.length === 0) {
+      candidates = bagQuestions.filter((q) => q.id !== lastId);
+      if (candidates.length === 0) candidates = bagQuestions;
+    }
+
+    if (candidates.length === 0) {
+      // Safety fallback if targetJlpt somehow had 0 items
+      const fallback = allRaw.filter((q) => q.id !== lastId);
+      const chosen = (fallback.length ? fallback : allRaw)[0];
+      return normalizeQuestion(chosen);
+    }
+
+    // Priority 1: Current region unseen questions in the shuffle bag
+    const regionCandidates = candidates.filter((q) => q.regionId === battle.regionId);
+    let activeTier = regionCandidates;
+
+    // Priority 2: Current region target JLPT unseen pool exhausted -> seamless cross-region draw!
+    if (activeTier.length === 0) {
+      activeTier = candidates;
+      const notifyKey = `${battle.regionId}_${targetJlpt}`;
+      if (!crossRegionNotifiedKeys.has(notifyKey)) {
+        crossRegionNotifiedKeys.add(notifyKey);
+        showToast(`🌐 已解鎖跨區進階題庫！自動從其他區域 ${targetJlpt} 未答題庫無縫補題`, 'info');
       }
     }
 
-    const allTargetJlpt = allRaw.filter((q) => getJlptOf(q) === targetJlpt);
-    const regionTargetJlpt = allTargetJlpt.filter((q) => q.regionId === battle.regionId);
-
-    // Tier 1: Current region + target JLPT (unused)
-    let pool = filterUnused(regionTargetJlpt);
-    // Tier 2: Global across all regions + target JLPT (seamless補位, never stalls!)
-    if (pool.length === 0) {
-      pool = filterUnused(allTargetJlpt);
-    }
-    // Tier 3: If all questions of targetJlpt were used in this battle, clear targetJlpt history (avoid immediate repeat)
-    if (pool.length === 0 && allTargetJlpt.length > 0) {
-      const lastId = battle.currentQ ? battle.currentQ.id : null;
-      const targetIds = new Set(allTargetJlpt.map((q) => q.id));
-      battle.usedQuestionIds = battle.usedQuestionIds.filter((id) => !targetIds.has(id) || id === lastId);
-      const freshUsed = new Set(battle.usedQuestionIds);
-      pool = regionTargetJlpt.filter((q) => !freshUsed.has(q.id));
-      if (pool.length === 0) {
-        pool = allTargetJlpt.filter((q) => !freshUsed.has(q.id));
-      }
-      if (pool.length === 0) {
-        pool = allTargetJlpt;
-      }
-    }
-    // Ultimate safety fallback if database somehow has 0 items of targetJlpt
-    if (pool.length === 0) {
-      pool = filterUnused(allRaw);
-      if (pool.length === 0) {
-        battle.usedQuestionIds = [];
-        pool = allRaw;
-      }
+    // Draw deterministically from shuffled bag order, lightly favoring enemy weakness within top shuffled window
+    let chosen = activeTier[0];
+    if (activeTier.length > 1 && battle.enemy && battle.enemy.weakness && Math.random() < 0.42) {
+      const weakMatch = activeTier.slice(0, 6).find((q) => q.type === battle.enemy.weakness);
+      if (weakMatch) chosen = weakMatch;
     }
 
-    // Slight bias toward enemy weakness inside the strictly filtered pool
-    const weakMatches = pool.filter((q) => q.type === battle.enemy.weakness);
-    if (weakMatches.length > 0 && Math.random() < 0.42) {
-      pool = weakMatches;
-    }
-
-    const chosen = pool[Math.floor(Math.random() * pool.length)];
     return normalizeQuestion(chosen);
   }
 
@@ -3551,12 +3896,35 @@
     }
 
     if (isCorrect) {
+      recordQuestionOutcomeInShuffleBag(q, true);
+      const newlyMastered = markWrongNoteMastered(q.id);
       battle.consecutiveCorrect += 1;
       battle.consecutiveWrong = 0;
       battle.combo += 1;
       state.stats.totalCorrect += 1;
       state.quests.dailyProgress.correct_answers += 1;
       state.stats.maxCombo = Math.max(state.stats.maxCombo, battle.combo);
+
+      if (battle.isWrongNoteTraining) {
+        if (!battle.masteredIdsInRun.includes(q.id)) {
+          battle.masteredIdsInRun.push(q.id);
+        }
+        battle.trainingQueue = (battle.trainingQueue || []).filter((id) => id !== q.id);
+        const bonusExp = 15;
+        const bonusGold = 12;
+        gainGold(bonusGold);
+        gainExp(bonusExp);
+        battle.trainingExpEarned += bonusExp;
+        battle.trainingGoldEarned += bonusGold;
+        showToast(
+          newlyMastered
+            ? `✔ 已攻克錯題！獲得 +${bonusExp} EXP、+${bonusGold} 金幣`
+            : `✔ 複習答對！+15 EXP、+12 金幣`,
+          'success'
+        );
+      } else if (newlyMastered) {
+        showToast('📓 錯題筆記中的題目已標記為【已攻克】！', 'success');
+      }
 
       if (battle.consecutiveCorrect >= 3 && !battle.feverActive) {
         battle.feverActive = true;
@@ -3593,7 +3961,7 @@
       const insightMult = battle.insightActive ? [1, 1, 1.20, 1.35][insightLv] : 1;
       const wasAlreadyStunned = battle.enemyStunned;
 
-      const dmg = Math.max(
+      let dmg = Math.max(
         5,
         Math.round(
           (18 + stats.INT * 2.1) *
@@ -3604,6 +3972,16 @@
           insightMult
         )
       );
+
+      if (battle.isWrongNoteTraining) {
+        const remainingToMaster = Math.max(0, battle.trainingTotal - battle.masteredIdsInRun.length);
+        if (remainingToMaster <= 0) {
+          dmg = battle.enemyHp;
+        } else {
+          const slice = Math.max(10, Math.round(battle.enemyMaxHp / Math.max(1, battle.trainingTotal)));
+          dmg = Math.min(Math.max(1, battle.enemyHp - remainingToMaster), slice);
+        }
+      }
 
       battle.enemyHp = Math.max(0, battle.enemyHp - dmg);
 
@@ -3673,6 +4051,7 @@
       }
     } else {
       // Wrong Answer -> Friendly Capped Damage + MANDATORY Teaching Explanation Modal
+      recordQuestionOutcomeInShuffleBag(q, false);
       battle.consecutiveWrong += 1;
       battle.consecutiveCorrect = 0;
       battle.combo = 0;
@@ -3686,7 +4065,11 @@
       }
 
       state.stats.totalWrong += 1;
-      logMistake(q.id);
+      recordWrongNote(q.id, chosenIdx !== null && chosenIdx !== undefined ? chosenIdx : -1);
+      if (battle.isWrongNoteTraining) {
+        battle.trainingQueue = (battle.trainingQueue || []).filter((id) => id !== q.id);
+        battle.trainingQueue.push(q.id);
+      }
 
       const stats = getTotalStats();
       let dmg = 0;
@@ -3771,8 +4154,50 @@
 
     state.stats.battlesWon += 1;
     state.quests.dailyProgress.win_battles += 1;
-    if (!state.stats.defeatedEnemies.includes(enemy.id)) {
+    if (!battle.isWrongNoteTraining && !state.stats.defeatedEnemies.includes(enemy.id)) {
       state.stats.defeatedEnemies.push(enemy.id);
+    }
+
+    if (battle.isWrongNoteTraining) {
+      const masteredCount = battle.masteredIdsInRun.length;
+      const bonusExp = 20;
+      const bonusGold = 15;
+      gainGold(bonusGold);
+      const lvRes = gainExp(bonusExp);
+      const totalExpShown = battle.trainingExpEarned + bonusExp;
+      const totalGoldShown = battle.trainingGoldEarned + bonusGold;
+
+      Audio.playSFX('victory');
+      setBattlePoses('victory', 'defeat');
+      battle.active = false;
+      checkAchievements();
+      autoSave();
+      updateHUD();
+
+      const trainingHeroHtml = `<div class="victory-portrait-banner">
+        <div class="victory-portrait-art">${Art.hero(state.player.jobId, 'victory')}</div>
+        <div class="victory-portrait-quote">
+          <div class="jp-text">「忘却の霧を斬り払い、己の弱点を乗り越えた！」</div>
+          <div class="text-muted" style="font-size:0.84rem;margin-top:4px;">已斬斷遺忘迷霧，徹底克服過往的言靈弱點！</div>
+        </div>
+      </div>`;
+
+      const trainingLines = [
+        `<div class="panel-card" style="padding:10px 14px;border-left:3px solid var(--emerald);background:rgba(6,78,59,0.22);font-size:1.05rem;font-weight:700;color:#a7f3d0;">🎉 本次成功攻克 ${masteredCount} 題錯題！</div>`,
+        `⭐ 特訓累計獲得經驗：<strong>+${totalExpShown} EXP</strong>（含通關獎勵 +${bonusExp}）`,
+        `🪙 特訓累計獲得金幣：<strong>+${totalGoldShown} 金幣</strong>（含通關獎勵 +${bonusGold}）`
+      ];
+      if (lvRes.leveledUp) {
+        trainingLines.push(`🎊 升級至 <strong>Lv.${state.player.level}</strong>（SP +${lvRes.levelsGained}）！`);
+      }
+
+      showGenericModal(
+        '📓 記憶試煉完成・錯題特訓勝利！',
+        `${trainingHeroHtml}<div style="display:flex;flex-direction:column;gap:8px;font-size:0.96rem;">${trainingLines.map((l) => `<div>${l}</div>`).join('')}</div>`,
+        '📓',
+        () => switchView('notes')
+      );
+      return;
     }
 
     const rewardLines = [
@@ -4234,15 +4659,20 @@
           reading.answered = true;
           const chosen = Number(btn.getAttribute('data-rd-opt'));
           const isCorrect = chosen === ansIdx;
+          const noteId = `${rd.id}_q${reading.qIdx}`;
           if (isCorrect) {
             reading.correctCount += 1;
             state.stats.totalCorrect += 1;
             state.quests.dailyProgress.correct_answers += 1;
+            const rdMastered = markWrongNoteMastered(noteId);
+            if (rdMastered) showToast('📓 閱讀錯題已標記為【已攻克】！', 'success');
             Audio.playSFX('correct');
           } else {
             state.stats.totalWrong += 1;
+            recordWrongNote(noteId, chosen);
             Audio.playSFX('wrong');
           }
+          autoSave();
 
           optsEl.querySelectorAll('[data-rd-opt]').forEach((b) => {
             const idx = Number(b.getAttribute('data-rd-opt'));
@@ -5490,6 +5920,323 @@
   }
 
   // ============================================================================
+  // 16B. Dedicated Mistake Notebook View & Revenge Training (#view-notes)
+  // ============================================================================
+  function removeWrongNote(noteId) {
+    const notes = ensureWrongNotesMap();
+    if (!notes[noteId]) return;
+    delete notes[noteId];
+    state.mistakes = state.mistakes.filter((m) => m.questionId !== noteId);
+    updateNavMistakeBadge();
+    autoSave();
+    renderNotes();
+    showToast('🗑️ 已從錯題筆記移除該題。', 'info');
+  }
+
+  function clearMasteredWrongNotes() {
+    const notes = ensureWrongNotesMap();
+    const masteredIds = Object.keys(notes).filter((id) => notes[id] && notes[id].mastered);
+    if (masteredIds.length === 0) {
+      showToast('目前沒有可清除的已攻克題目。', 'info');
+      return;
+    }
+    masteredIds.forEach((id) => {
+      delete notes[id];
+    });
+    const removedSet = new Set(masteredIds);
+    state.mistakes = state.mistakes.filter((m) => !removedSet.has(m.questionId));
+    Audio.playSFX('confirm');
+    updateNavMistakeBadge();
+    autoSave();
+    renderNotes();
+    showToast(`🧹 已清除 ${masteredIds.length} 題已攻克的錯題紀錄！`, 'success');
+  }
+
+  function startWrongNoteBattle() {
+    const notes = ensureWrongNotesMap();
+    const unmasteredIds = Object.values(notes)
+      .filter((entry) => entry && !entry.mastered && resolveWrongNoteQuestion(entry.id))
+      .map((entry) => entry.id);
+
+    if (unmasteredIds.length === 0) {
+      showToast('🎉 目前沒有待複習的未攻克錯題！', 'info');
+      return;
+    }
+
+    const queue = shuffleArray(unmasteredIds);
+    const totalHp = Math.max(80, queue.length * 100);
+    const phantomEnemy = {
+      id: 'memory_phantom',
+      name: '記憶の幻影・復習の試練',
+      regionId: state.progress.currentRegionId || 'r1',
+      isBoss: false,
+      weakness: 'vocab',
+      weaknessLabel: '未攻克錯題專攻',
+      hp: totalHp,
+      maxHp: totalHp,
+      breakMax: 2,
+      atk: 16,
+      exp: 20,
+      gold: 15,
+      introLine: {
+        jp: '記憶の迷霧から過去の過ちが具現化した……今こそ克服の時だ！',
+        zh: '昔日答錯的記憶殘影凝聚成形……現在正是徹底攻克它的時刻！'
+      },
+      hitLine: {
+        jp: 'ぐっ……その言霊を完全に思い出したというのか！',
+        zh: '唔……你竟然已經徹底記起這道言靈的真義了嗎！'
+      },
+      breakLine: {
+        jp: '記憶の鎖が砕け散った！',
+        zh: '困擾你的記憶枷鎖徹底粉碎了！'
+      }
+    };
+
+    Audio.playSFX('confirm');
+    startBattle(phantomEnemy, {
+      returnView: 'notes',
+      isWrongNoteTraining: true,
+      trainingQueue: queue
+    });
+  }
+
+  function renderNotes() {
+    const summary = getWrongNotesSummary();
+    updateNavMistakeBadge();
+
+    const trainBtn = $('btn-start-wrong-training');
+    if (trainBtn) {
+      trainBtn.disabled = summary.unmastered < 1;
+      trainBtn.textContent = summary.unmastered > 0
+        ? `⚔️ 啟動錯題特訓（專攻 ${summary.unmastered} 題未攻克）`
+        : '⚔️ 啟動錯題特訓（專攻未攻克題庫）';
+    }
+    const clearBtn = $('btn-clear-mastered-notes');
+    if (clearBtn) {
+      clearBtn.disabled = summary.mastered < 1;
+      clearBtn.textContent = summary.mastered > 0
+        ? `🧹 一鍵清除已攻克 (${summary.mastered})`
+        : '🧹 一鍵清除已攻克';
+    }
+
+    const summaryEl = $('notes-summary-bar');
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <div class="notes-stats-row">
+          <span class="notes-stat-pill">📚 累計錯題數：<b>${summary.total}</b></span>
+          <span class="notes-stat-pill pending">🔴 待複習未攻克：<b>${summary.unmastered}</b></span>
+          <span class="notes-stat-pill mastered">✅ 已攻克：<b>${summary.mastered}</b></span>
+        </div>
+        <div class="text-muted" style="font-size:0.82rem;">在一般戰鬥、Boss 戰或閱讀副本答錯即自動收錄；再次答對將標記為【已攻克】。</div>
+      `;
+    }
+
+    const filterEl = $('notes-filter-bar');
+    if (filterEl) {
+      const jlptOpts = [
+        { val: 'all', label: '全部難度' },
+        { val: 'N4', label: 'N4' },
+        { val: 'N3', label: 'N3' },
+        { val: 'N2', label: 'N2' },
+        { val: 'N1', label: 'N1' }
+      ];
+      const typeOpts = [
+        { val: 'all', label: '全部題型' },
+        { val: 'reading', label: '讀音' },
+        { val: 'particle', label: '助詞' },
+        { val: 'conjugation', label: '活用' },
+        { val: 'reorder', label: '重組' },
+        { val: 'reading_comp', label: '閱讀' }
+      ];
+      const statusOpts = [
+        { val: 'all', label: '顯示全部' },
+        { val: 'unmastered', label: '僅看未攻克' }
+      ];
+
+      filterEl.innerHTML = `
+        <div class="notes-filter-group">
+          <span class="notes-filter-label">難度：</span>
+          ${jlptOpts.map((o) => `<button type="button" class="notes-filter-btn ${uiNotesFilter.jlpt === o.val ? 'active' : ''}" data-note-filter="jlpt" data-val="${o.val}">${o.label}</button>`).join('')}
+        </div>
+        <div class="notes-filter-group">
+          <span class="notes-filter-label">題型：</span>
+          ${typeOpts.map((o) => `<button type="button" class="notes-filter-btn ${uiNotesFilter.type === o.val ? 'active' : ''}" data-note-filter="type" data-val="${o.val}">${o.label}</button>`).join('')}
+        </div>
+        <div class="notes-filter-group">
+          <span class="notes-filter-label">狀態：</span>
+          ${statusOpts.map((o) => `<button type="button" class="notes-filter-btn ${uiNotesFilter.status === o.val ? 'active' : ''}" data-note-filter="status" data-val="${o.val}">${o.label}</button>`).join('')}
+        </div>
+      `;
+
+      filterEl.querySelectorAll('[data-note-filter]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const group = btn.getAttribute('data-note-filter');
+          const val = btn.getAttribute('data-val');
+          if (!group || !val) return;
+          Audio.playSFX('click');
+          uiNotesFilter[group] = val;
+          renderNotes();
+        });
+      });
+    }
+
+    const listEl = $('notes-list-container');
+    if (!listEl) return;
+
+    if (summary.total === 0) {
+      listEl.innerHTML = `
+        <div class="panel-card notes-empty-card">
+          <div class="notes-empty-icon">📓✨</div>
+          <h3 style="margin:0;color:var(--gold-bright);">錯題筆記本目前空空如也！</h3>
+          <p class="text-muted" style="max-width:480px;margin:0;">
+            你在一般戰鬥、Boss 戰或長文閱讀副本中只要答錯任何題目，系統就會自動將它收錄到這裡，並記錄錯誤選項與完整文法剖析。
+          </p>
+          <button type="button" class="btn btn-gold" id="btn-notes-go-battle">🗺️ 前往區域戰鬥挑戰</button>
+        </div>
+      `;
+      const goBtn = $('btn-notes-go-battle');
+      if (goBtn) goBtn.addEventListener('click', () => { Audio.playSFX('click'); switchView('map'); });
+      return;
+    }
+
+    const resolvedItems = summary.entries
+      .map((entry) => {
+        const resolved = resolveWrongNoteQuestion(entry.id);
+        return resolved ? { entry, resolved } : null;
+      })
+      .filter(Boolean)
+      .filter(({ entry, resolved }) => {
+        const q = resolved.q;
+        if (uiNotesFilter.jlpt !== 'all' && q.jlpt !== uiNotesFilter.jlpt) return false;
+        if (uiNotesFilter.type !== 'all' && getWrongNoteCategory(q) !== uiNotesFilter.type) return false;
+        if (uiNotesFilter.status === 'unmastered' && entry.mastered) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        if (Boolean(a.entry.mastered) !== Boolean(b.entry.mastered)) {
+          return a.entry.mastered ? 1 : -1;
+        }
+        return String(b.entry.lastWrongAt || '').localeCompare(String(a.entry.lastWrongAt || ''));
+      });
+
+    if (resolvedItems.length === 0) {
+      listEl.innerHTML = `
+        <div class="panel-card notes-empty-card">
+          <div class="notes-empty-icon">🔍</div>
+          <h3 style="margin:0;color:var(--gold-bright);">目前篩選條件下沒有符合的錯題</h3>
+          <p class="text-muted" style="margin:0;">你可以重設篩選條件檢視全部錯題，或前往區域繼續冒險！</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+            <button type="button" class="btn btn-secondary" id="btn-notes-reset-filter">↺ 顯示全部錯題</button>
+            <button type="button" class="btn btn-gold" id="btn-notes-go-battle">🗺️ 前往區域戰鬥挑戰</button>
+          </div>
+        </div>
+      `;
+      const resetBtn = $('btn-notes-reset-filter');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          Audio.playSFX('click');
+          uiNotesFilter = { jlpt: 'all', type: 'all', status: 'all' };
+          renderNotes();
+        });
+      }
+      const goBtn = $('btn-notes-go-battle');
+      if (goBtn) goBtn.addEventListener('click', () => { Audio.playSFX('click'); switchView('map'); });
+      return;
+    }
+
+    const typeLabelMap = {
+      reading: '讀音',
+      particle: '助詞',
+      conjugation: '活用',
+      reorder: '重組',
+      reading_comp: '閱讀'
+    };
+
+    listEl.innerHTML = resolvedItems.map(({ entry, resolved }) => {
+      const q = resolved.q;
+      const cat = getWrongNoteCategory(q);
+      const catBadge = q.typeLabel || typeLabelMap[cat] || '綜合';
+      const hasTts = Boolean(q.tts || (q.fullRubyJp && resolved.source === 'battle'));
+      const chosenIdx = entry.playerLastChoice;
+      let wrongChoiceHtml = '<span class="text-muted">（未記錄選項或重組誤排）</span>';
+      if (typeof chosenIdx === 'number' && chosenIdx >= 0 && Array.isArray(q.options) && q.options[chosenIdx] !== undefined) {
+        wrongChoiceHtml = `<span class="jp-text">${q.options[chosenIdx]}</span>`;
+      } else if (typeof chosenIdx === 'string' && chosenIdx) {
+        wrongChoiceHtml = `<span class="jp-text">${escapeHtml(chosenIdx)}</span>`;
+      }
+
+      const rightOptionHtml = Array.isArray(q.options) && q.options[q.answerIndex] !== undefined
+        ? `<span class="jp-text">${q.options[q.answerIndex]}</span>`
+        : `<span class="jp-text">${q.correctDisplay || ''}</span>`;
+
+      const timeStr = entry.lastWrongAt ? formatTimestamp(entry.lastWrongAt) : '';
+
+      return `
+        <article class="mistake-note-card ${entry.mastered ? 'is-mastered' : ''}" data-note-id="${escapeHtml(entry.id)}">
+          <div class="mistake-note-top">
+            <div class="mistake-note-badges">
+              <span class="jlpt-badge">${escapeHtml(q.jlpt)}</span>
+              <span class="badge">${escapeHtml(catBadge)}</span>
+              <span class="badge badge-crimson">錯 ${entry.wrongCount} 次</span>
+              ${entry.mastered
+                ? '<span class="badge badge-emerald">✅ 已攻克</span>'
+                : '<span class="badge badge-gold">🔴 待複習</span>'}
+              ${timeStr ? `<span class="text-muted" style="font-size:0.74rem;">最近：${escapeHtml(timeStr)}</span>` : ''}
+            </div>
+            <div class="mistake-note-actions">
+              ${hasTts ? `
+                <button type="button" class="btn btn-sm btn-audio" data-note-tts="${escapeHtml(entry.id)}" data-rate="1.0">🔊 朗讀 1.0x</button>
+                <button type="button" class="btn btn-sm btn-audio" data-note-tts="${escapeHtml(entry.id)}" data-rate="0.65">🐢 慢速 0.65x</button>
+              ` : ''}
+              <button type="button" class="btn btn-sm btn-secondary" data-note-remove="${escapeHtml(entry.id)}">🗑️ 移出筆記</button>
+            </div>
+          </div>
+
+          <div class="mistake-note-stem">
+            <div class="text-muted" style="font-size:0.84rem;margin-bottom:6px;">${q.promptZh || ''}</div>
+            <div class="jp-text" style="font-size:1.12rem;line-height:1.8;">${q.promptJp || q.fullRubyJp || ''}</div>
+          </div>
+
+          <div class="mistake-choice-compare">
+            <div class="mistake-choice-box mistake-choice-wrong">
+              <div style="font-size:0.76rem;font-weight:700;margin-bottom:2px;">✘ 上次誤選</div>
+              <div>${wrongChoiceHtml}</div>
+            </div>
+            <div class="mistake-choice-box mistake-choice-correct">
+              <div style="font-size:0.76rem;font-weight:700;margin-bottom:2px;">✔ 正確答案</div>
+              <div>${rightOptionHtml}${q.kanaReading ? ` <span style="opacity:0.88;">（${escapeHtml(q.kanaReading)}）</span>` : ''}</div>
+            </div>
+          </div>
+
+          <div class="mistake-note-explain">
+            ${q.wrongReason ? `<div style="margin-bottom:4px;"><strong class="text-gold">誤區提醒：</strong>${q.wrongReason}</div>` : ''}
+            <div><strong class="text-cyan">文法解析：</strong>${q.explanation || ''}</div>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('[data-note-tts]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const res = resolveWrongNoteQuestion(btn.getAttribute('data-note-tts'));
+        if (!res) return;
+        const q = res.q;
+        const rate = Number(btn.getAttribute('data-rate')) || 1.0;
+        const text = q.tts || stripRubyHtml(q.fullRubyJp || q.promptJp);
+        if (text) Audio.speak(text, rate);
+      });
+    });
+
+    listEl.querySelectorAll('[data-note-remove]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const nid = btn.getAttribute('data-note-remove');
+        Audio.playSFX('click');
+        removeWrongNote(nid);
+      });
+    });
+  }
+
+  // ============================================================================
   // 17. Save / Load Modal
   // ============================================================================
   function openSaveModal(loadOnly = false) {
@@ -5603,6 +6350,7 @@
       case 'inventory': renderInventory(); break;
       case 'quests': renderQuests(); break;
       case 'codex': renderCodex(); break;
+      case 'notes': renderNotes(); break;
       default: break;
     }
   }
@@ -5828,6 +6576,12 @@
         renderShopModal();
       });
     });
+    if ($('btn-start-wrong-training')) {
+      $('btn-start-wrong-training').addEventListener('click', startWrongNoteBattle);
+    }
+    if ($('btn-clear-mastered-notes')) {
+      $('btn-clear-mastered-notes').addEventListener('click', clearMasteredWrongNotes);
+    }
 
     // Modals
     // IMPORTANT: #modal-explain can ONLY be closed via #btn-explain-confirm!
@@ -5946,6 +6700,7 @@
         Audio.stopSpeak();
         state = createDefaultState();
         hasActiveSession = false;
+        crossRegionNotifiedKeys = new Set();
         battle.active = false;
         shrine.active = false;
         reading.active = false;
@@ -5988,6 +6743,7 @@
     setDifficultyMode,
     setAdaptiveStartJlpt,
     getDifficultyModeConfig,
+    getQuestionBankProgressSummary,
     getTotalStats,
     getEnhancedItemStats,
     isRegionUnlocked,
@@ -6008,7 +6764,13 @@
     gainGold,
     checkAchievements,
     updateHUD,
-    showToast
+    showToast,
+    recordWrongNote,
+    markWrongNoteMastered,
+    getWrongNotesSummary,
+    startWrongNoteBattle,
+    clearMasteredWrongNotes,
+    renderNotes
   };
 
   global.Game = Game;

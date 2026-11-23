@@ -71,6 +71,7 @@
       <button type="button" class="nav-btn" data-view="inventory">🎒 背包</button>
       <button type="button" class="nav-btn" data-view="quests">📜 任務</button>
       <button type="button" class="nav-btn" data-view="codex">📖 圖鑑</button>
+      <button type="button" class="nav-btn" data-view="notes" id="nav-btn-notes">📓 錯題筆記 <span id="nav-notes-badge" class="nav-notes-badge hidden">0</span></button>
     </nav>
 
     <!-- Main Views Container -->
@@ -552,6 +553,24 @@
 
         <div id="codex-summary" class="codex-summary panel-card"></div>
         <div id="codex-content" class="codex-content"></div>
+      </section>
+
+      <!-- 14. Mistake Notebook (言霊錯題筆記) -->
+      <section id="view-notes" class="game-view" aria-label="言霊錯題筆記">
+        <div class="view-header notes-view-header">
+          <div>
+            <h2>📓 言霊錯題筆記（ミスノート）</h2>
+            <p class="view-subtitle">自動收錄戰鬥與閱讀副本中的答錯題目，複習錯誤剖析並發起「記憶試煉復仇戰」徹底攻克弱點。</p>
+          </div>
+          <div class="notes-header-actions">
+            <button id="btn-start-wrong-training" type="button" class="btn btn-crimson" disabled>⚔️ 啟動錯題特訓（專攻未攻克題庫）</button>
+            <button id="btn-clear-mastered-notes" type="button" class="btn btn-secondary btn-sm" disabled>🧹 一鍵清除已攻克</button>
+          </div>
+        </div>
+
+        <div id="notes-summary-bar" class="notes-summary-bar panel-card"></div>
+        <div id="notes-filter-bar" class="notes-filter-bar panel-card"></div>
+        <div id="notes-list-container" class="notes-list-container"></div>
       </section>
 
     </main>
