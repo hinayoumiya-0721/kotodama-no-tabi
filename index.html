@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>言霊の旅（ことだまのたび）｜日文學習奇幻 RPG</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app" class="furigana-on">
+    <!-- Atmospheric Background Layer -->
+    <div class="bg-atmosphere" aria-hidden="true"></div>
+
+    <!-- Persistent Top HUD -->
+    <header id="top-hud" class="top-hud hidden" aria-label="旅人狀態列">
+      <div class="hud-profile">
+        <div id="hud-avatar" class="hud-avatar" aria-label="角色頭像"></div>
+        <div class="hud-identity">
+          <div class="hud-name-row">
+            <span id="hud-name" class="hud-name">旅人</span>
+            <span id="hud-level" class="hud-level-pill">Lv.1</span>
+          </div>
+          <span id="hud-title" class="hud-title-badge">初醒的旅人</span>
+        </div>
+      </div>
+
+      <div class="hud-bars">
+        <div class="stat-bar hp-bar">
+          <div id="hud-hp-bar" class="stat-bar-fill" style="width: 100%;"></div>
+          <span id="hud-hp-text" class="stat-bar-text">HP 100/100</span>
+        </div>
+        <div class="stat-bar mp-bar">
+          <div id="hud-mp-bar" class="stat-bar-fill" style="width: 100%;"></div>
+          <span id="hud-mp-text" class="stat-bar-text">MP 50/50</span>
+        </div>
+        <div class="stat-bar exp-bar">
+          <div id="hud-exp-bar" class="stat-bar-fill" style="width: 0%;"></div>
+          <span id="hud-exp-text" class="stat-bar-text">EXP 0/100</span>
+        </div>
+      </div>
+
+      <div class="hud-controls">
+        <div class="hud-currency">
+          <span class="coin-chip">🪙 <b id="hud-gold">0</b></span>
+          <span class="sp-chip">✨ SP <b id="hud-sp">1</b></span>
+        </div>
+        <div class="hud-toggles">
+          <select id="hud-difficulty-select" class="btn-hud hud-diff-select" aria-label="切換難度模式" title="隨時切換題庫難度模式">
+            <option value="adaptive">⚡ 自適應 (N4-N1)</option>
+            <option value="fixed_n4">🌿 固定 N4</option>
+            <option value="fixed_n3">⚔️ 固定 N3</option>
+            <option value="fixed_n2">🔮 固定 N2</option>
+            <option value="fixed_n1">🔥 N1 魔境 ×2</option>
+          </select>
+          <button id="btn-toggle-furigana" type="button" class="btn-hud active" title="切換漢字假名顯示">假名: 開</button>
+          <button id="btn-toggle-bgm" type="button" class="btn-hud" title="切換背景音樂">🎵 BGM</button>
+          <button id="btn-toggle-sfx" type="button" class="btn-hud" title="切換音效">🔊 SFX</button>
+          <button id="btn-open-save" type="button" class="btn-hud" title="存檔與讀取">💾 存檔</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Bar -->
+    <nav id="nav-bar" class="nav-bar hidden" aria-label="主功能導覽">
+      <button type="button" class="nav-btn active" data-view="town">🏛️ 城鎮據點</button>
+      <button type="button" class="nav-btn" data-view="map">🗺️ 世界地圖</button>
+      <button type="button" class="nav-btn" data-view="reading">📚 閱讀副本</button>
+      <button type="button" class="nav-btn" data-view="shrine">⛩️ 試煉神殿</button>
+      <button type="button" class="nav-btn" data-view="character">⚔️ 角色</button>
+      <button type="button" class="nav-btn" data-view="skills">✨ 技能樹</button>
+      <button type="button" class="nav-btn" data-view="inventory">🎒 背包</button>
+      <button type="button" class="nav-btn" data-view="quests">📜 任務</button>
+      <button type="button" class="nav-btn" data-view="codex">📖 圖鑑</button>
+    </nav>
+
+    <!-- Main Views Container -->
+    <main id="main-stage" class="main-stage">
+
+      <!-- 1. Title Screen -->
+      <section id="view-title" class="game-view active" aria-label="標題畫面">
+        <div class="title-screen-card">
+          <div id="title-logo-slot" class="title-logo-slot"></div>
+          <h1 class="game-title">
+            <ruby>言霊<rt>ことだま</rt></ruby>の<ruby>旅<rt>たび</rt></ruby>
+          </h1>
+          <p class="title-subtitle">KOTODAMA NO TABI｜日文學習暗黑奇幻 JRPG（JLPT N4 ～ N1）</p>
+          <p class="title-synopsis">
+            昔日由古老語言維繫秩序的<strong>「<ruby>言霊<rt>ことだま</rt></ruby>大陸」</strong>，因禁忌的<strong>「文字崩壞」</strong>而墮入沉暗與失語。<br>
+            斷裂的音節與扭曲的語意化作魔物四處徘徊——唯有能傾聽真音、詠唱正確句法的旅人，方能斬開迷霧，重燃沉睡百年的詞彙聖碑。
+          </p>
+          <div class="title-actions">
+            <button id="btn-title-continue" type="button" class="btn btn-primary btn-lg hidden">▶ 繼續冒險</button>
+            <button id="btn-title-new" type="button" class="btn btn-gold btn-lg">✨ 開始新旅程</button>
+            <button id="btn-title-load" type="button" class="btn btn-secondary btn-lg">💾 讀取存檔</button>
+          </div>
+          <p class="title-footer-note">
+            🎧 建議開啟裝置音效以體驗日文真人語音朗讀與合成配樂；漢字上方之<strong>振假名（ふりがな）</strong>可隨時於頂端狀態列一鍵開關。
+          </p>
+        </div>
+      </section>
+
+      <!-- 2. Character Creation -->
+      <section id="view-create" class="game-view" aria-label="創建角色">
+        <div class="view-header">
+          <div>
+            <h2>喚醒記憶・創建旅行者</h2>
+            <p class="view-subtitle">在迷霧散盡前銘刻你的名號，擇定初始職業以面對言霊大陸的試煉。</p>
+          </div>
+        </div>
+
+        <div class="create-layout">
+          <div class="panel-card create-preview-panel">
+            <div id="create-hero-preview" class="create-hero-preview"></div>
+            <div id="create-stats-preview" class="create-stats-preview"></div>
+          </div>
+
+          <div class="panel-card create-form-panel">
+            <div class="form-group">
+              <label for="create-name-input" class="form-label">旅人名稱</label>
+              <input id="create-name-input" class="text-input" type="text" maxlength="12" placeholder="輸入旅人名稱（預設：旅人）" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <span class="form-label">選擇初始職業</span>
+              <div id="create-job-cards" class="create-job-cards"></div>
+            </div>
+
+            <div class="form-group">
+              <span class="form-label">選擇題庫難度模式（遊戲中隨時可於頂部欄／世界地圖切換）</span>
+              <div id="create-difficulty-cards" class="difficulty-mode-grid"></div>
+              <div id="create-adaptive-start-row" class="adaptive-start-row">
+                <span class="adaptive-start-label">自適應起步等級：</span>
+                <button type="button" class="btn btn-sm adaptive-start-btn active" data-adaptive-start="N4">從 N4 起步（推薦）</button>
+                <button type="button" class="btn btn-sm adaptive-start-btn" data-adaptive-start="N3">從 N3 起步</button>
+              </div>
+            </div>
+
+            <div class="create-actions">
+              <button id="btn-create-confirm" type="button" class="btn btn-gold btn-lg">⚔️ 喚醒記憶・啟程</button>
+              <button id="btn-create-back" type="button" class="btn btn-secondary">返回標題</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Town Hub & NPC Dialogue -->
+      <section id="view-town" class="game-view" aria-label="城鎮據點">
+        <div class="town-banner panel-card">
+          <div class="town-banner-info">
+            <h2 id="town-banner-title" class="town-banner-title">黎明之村・言霊據點</h2>
+            <p id="town-banner-sub" class="town-banner-sub">被古老結界守護的邊境村落，旅人可在此休憩整頓、與居民以日文交流並開啟各項設施。</p>
+          </div>
+          <div class="town-quick-actions">
+            <button id="btn-town-rest" type="button" class="btn btn-heal">🛏️ 免費休憩（全回復）</button>
+            <button id="btn-town-map" type="button" class="btn btn-primary">🗺️ 前往世界地圖</button>
+            <button id="btn-town-reading" type="button" class="btn btn-secondary">📚 閱讀副本</button>
+            <button id="btn-town-shrine" type="button" class="btn btn-gold">⛩️ 試煉神殿</button>
+          </div>
+        </div>
+
+        <div class="town-layout">
+          <div class="town-npc-column">
+            <h3 class="section-heading">據點居民</h3>
+            <div id="town-npc-grid" class="town-npc-grid"></div>
+          </div>
+
+          <div id="town-dialogue-panel" class="town-dialogue-panel panel-card">
+            <div class="dialogue-header">
+              <div id="dialogue-portrait" class="dialogue-portrait"></div>
+              <div class="dialogue-meta">
+                <div class="dialogue-speaker-row">
+                  <h3 id="dialogue-speaker" class="dialogue-speaker">請選擇一位城鎮居民</h3>
+                  <span id="dialogue-role-tag" class="tag-pill">據點交流</span>
+                </div>
+                <div class="affection-wrap">
+                  <div class="stat-bar affection-bar">
+                    <div id="dialogue-affection-bar" class="stat-bar-fill" style="width: 0%;"></div>
+                    <span id="dialogue-affection-text" class="stat-bar-text">好感度 0/100</span>
+                  </div>
+                  <div id="dialogue-milestones" class="dialogue-milestones"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dialogue-body">
+              <div class="dialogue-speech-box">
+                <div id="dialogue-text-jp" class="dialogue-text-jp"></div>
+                <div id="dialogue-text-zh" class="dialogue-text-zh">點擊左側的居民卡片，以禮貌的日文與其對話、累積好感度並解鎖專屬獎勵。</div>
+                <div class="dialogue-audio-row">
+                  <button id="btn-dialogue-tts" type="button" class="btn btn-sm btn-audio">🔊 正常朗讀</button>
+                  <button id="btn-dialogue-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速 0.65x</button>
+                </div>
+              </div>
+
+              <div id="dialogue-feedback" class="dialogue-feedback"></div>
+              <div id="dialogue-choices" class="dialogue-choices"></div>
+              <div id="dialogue-actions" class="dialogue-actions"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. World Map -->
+      <section id="view-map" class="game-view" aria-label="世界地圖">
+        <div class="view-header">
+          <div>
+            <h2><ruby>言霊<rt>ことだま</rt></ruby>大陸・世界地圖</h2>
+            <p class="view-subtitle">點選地圖節點檢視各區域的 JLPT 等級、棲息魔物與區域 Boss 情報。</p>
+          </div>
+          <div class="map-progress-pill">已解鎖區域：<b id="map-unlocked-count">1 / 6</b></div>
+        </div>
+
+        <div id="map-difficulty-bar" class="map-difficulty-bar panel-card" aria-label="世界地圖難度模式選擇"></div>
+
+        <div class="map-layout">
+          <div id="world-map-svg-container" class="world-map-svg-container panel-card"></div>
+          <aside id="map-region-detail" class="map-region-detail panel-card">
+            <p class="empty-hint">請點擊地圖上的任一區域以檢視詳細資訊。</p>
+            <button id="btn-enter-region" type="button" class="btn btn-gold btn-block" disabled>⚔️ 踏入此區域</button>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 5. Region Exploration -->
+      <section id="view-explore" class="game-view" aria-label="區域探索">
+        <div class="explore-header panel-card">
+          <div class="explore-title-group">
+            <h2 id="explore-region-title">探索區域</h2>
+            <span id="explore-region-jlpt" class="jlpt-badge">N4</span>
+          </div>
+          <button id="btn-explore-retreat" type="button" class="btn btn-secondary">🗺️ 返回世界地圖</button>
+        </div>
+
+        <div class="explore-progress-card panel-card">
+          <div class="explore-progress-header">
+            <span>區域探索度（達 100% 可挑戰區域 Boss）</span>
+            <span id="explore-progress-text">0%</span>
+          </div>
+          <div class="explore-progress-track">
+            <div class="stat-bar explore-bar">
+              <div id="explore-progress-bar" class="stat-bar-fill" style="width: 0%;"></div>
+            </div>
+            <span class="boss-marker" title="探索達 100% 解鎖區域 Boss">💀 BOSS</span>
+          </div>
+        </div>
+
+        <div id="explore-scene-box" class="explore-scene-box panel-card">
+          <div id="explore-visual" class="explore-visual"></div>
+          <div class="explore-event-content">
+            <h3 id="explore-event-title" class="explore-event-title">踏入荒野</h3>
+            <p id="explore-event-desc" class="explore-event-desc">點擊下方「前進探索」深入領域，遭遇魔物、解開古代石碑或發現隱藏寶箱。</p>
+            <div id="explore-event-choices" class="explore-event-choices"></div>
+          </div>
+        </div>
+
+        <div class="explore-action-bar">
+          <button id="btn-explore-step" type="button" class="btn btn-primary btn-lg">🧭 前進探索</button>
+          <button id="btn-explore-boss" type="button" class="btn btn-danger btn-lg">👹 挑戰區域 Boss</button>
+          <button id="btn-explore-camp" type="button" class="btn btn-secondary">🎒 快速整備／背包</button>
+        </div>
+
+        <div class="explore-log-card panel-card">
+          <h3 class="section-heading">探索日誌</h3>
+          <div id="explore-log" class="explore-log" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- 6. Battle Arena -->
+      <section id="view-battle" class="game-view" aria-label="日文言霊戰鬥">
+        <div class="battle-status-strip">
+          <span id="battle-region-label" class="battle-badge region-badge">區域戰鬥</span>
+          <span id="battle-combo-badge" class="battle-badge combo-badge">🔥 Combo x0</span>
+          <span id="battle-fever-badge" class="battle-badge fever-badge hidden">⚡ FEVER TIME</span>
+          <span id="battle-difficulty-badge" class="battle-badge diff-badge">難度：動態自適應（N4）</span>
+          <span id="battle-n1-bonus-badge" class="battle-badge n1-bonus-badge hidden">🔥 N1 魔境加成：EXP ×2・掉落 ×2</span>
+        </div>
+
+        <div class="battle-arena">
+          <!-- Player Side -->
+          <div class="combatant-card player-side">
+            <div id="battle-hero-fx" class="combat-fx-layer"></div>
+            <div id="battle-hero-art" class="combatant-art"></div>
+            <div class="combatant-info">
+              <div id="battle-hero-name" class="combatant-name">旅人</div>
+              <div class="stat-bar hp-bar">
+                <div id="battle-hero-hp-bar" class="stat-bar-fill" style="width: 100%;"></div>
+                <span id="battle-hero-hp-text" class="stat-bar-text">HP 100/100</span>
+              </div>
+              <div class="stat-bar mp-bar">
+                <div id="battle-hero-mp-bar" class="stat-bar-fill" style="width: 100%;"></div>
+                <span id="battle-hero-mp-text" class="stat-bar-text">MP 50/50</span>
+              </div>
+              <div id="battle-player-buffs" class="combatant-buffs"></div>
+            </div>
+          </div>
+
+          <!-- Enemy Side -->
+          <div class="combatant-card enemy-side">
+            <div id="battle-enemy-fx" class="combat-fx-layer"></div>
+            <div id="battle-enemy-speech" class="enemy-speech-bubble"></div>
+            <div id="battle-enemy-art" class="combatant-art"></div>
+            <div class="combatant-info">
+              <div class="enemy-name-row">
+                <div id="battle-enemy-name" class="combatant-name">魔物</div>
+                <span id="battle-enemy-weakness" class="weakness-badge">弱點：單字</span>
+              </div>
+              <div class="stat-bar enemy-hp-bar">
+                <div id="battle-enemy-hp-bar" class="stat-bar-fill" style="width: 100%;"></div>
+                <span id="battle-enemy-hp-text" class="stat-bar-text">HP 100/100</span>
+              </div>
+              <div class="enemy-break-row">
+                <div id="battle-break-pips" class="break-pips" title="護盾破防量表"></div>
+                <span id="battle-enemy-stun-badge" class="stun-badge"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question Panel -->
+        <div id="battle-question-card" class="battle-question-card panel-card">
+          <div class="question-card-header">
+            <span id="battle-q-type" class="q-type-badge">單字題</span>
+            <div id="battle-speed-wrap" class="battle-speed-wrap">
+              <div class="stat-bar speed-bar">
+                <div id="battle-speed-bar" class="stat-bar-fill" style="width: 100%;"></div>
+              </div>
+              <span id="battle-speed-text" class="speed-text">⚡ 速答加成</span>
+            </div>
+            <div class="question-audio-btns">
+              <button id="btn-battle-tts-normal" type="button" class="btn btn-sm btn-audio">🔊 朗讀 1.0x</button>
+              <button id="btn-battle-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速 0.65x</button>
+            </div>
+          </div>
+
+          <div id="battle-q-prompt-zh" class="q-prompt-zh"></div>
+          <div id="battle-q-prompt-jp" class="q-prompt-jp"></div>
+          <div id="battle-q-hint" class="battle-q-hint hidden"></div>
+          <div id="battle-options-container" class="options-grid"></div>
+        </div>
+
+        <!-- Battle Action Bar -->
+        <div id="battle-action-bar" class="battle-action-bar">
+          <div class="battle-skills-group">
+            <button id="btn-skill-vocab" type="button" class="btn btn-skill">👁️ 單字洞察</button>
+            <button id="btn-skill-listen" type="button" class="btn btn-skill">🎐 順風耳</button>
+          </div>
+          <div id="battle-consumables" class="battle-consumables"></div>
+          <button id="btn-battle-flee" type="button" class="btn btn-secondary">🏃 撤退回營地</button>
+        </div>
+      </section>
+
+      <!-- 7. Reading Comprehension Dungeon -->
+      <section id="view-reading" class="game-view" aria-label="閱讀副本">
+        <div id="reading-list-view" class="reading-list-view">
+          <div class="view-header">
+            <div>
+              <h2>📚 古代文獻・閱讀副本</h2>
+              <p class="view-subtitle">細讀失落於言霊大陸的日文短篇與書卷，通過閱讀測驗以贏取豐厚報酬。</p>
+            </div>
+          </div>
+          <div id="reading-cards-grid" class="reading-cards-grid"></div>
+        </div>
+
+        <div id="reading-active-view" class="reading-active-view hidden">
+          <div class="reading-top-bar panel-card">
+            <div class="reading-title-group">
+              <h2 id="reading-active-title">文獻閱讀</h2>
+              <span id="reading-active-meta" class="jlpt-badge">N4</span>
+            </div>
+            <div class="reading-top-actions">
+              <button id="btn-reading-skill" type="button" class="btn btn-skill">📜 速讀解析</button>
+              <button id="btn-reading-exit" type="button" class="btn btn-secondary">返回列表</button>
+            </div>
+          </div>
+
+          <div class="reading-layout">
+            <article class="reading-passage-pane panel-card">
+              <h3 class="section-heading">文獻正文</h3>
+              <div id="reading-paragraphs" class="reading-paragraphs"></div>
+            </article>
+
+            <div class="reading-quiz-pane panel-card">
+              <div class="reading-quiz-header">
+                <span id="reading-q-progress" class="tag-pill">第 1 / 3 題</span>
+                <span id="reading-q-category" class="q-type-badge">主旨理解</span>
+              </div>
+              <div id="reading-q-prompt" class="reading-q-prompt"></div>
+              <div id="reading-q-options" class="options-list"></div>
+              <div id="reading-q-feedback" class="reading-q-feedback"></div>
+              <button id="btn-reading-next" type="button" class="btn btn-gold btn-block">下一題 ➡</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. Shrine Timed Exam -->
+      <section id="view-shrine" class="game-view" aria-label="試煉神殿">
+        <div id="shrine-select-view" class="shrine-select-view">
+          <div class="view-header">
+            <div>
+              <h2>⛩️ 言霊試煉神殿</h2>
+              <p class="view-subtitle">接受神殿祭司的限時綜合測驗（N4 ～ N1），依答對率與剩餘時間頒授階級評等。</p>
+            </div>
+          </div>
+          <div id="shrine-tiers-grid" class="shrine-tiers-grid"></div>
+        </div>
+
+        <div id="shrine-exam-view" class="shrine-exam-view hidden">
+          <div class="shrine-top-strip panel-card">
+            <div class="shrine-strip-left">
+              <h3 id="shrine-tier-title">N4 試煉</h3>
+              <span id="shrine-q-counter" class="tag-pill">1 / 10</span>
+            </div>
+            <div class="shrine-timer-wrap">
+              <div class="stat-bar timer-bar">
+                <div id="shrine-timer-bar" class="stat-bar-fill" style="width: 100%;"></div>
+              </div>
+              <span id="shrine-timer-text" class="timer-text">03:00</span>
+            </div>
+            <button id="btn-shrine-quit" type="button" class="btn btn-secondary btn-sm">放棄試煉</button>
+          </div>
+
+          <div id="shrine-q-card" class="shrine-q-card panel-card">
+            <div class="question-card-header">
+              <span id="shrine-q-type" class="q-type-badge">文法</span>
+              <button id="btn-shrine-tts" type="button" class="btn btn-sm btn-audio">🔊 朗讀題目</button>
+            </div>
+            <div id="shrine-q-prompt-zh" class="q-prompt-zh"></div>
+            <div id="shrine-q-prompt-jp" class="q-prompt-jp"></div>
+            <div id="shrine-options-container" class="options-grid"></div>
+          </div>
+        </div>
+
+        <div id="shrine-result-view" class="shrine-result-view hidden">
+          <div class="shrine-result-card panel-card">
+            <div id="shrine-rank-badge" class="shrine-rank-badge">S</div>
+            <div id="shrine-result-summary" class="shrine-result-summary"></div>
+            <div id="shrine-rewards-box" class="shrine-rewards-box"></div>
+            <h3 class="section-heading">試煉詳解回顧</h3>
+            <div id="shrine-review-list" class="shrine-review-list"></div>
+            <button id="btn-shrine-return" type="button" class="btn btn-gold btn-lg">返回試煉神殿</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Character Sheet -->
+      <section id="view-character" class="game-view" aria-label="角色面板">
+        <div class="view-header">
+          <div>
+            <h2>⚔️ 角色狀態與裝備</h2>
+            <p class="view-subtitle">檢視旅人的戰鬥能力、目前裝備、已獲得稱號與日文學習歷程。</p>
+          </div>
+        </div>
+
+        <div class="character-layout">
+          <div class="panel-card char-left-panel">
+            <div id="char-hero-art" class="char-hero-art"></div>
+            <div id="char-identity" class="char-identity"></div>
+            <div class="char-title-picker">
+              <label for="char-title-select" class="form-label">佩戴稱號</label>
+              <select id="char-title-select" class="select-input"></select>
+            </div>
+          </div>
+
+          <div class="char-right-panel">
+            <div class="panel-card">
+              <h3 class="section-heading">戰鬥屬性</h3>
+              <div id="char-stats-grid" class="char-stats-grid"></div>
+            </div>
+            <div class="panel-card">
+              <h3 class="section-heading">裝備欄位</h3>
+              <div id="char-equip-slots" class="char-equip-slots"></div>
+            </div>
+            <div class="panel-card">
+              <h3 class="section-heading">日文學習統計</h3>
+              <div id="char-learning-stats" class="char-learning-stats"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. Skill Tree -->
+      <section id="view-skills" class="game-view" aria-label="技能樹">
+        <div class="view-header">
+          <div>
+            <h2>✨ 言霊技能樹</h2>
+            <p class="view-subtitle">消耗技能點數（SP）解鎖戰鬥增益與日文洞察輔助能力。</p>
+          </div>
+          <div id="skills-sp-display" class="sp-banner-pill">可用技能點：1 SP</div>
+        </div>
+
+        <div id="skills-tree-grid" class="skills-tree-grid"></div>
+      </section>
+
+      <!-- 11. Inventory -->
+      <section id="view-inventory" class="game-view" aria-label="旅人背包">
+        <div class="view-header">
+          <div>
+            <h2>🎒 旅人背包</h2>
+            <p class="view-subtitle">點選持有裝備或藥水以檢視數值加成，並可隨時穿戴或使用。</p>
+          </div>
+        </div>
+
+        <div id="inv-tabs" class="tab-bar" role="tablist">
+          <button type="button" class="tab-btn active" data-tab="all" role="tab">全部</button>
+          <button type="button" class="tab-btn" data-tab="weapon" role="tab">⚔️ 武器</button>
+          <button type="button" class="tab-btn" data-tab="armor" role="tab">🛡️ 防具</button>
+          <button type="button" class="tab-btn" data-tab="accessory" role="tab">💍 飾品</button>
+          <button type="button" class="tab-btn" data-tab="consumable" role="tab">🧪 消耗品</button>
+        </div>
+
+        <div class="inventory-layout">
+          <div id="inv-grid" class="inv-grid panel-card"></div>
+          <aside id="inv-detail-panel" class="inv-detail-panel panel-card">
+            <p class="empty-hint">請選擇背包中的物品以檢視詳細資訊。</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 12. Quests -->
+      <section id="view-quests" class="game-view" aria-label="冒險任務">
+        <div class="view-header">
+          <div>
+            <h2>📜 冒險任務</h2>
+            <p class="view-subtitle">完成主線章節、城鎮委託與每日學習目標以獲取大量經驗值與稀有獎勵。</p>
+          </div>
+        </div>
+
+        <div id="quest-tabs" class="tab-bar" role="tablist">
+          <button type="button" class="tab-btn active" data-tab="main" role="tab">⭐ 主線任務</button>
+          <button type="button" class="tab-btn" data-tab="side" role="tab">🌿 支線委託</button>
+          <button type="button" class="tab-btn" data-tab="daily" role="tab">☀️ 每日學習</button>
+        </div>
+
+        <div id="quest-list" class="quest-list"></div>
+      </section>
+
+      <!-- 13. Codex (Bestiary, Achievements, Mistake Notebook) -->
+      <section id="view-codex" class="game-view" aria-label="圖鑑與錯題本">
+        <div class="view-header">
+          <div>
+            <h2>📖 言霊圖鑑與錯題本</h2>
+            <p class="view-subtitle">回顧遭遇過的魔物弱點、已解鎖榮譽成就，並隨時複習答錯的日文題目。</p>
+          </div>
+        </div>
+
+        <div id="codex-tabs" class="tab-bar" role="tablist">
+          <button type="button" class="tab-btn active" data-tab="bestiary" role="tab">👹 魔物圖鑑</button>
+          <button type="button" class="tab-btn" data-tab="achievements" role="tab">🏆 成就殿堂</button>
+          <button type="button" class="tab-btn" data-tab="mistakes" role="tab">📝 錯題筆記</button>
+        </div>
+
+        <div id="codex-summary" class="codex-summary panel-card"></div>
+        <div id="codex-content" class="codex-content"></div>
+      </section>
+
+    </main>
+
+    <!-- Modals -->
+
+    <!-- 1. Mandatory Teaching Explanation Modal -->
+    <div id="modal-explain" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="explain-modal-title">
+      <div class="modal-dialog modal-explain-dialog">
+        <div class="modal-header">
+          <h3 id="explain-modal-title">📖 言霊解析・錯題教學</h3>
+        </div>
+        <div class="modal-body">
+          <div id="explain-damage-notice" class="explain-damage-notice"></div>
+
+          <div class="explain-answer-box">
+            <div class="explain-answer-header">
+              <span class="explain-label">正確答案</span>
+              <div class="explain-audio-btns">
+                <button id="btn-explain-tts" type="button" class="btn btn-sm btn-audio">🔊 朗讀 1.0x</button>
+                <button id="btn-explain-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速 0.65x</button>
+              </div>
+            </div>
+            <div id="explain-correct-answer" class="explain-correct-answer"></div>
+            <div id="explain-reading" class="explain-reading"></div>
+          </div>
+
+          <div class="explain-section">
+            <span class="explain-label">錯誤原因剖析</span>
+            <div id="explain-wrong-reason" class="explain-wrong-reason"></div>
+          </div>
+
+          <div class="explain-section">
+            <span class="explain-label">核心知識與例句詳解</span>
+            <div id="explain-detail" class="explain-detail"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-explain-confirm" type="button" class="btn btn-gold btn-lg btn-block">✔ 我已理解</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Merchant Shop & Enhancement Modal -->
+    <div id="modal-shop" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
+      <div class="modal-dialog modal-shop-dialog">
+        <div class="modal-header">
+          <h3 id="shop-modal-title">🏪 旅人商會與鍛造爐</h3>
+          <button id="btn-shop-close" type="button" class="btn-icon-close" aria-label="關閉商店">✕</button>
+        </div>
+        <div id="shop-discount-banner" class="shop-discount-banner"></div>
+        <div id="shop-tabs" class="tab-bar" role="tablist">
+          <button type="button" class="tab-btn active" data-tab="buy" role="tab">🛒 購買裝備道具</button>
+          <button type="button" class="tab-btn" data-tab="enhance" role="tab">⚒️ 鍛造強化</button>
+          <button type="button" class="tab-btn" data-tab="sell" role="tab">💰 出售物品</button>
+        </div>
+        <div id="shop-content" class="shop-content modal-body"></div>
+      </div>
+    </div>
+
+    <!-- 3. Save / Load Slots Modal -->
+    <div id="modal-save" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+      <div class="modal-dialog modal-save-dialog">
+        <div class="modal-header">
+          <h3 id="save-modal-title">💾 存檔與讀取進度</h3>
+          <button id="btn-save-close" type="button" class="btn-icon-close" aria-label="關閉存檔視窗">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint">所有進度均儲存於本機瀏覽器，支援多組存檔欄位隨時切換。</p>
+          <div id="save-slots-list" class="save-slots-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Generic Notification / Event Modal -->
+    <div id="modal-generic" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="generic-modal-title">
+      <div class="modal-dialog modal-generic-dialog">
+        <div class="modal-header">
+          <span id="generic-modal-icon" class="generic-modal-icon" aria-hidden="true">✨</span>
+          <h3 id="generic-modal-title">系統通知</h3>
+        </div>
+        <div id="generic-modal-body" class="modal-body"></div>
+        <div class="modal-footer">
+          <button id="btn-generic-close" type="button" class="btn btn-gold btn-block">確定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Discreet Corner Dev / Test Tool -->
+    <button id="btn-dev-toggle" type="button" class="dev-toggle-btn" title="開發測試工具">🔧 測試工具</button>
+    <div id="dev-drawer" class="dev-drawer hidden" aria-label="開發測試工具面板">
+      <div class="dev-drawer-header">
+        <span>🔧 測試與除錯工具</span>
+        <button id="dev-close" type="button" class="dev-close-btn" aria-label="關閉測試工具">✕</button>
+      </div>
+      <div class="dev-btn-grid">
+        <button id="dev-add-gold" type="button" class="btn-dev">🪙 +1000 金幣</button>
+        <button id="dev-level-up" type="button" class="btn-dev">⬆️ 升 1 級</button>
+        <button id="dev-level-5" type="button" class="btn-dev">⚡ 連升 5 級</button>
+        <button id="dev-full-heal" type="button" class="btn-dev">💚 全回復</button>
+        <button id="dev-add-sp" type="button" class="btn-dev">✨ +5 SP</button>
+        <button id="dev-unlock-all" type="button" class="btn-dev">🗺️ 解鎖全區域</button>
+        <button id="dev-trigger-boss" type="button" class="btn-dev">👹 觸發區域 Boss</button>
+        <button id="dev-reset-all" type="button" class="btn-dev btn-dev-danger">🗑️ 重置存檔</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="audio.js"></script>
+  <script src="svg_art.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
