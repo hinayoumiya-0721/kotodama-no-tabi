@@ -3269,10 +3269,13 @@
       var jlptText = reg.jlpt || '';
       var emblem = reg.kanjiEmblem || '言';
 
-      // Pill placement clamped neatly inside 900x480
-      var pillW = Math.max(114, nameText.length * 13 + (jlptText ? 40 : 20));
-      var pillX = Math.max(22 + pillW / 2, Math.min(878 - pillW / 2, nx));
-      var pillY = ny > 406 ? ny - 54 : ny + 38;
+      // 2-tier stacked Pill Label clamped neatly inside 900x480 (zero region-name/JLPT overlap)
+      var nameW = nameText.length * 13 + 24;
+      var subW = jlptText ? (jlptText.length * 9.5 + 24) : 0;
+      var pillW = Math.max(122, Math.min(188, Math.max(nameW, subW)));
+      var pillH = jlptText ? 38 : 24;
+      var pillX = Math.max(14 + pillW / 2, Math.min(886 - pillW / 2, nx));
+      var pillY = ny > 388 ? ny - 56 : ny + 46;
 
       var auraRings = '';
       if (isCur) {
@@ -3320,13 +3323,12 @@
           '<circle cx="' + nx + '" cy="' + ny + '" r="19" fill="none" stroke="' + (isCur ? '#fde047' : isUnl ? '#38bdf8' : '#334155') + '" stroke-width="0.9" opacity="0.65"/>' +
           centerIcon +
           clearedCrown +
-          // Clean Dark Pill Label below node
+          // Clean Dark 2-Tier Pill Label below node (region name top, JLPT subtitle bottom)
           '<g>' +
-            '<rect x="' + (pillX - pillW / 2).toFixed(1) + '" y="' + (pillY - 12) + '" width="' + pillW + '" height="24" rx="12" fill="#080d1c" fill-opacity="0.92" stroke="' + (isCur ? '#38e8ff' : isUnl ? '#d4af37' : '#475569') + '" stroke-width="1.2"/>' +
-            '<text x="' + (jlptText ? pillX - 14 : pillX).toFixed(1) + '" y="' + (pillY + 4) + '" text-anchor="middle" font-size="11.5" font-weight="600" font-family="' + FONT_SANS + '" fill="' + (isUnl ? '#f8fafc' : '#64748b') + '">' + esc(nameText) + '</text>' +
+            '<rect x="' + (pillX - pillW / 2).toFixed(1) + '" y="' + (pillY - pillH / 2).toFixed(1) + '" width="' + pillW.toFixed(1) + '" height="' + pillH + '" rx="10" fill="#080d1c" fill-opacity="0.94" stroke="' + (isCur ? '#38e8ff' : isUnl ? '#d4af37' : '#475569') + '" stroke-width="1.25"/>' +
+            '<text x="' + pillX.toFixed(1) + '" y="' + (jlptText ? (pillY - 4) : (pillY + 4)) + '" text-anchor="middle" font-size="11.5" font-weight="700" font-family="' + FONT_SANS + '" fill="' + (isUnl ? '#f8fafc' : '#64748b') + '">' + esc(nameText) + '</text>' +
             (jlptText
-              ? '<rect x="' + (pillX + pillW / 2 - 34).toFixed(1) + '" y="' + (pillY - 8.5) + '" width="28" height="17" rx="8.5" fill="' + (isCur ? '#0284c7' : isUnl ? '#422006' : '#1e293b') + '" stroke="' + (isUnl ? '#d4af37' : '#475569') + '" stroke-width="0.8"/>' +
-                '<text x="' + (pillX + pillW / 2 - 20).toFixed(1) + '" y="' + (pillY + 3.5) + '" text-anchor="middle" font-size="9.5" font-weight="700" font-family="' + FONT_SANS + '" fill="' + (isUnl ? '#fde68a' : '#94a3b8') + '">' + esc(jlptText) + '</text>'
+              ? '<text x="' + pillX.toFixed(1) + '" y="' + (pillY + 12) + '" text-anchor="middle" font-size="9.2" font-weight="700" font-family="' + FONT_SANS + '" fill="' + (isCur ? '#7dd3fc' : isUnl ? '#fde68a' : '#94a3b8') + '">' + esc(jlptText) + '</text>'
               : '') +
           '</g>' +
         '</g>';

@@ -4072,3 +4072,360 @@ select:focus {
     padding: 5px 9px;
   }
 }
+
+
+/* ==========================================================================
+ * P0/P1 Polish: Compact HUD, 100vh Single-Screen Battle, Bottom Toast,
+ * High-Contrast EXP Bar, Vocab Insight Eliminated Options, Sticky Reading
+ * ========================================================================== */
+
+/* 1. Compact Single-Row Desktop HUD (no save-button wrapping) & High-Contrast EXP Bar */
+#top-hud {
+  padding: 6px 14px;
+  gap: 8px 12px;
+  min-height: 52px;
+}
+
+.hud-avatar {
+  width: 36px;
+  height: 36px;
+}
+
+.hud-name {
+  font-size: 0.92rem;
+}
+
+.hud-title-badge {
+  font-size: 0.7rem;
+}
+
+.hud-bars {
+  gap: 6px;
+  min-width: 230px;
+  max-width: 420px;
+}
+
+.hud-bars .stat-bar {
+  height: 18px;
+}
+
+.exp-bar .stat-bar-fill,
+#hud-exp-bar {
+  background: linear-gradient(90deg, #6d4708 0%, #a16f0c 55%, #c8941e 100%);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+.exp-bar .stat-bar-text,
+#hud-exp-text {
+  color: #ffffff;
+  font-weight: 900;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 1),
+    0 -1px 2px rgba(0, 0, 0, 0.95),
+    1px 0 2px rgba(0, 0, 0, 0.95),
+    -1px 0 2px rgba(0, 0, 0, 0.95),
+    0 0 6px rgba(0, 0, 0, 0.95);
+}
+
+.hud-controls {
+  gap: 6px 8px;
+}
+
+.coin-chip,
+.sp-chip {
+  padding: 4px 8px;
+  font-size: 0.76rem;
+}
+
+.btn-hud {
+  min-height: 34px;
+  padding: 4px 9px;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.hud-diff-select {
+  min-height: 34px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  max-width: 146px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+  #top-hud {
+    flex-wrap: nowrap;
+  }
+  .hud-controls,
+  .hud-toggles {
+    flex-wrap: nowrap;
+  }
+}
+
+#nav-bar {
+  top: 52px;
+  padding: 6px 12px;
+  gap: 5px;
+}
+
+.nav-btn {
+  min-height: 36px;
+  padding: 5px 11px;
+  font-size: 0.82rem;
+}
+
+/* 2. Battle 100vh Single-Screen Compact Layout on Desktop (1280x720+) */
+@media (min-width: 769px) {
+  #view-battle.active {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #view-battle .battle-status-strip {
+    margin-bottom: 0;
+    gap: 6px;
+  }
+
+  #view-battle .battle-arena {
+    padding: 10px 14px;
+    gap: 14px;
+    margin-bottom: 0;
+  }
+
+  #view-battle .battle-vs-crest {
+    width: 34px;
+    height: 34px;
+    top: 50%;
+  }
+
+  #view-battle .battle-vs-crest span {
+    font-size: 0.72rem;
+  }
+
+  #view-battle .combatant-card {
+    display: grid;
+    grid-template-columns: 122px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 6px 12px;
+    padding: 8px 10px;
+    align-items: center;
+  }
+
+  #view-battle .combatant-card.enemy-side {
+    grid-template-columns: minmax(0, 1fr) 122px;
+  }
+
+  #view-battle .combatant-art {
+    height: 124px;
+  }
+
+  #view-battle .combatant-art svg {
+    max-height: 120px;
+  }
+
+  #view-battle .combatant-card.player-side .combatant-art {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  #view-battle .combatant-card.player-side .hero-speech-bubble {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  #view-battle .combatant-card.player-side .combatant-info {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  #view-battle .combatant-card.enemy-side .combatant-art {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  #view-battle .combatant-card.enemy-side .enemy-speech-bubble {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  #view-battle .combatant-card.enemy-side .combatant-info {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #view-battle .hero-speech-bubble,
+  #view-battle .enemy-speech-bubble {
+    min-height: 38px;
+    max-height: 54px;
+    padding: 5px 9px;
+    font-size: 0.78rem;
+    line-height: 1.42;
+  }
+
+  #view-battle .speech-zh {
+    font-size: 0.7rem;
+    margin-top: 1px;
+  }
+
+  #view-battle .combatant-info {
+    gap: 5px;
+  }
+
+  #view-battle .combatant-name {
+    font-size: 0.94rem;
+  }
+
+  #view-battle .combatant-info .stat-bar {
+    height: 17px;
+  }
+
+  #view-battle .combatant-buffs {
+    min-height: 18px;
+    gap: 4px;
+  }
+
+  #view-battle #battle-question-card {
+    padding: 12px 16px;
+    margin-bottom: 0;
+  }
+
+  #view-battle .question-card-header {
+    margin-bottom: 8px;
+    gap: 8px 12px;
+  }
+
+  #view-battle .q-prompt-zh {
+    font-size: 0.88rem;
+    margin-bottom: 5px;
+  }
+
+  #view-battle .q-prompt-jp {
+    font-size: 1.12rem;
+    padding: 9px 14px;
+    margin-bottom: 10px;
+  }
+
+  #view-battle .battle-q-hint {
+    margin-bottom: 8px;
+    padding: 7px 12px;
+    font-size: 0.84rem;
+  }
+
+  #view-battle .options-grid {
+    gap: 8px 10px;
+  }
+
+  #view-battle .option-btn {
+    min-height: 46px;
+    padding: 8px 13px;
+    font-size: 0.94rem;
+  }
+
+  #view-battle .battle-action-bar {
+    margin-top: 2px;
+  }
+
+  #view-battle .battle-action-bar .btn {
+    min-height: 36px;
+    padding: 5px 12px;
+    font-size: 0.82rem;
+  }
+}
+
+/* 3. Vocab Insight Eliminated Wrong Option & Reorder Insight Hint */
+.option-btn.eliminated {
+  opacity: 0.36 !important;
+  border-style: dashed !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  background: rgba(20, 14, 22, 0.72) !important;
+  color: var(--text-muted) !important;
+  pointer-events: none;
+}
+
+.option-btn.eliminated .jp-text {
+  text-decoration: line-through;
+  text-decoration-color: #f87171;
+  text-decoration-thickness: 2px;
+}
+
+.eliminated-tag {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fca5a5;
+  background: rgba(185, 28, 28, 0.32);
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  white-space: nowrap;
+}
+
+.reorder-chip.chip-insight-hint {
+  border-color: var(--gold-bright, #fde68a) !important;
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.52);
+  background: linear-gradient(135deg, rgba(161, 98, 7, 0.45), rgba(30, 41, 68, 0.92)) !important;
+}
+
+/* 4. Toast Notification — Bottom Center (never blocks top nav, tabs, or TTS audio buttons) */
+#toast-container {
+  top: auto !important;
+  right: auto !important;
+  bottom: 18px !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  width: min(440px, calc(100vw - 24px));
+  align-items: center;
+}
+
+#toast-container .toast-item {
+  width: 100%;
+  animation: toast-up-in 0.24s var(--ease-out) forwards;
+}
+
+@keyframes toast-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 5. Desktop Reading Dungeon Side-by-Side (Left Passage / Right Sticky Quiz) */
+@media (min-width: 960px) {
+  .reading-layout {
+    grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .reading-passage-pane {
+    max-height: calc(100vh - 185px);
+    overflow-y: auto;
+    padding-right: 12px;
+  }
+
+  .reading-quiz-pane {
+    position: sticky;
+    top: 112px;
+  }
+}
+
+/* 6. Shop Quick-Equip Banner Bar */
+.shop-quick-equip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(212, 175, 55, 0.14);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: var(--gold-bright, #fde68a);
+  font-size: 0.86rem;
+}

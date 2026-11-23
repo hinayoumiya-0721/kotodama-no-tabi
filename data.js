@@ -848,7 +848,7 @@
       branch: '文法系',
       icon: 'shield',
       name: '助詞護盾',
-      jpName: '<ruby>助詞<rt>じょし</rt></ruby><ruby>護盾<rt>ごじゅん</rt></ruby>',
+      jpName: '<ruby>助詞<rt>じょし</rt></ruby>の<ruby>盾<rt>たて</rt></ruby>',
       type: 'passive',
       context: 'battle',
       mpCost: 0,
@@ -1264,7 +1264,7 @@
       dialogues: [
         {
           id: 'mayor_d1',
-          npcLineJp: '<ruby>最近<rt>さいきん</rt></ruby>、<ruby>町<rt>まち</rt></ruby>の<ruby>外<rt>そと</rt></ruby>れで<ruby>言葉<rt>ことば</rt></ruby>を<ruby>乱<rt>みだ</rt></ruby>す<ruby>魔物<rt>まもの</rt></ruby>が<ruby>増<rt>ふ</rt></ruby>えていてね。<ruby>君<rt>きみ</rt></ruby>に<ruby>力<rt>ちから</rt></ruby>を<ruby>貸<rt>か</rt></ruby>してほしいんだ。',
+          npcLineJp: '<ruby>最近<rt>さいきん</rt></ruby>、<ruby>町<rt>まち</rt></ruby>の<ruby>外<rt>はず</rt></ruby>れで<ruby>言葉<rt>ことば</rt></ruby>を<ruby>乱<rt>みだ</rt></ruby>す<ruby>魔物<rt>まもの</rt></ruby>が<ruby>増<rt>ふ</rt></ruby>えていてね。<ruby>君<rt>きみ</rt></ruby>に<ruby>力<rt>ちから</rt></ruby>を<ruby>貸<rt>か</rt></ruby>してほしいんだ。',
           npcLineZh: '最近鎮外擾亂語言的魔物越來越多了。我想借重你的力量啊。',
           tts: 'さいきん、まちのはずれでことばをみだすまものがふえていてね。きみにちからをかしてほしいんだ。',
           emotion: 'serious',
@@ -1488,7 +1488,7 @@
               feedback: '「足元にお気をつけて」是非常體貼且道地的日語叮嚀！'
             },
             {
-              jp: '<ruby>魔物<rt>まもの</rt></ruby>も<ruby>出<rt>で</rt></ruby>るので、<ruby>明る<rt>あか</rt></ruby>いうちに<ruby>通<rt>とお</rt></ruby>るといいですよ。',
+              jp: '<ruby>魔物<rt>まもの</rt></ruby>も<ruby>出<rt>で</rt></ruby>るので、<ruby>明<rt>あか</rt></ruby>るいうちに<ruby>通<rt>とお</rt></ruby>るといいですよ。',
               zh: '因為也會有魔物出沒，趁天亮時通過比較好喔。',
               affectionDelta: 10,
               replyEmotion: 'calm',
@@ -1711,7 +1711,7 @@
         },
         {
           id: 'priest_d2',
-          npcLineJp: '<ruby>参拝<rt>さんぱい</rt></ruby>の<ruby>作法<rt>さほう</rt></ruby>を<ruby>ご存<rt>ぞん</rt></ruby>じですか？「<ruby>二礼<rt>にれい</rt></ruby><ruby>二拍手<rt>にはくしゅ</rt></ruby><ruby>一礼<rt>いちれい</rt></ruby>」と<ruby>申<rt>もう</rt></ruby>します。',
+          npcLineJp: '<ruby>参拝<rt>さんぱい</rt></ruby>の<ruby>作法<rt>さほう</rt></ruby>をご<ruby>存<rt>ぞん</rt></ruby>じですか？「<ruby>二礼<rt>にれい</rt></ruby><ruby>二拍手<rt>にはくしゅ</rt></ruby><ruby>一礼<rt>いちれい</rt></ruby>」と<ruby>申<rt>もう</rt></ruby>します。',
           npcLineZh: '您知道神社參拜的禮節嗎？稱為「二禮、二拍手、一禮」。',
           tts: 'さんぱいのさほうをごぞんじですか？にれいにはくしゅいちれいともうします。',
           emotion: 'calm',
@@ -1874,7 +1874,7 @@
       "answerIndex": 2,
       "kanaReading": "みやげ",
       "correctDisplay": "お土産（おみやげ）",
-      "wrongReason": "「どさん」是音讀「土產」，不加「お」且日常少用；「みあげ」把濁音「げ」誤為清音或把「や」誤為「あ」。",
+      "wrongReason": "「どさん」是音讀「土產」，不加「お」且日常少用；「つちうみ」是拆字直讀的誤讀；「みあげ」則是把「や」誤為「あ」。",
       "explanation": "「お土産（おみやげ）」為熟字訓，指旅遊伴手禮或拜訪他人時帶的禮物，必須整體記憶讀音。",
       "hint": "這是特別的熟字訓，旅遊買伴手禮時常說「お＿＿」。"
     },
@@ -1885,7 +1885,7 @@
       "difficulty": 1,
       "type": "reading",
       "typeLabel": "漢字讀音",
-      "promptZh": "請選出畫線漢字在日常購物情境中的正確讀音。",
+      "promptZh": "請選出畫線漢字在日常外出情境中的正確讀音。",
       "promptJp": "<ruby>雨<rt>あめ</rt></ruby>が<ruby>降<rt>ふ</rt></ruby>りそうなので、<ruby>出<rt>で</rt></ruby>かける<ruby>前<rt>まえ</rt></ruby>に<span class=\"q-target\">準備</span>をしておきます。",
       "fullRubyJp": "<ruby>雨<rt>あめ</rt></ruby>が<ruby>降<rt>ふ</rt></ruby>りそうなので、<ruby>出<rt>で</rt></ruby>かける<ruby>前<rt>まえ</rt></ruby>に<ruby>準備<rt>じゅんび</rt></ruby>をしておきます。",
       "tts": "雨が降りそうなので、出かける前に準備をしておきます。",
@@ -1934,9 +1934,9 @@
       "type": "reading",
       "typeLabel": "漢字讀音",
       "promptZh": "請選出畫線漢字在點餐情境中的正確讀音。",
-      "promptJp": "すみません、こちらのお<ruby>料理<rt>りょうり</rt></ruby>の<span class=\"q-target\">注文</span>をもう<ruby>一つ<rt>ひとつ</rt></ruby>お<ruby>願<rt>ねが</rt></ruby>いします。",
-      "fullRubyJp": "すみません、こちらのお<ruby>料理<rt>りょうり</rt></ruby>の<ruby>注文<rt>ちゅうもん</rt></ruby>をもう<ruby>一つ<rt>ひとつ</rt></ruby>お<ruby>願<rt>ねが</rt></ruby>いします。",
-      "tts": "すみません、こちらのお料理の注文をもう一つお願いします。",
+      "promptJp": "すみません、お<ruby>料理<rt>りょうり</rt></ruby>の<span class=\"q-target\">注文</span>をお<ruby>願<rt>ねが</rt></ruby>いします。",
+      "fullRubyJp": "すみません、お<ruby>料理<rt>りょうり</rt></ruby>の<ruby>注文<rt>ちゅうもん</rt></ruby>をお<ruby>願<rt>ねが</rt></ruby>いします。",
+      "tts": "すみません、お料理の注文をお願いします。",
       "options": [
         "ちゅもん",
         "ちゅうもん",
@@ -2173,7 +2173,7 @@
       "difficulty": 1,
       "type": "particle",
       "typeLabel": "助詞辨析",
-      "promptZh": "請選出最適合填入空格的助詞組合。",
+      "promptZh": "請選出最適合填入空格的助詞。",
       "promptJp": "<ruby>店員<rt>てんいん</rt></ruby>さん<span class=\"q-blank\">（　）</span>おすすめの<ruby>地元<rt>じもと</rt></ruby><ruby>料理<rt>りょうり</rt></ruby>を<ruby>教<rt>おし</rt></ruby>えてもらいました。",
       "fullRubyJp": "<ruby>店員<rt>てんいん</rt></ruby>さん<span class=\"q-answer\">に</span>おすすめの<ruby>地元<rt>じもと</rt></ruby><ruby>料理<rt>りょうり</rt></ruby>を<ruby>教<rt>おし</rt></ruby>えてもらいました。",
       "tts": "店員さんにおすすめの地元料理を教えてもらいました。",
@@ -2352,7 +2352,7 @@
         "<ruby>閉<rt>と</rt></ruby>じてあげて"
       ],
       "answerIndex": 2,
-      "kanaReading": "しまっています",
+      "kanaReading": "しまって",
       "correctDisplay": "閉まって",
       "wrongReason": "主語是「店（は）」，描述店家呈現「打烊狀態」須用自動詞「閉まる」＋「ている」；他動詞「閉める」需要人當主語並用「を」。",
       "explanation": "「自動詞て形＋ている」用來表示動作完成後持續的結果狀態。「店が閉まっている」意為「店關著（打烊了）」。",
@@ -2376,7 +2376,7 @@
         "ようにして"
       ],
       "answerIndex": 3,
-      "kanaReading": "ようにしています",
+      "kanaReading": "ようにして",
       "correctDisplay": "ようにして",
       "wrongReason": "「ようになる」表自然或能力上的變化（變得會……），而非主動努力去實踐；「みたいにして」「そうにして」不構成習慣句型。",
       "explanation": "「動詞辭書形／ない形＋ようにしている」表示為了某目的而「盡量做到、持續努力維持某種日常習慣」。",
@@ -2438,8 +2438,8 @@
       "type": "conjugation",
       "typeLabel": "動詞・敬語活用",
       "promptZh": "請選出最能表達「不小心搞丟、很懊惱」語氣的選項。",
-      "promptJp": "さっき<ruby>入<rt>はい</rt></ruby>ったカフェに、<ruby>折<rt>お</rt></ruby>りたたみ<ruby>傘<rt>かさ</rt></ruby>を<span class=\"q-blank\">（　）</span>んです。",
-      "fullRubyJp": "さっき<ruby>入<rt>はい</rt></ruby>ったカフェに、<ruby>折<rt>お</rt></ruby>りたたみ<ruby>傘<rt>かさ</rt></ruby>を<span class=\"q-answer\"><ruby>忘<rt>わす</rt></ruby>れてしまった</span>んです。",
+      "promptJp": "さっき<ruby>入<rt>はい</rt></ruby>ったカフェに、<ruby>折<rt>お</rt></ruby>りたたみ<ruby>傘<rt>がさ</rt></ruby>を<span class=\"q-blank\">（　）</span>んです。",
+      "fullRubyJp": "さっき<ruby>入<rt>はい</rt></ruby>ったカフェに、<ruby>折<rt>お</rt></ruby>りたたみ<ruby>傘<rt>がさ</rt></ruby>を<span class=\"q-answer\"><ruby>忘<rt>わす</rt></ruby>れてしまった</span>んです。",
       "tts": "さっき入ったカフェに、折りたたみ傘を忘れてしまったんです。",
       "options": [
         "<ruby>忘<rt>わす</rt></ruby>れておいた",
@@ -2472,7 +2472,7 @@
         "<ruby>混<rt>こ</rt></ruby>むそう"
       ],
       "answerIndex": 3,
-      "kanaReading": "こむそうです",
+      "kanaReading": "こむそう",
       "correctDisplay": "混むそう",
       "wrongReason": "「混みそう」是樣態「眼看就要變擠」；「混んでそう」是口語樣態推測；「混むのそう」接續錯誤。傳聞「聽說」須接普通形。",
       "explanation": "表示傳聞（聽說……）的「そうだ／そうです」接在普通形後面（動詞辭書形／た形／ない形＋そうだ），故為「混むそうですよ」。",
@@ -2921,7 +2921,7 @@
       "options": [
         "チェックインの<ruby>前<rt>まえ</rt></ruby>に、<ruby>荷物<rt>にもつ</rt></ruby>を<ruby>預<rt>あず</rt></ruby>けられますか。",
         "<ruby>明日<rt>あした</rt></ruby>の<ruby>夜<rt>よる</rt></ruby>、<ruby>駅前<rt>えきまえ</rt></ruby>のホテルで<ruby>泊<rt>と</rt></ruby>まる<ruby>予定<rt>よてい</rt></ruby>です。",
-        "<ruby>部屋<rt>へや</rt></ruby>の<ruby>鍵<rt>かぎ</rt></ruby>を<ruby>出<rt>で</rt></ruby>かけるときにフロントへ<ruby>預<rt>あず</rt></ruby>けました。",
+        "<ruby>出<rt>で</rt></ruby>かけるときに、<ruby>部屋<rt>へや</rt></ruby>の<ruby>鍵<rt>かぎ</rt></ruby>をフロントに<ruby>預<rt>あず</rt></ruby>けました。",
         "<ruby>温泉<rt>おんせん</rt></ruby>に<ruby>入<rt>はい</rt></ruby>ってから、<ruby>部屋<rt>へや</rt></ruby>でゆっくり<ruby>休<rt>やす</rt></ruby>みました。"
       ],
       "answerIndex": 1,
@@ -3013,7 +3013,7 @@
       "promptZh": "以下四句關於「日常習慣與努力」的句子中，有一句語意或句型使用不自然，請找出來。",
       "promptJp": "<ruby>習慣<rt>しゅうかん</rt></ruby>や<ruby>努力<rt>どりょく</rt></ruby>を<ruby>表<rt>あらわ</rt></ruby>す<ruby>文<rt>ぶん</rt></ruby>の<ruby>中<rt>なか</rt></ruby>で、<ruby>不自然<rt>ふしぜん</rt></ruby>なものを<ruby>一<rt>ひと</rt></ruby>つ<ruby>選<rt>えら</rt></ruby>んでください。",
       "fullRubyJp": "<ruby>自分<rt>じぶん</rt></ruby>の<ruby>意志<rt>いし</rt></ruby>で<ruby>努力<rt>どりょく</rt></ruby>する<ruby>習慣<rt>しゅうかん</rt></ruby>は「<ruby>歩<rt>ある</rt></ruby>くようにしています」と<ruby>言<rt>い</rt></ruby>います。",
-      "tts": "毎朝駅まで歩くようになっています。",
+      "tts": "健康のために、毎朝駅まで歩くようになっています。",
       "options": [
         "<ruby>最近<rt>さいきん</rt></ruby>はなるべく<ruby>早<rt>はや</rt></ruby>く<ruby>寝<rt>ね</rt></ruby>るようにしています。",
         "<ruby>健康<rt>けんこう</rt></ruby>のために、<ruby>毎朝<rt>まいあさ</rt></ruby><ruby>駅<rt>えき</rt></ruby>まで<ruby>歩<rt>ある</rt></ruby>くようになっています。",
@@ -3036,7 +3036,7 @@
       "typeLabel": "找出不自然表達",
       "promptZh": "以下四句關於「時間期限與移動」的句子中，有一句助詞使用錯誤，請找出來。",
       "promptJp": "<ruby>時間<rt>じかん</rt></ruby>の<ruby>期限<rt>きげん</rt></ruby>に<ruby>関<rt>かん</rt></ruby>する<ruby>文<rt>ぶん</rt></ruby>の<ruby>中<rt>なか</rt></ruby>で、<ruby>不自然<rt>ふしぜん</rt></ruby>なものを<ruby>一<rt>ひと</rt></ruby>つ<ruby>選<rt>えら</rt></ruby>んでください。",
-      "fullRubyJp": "「<ruby>六時<rt>ろくじ</rt></ruby>まで<ruby>帰<rt>かえ</rt></ruby>る」ではなく、<ruby>期限<rt>きげん</rt></ruby>は「<ruby>六時<rt>ろくじ</rt></ruby>までに」を<ruby>使<rt>つか</rt></ruby>います。",
+      "fullRubyJp": "「<ruby>六時<rt>ろくじ</rt></ruby>まで<ruby>戻<rt>もど</rt></ruby>る」ではなく、<ruby>期限<rt>きげん</rt></ruby>は「<ruby>六時<rt>ろくじ</rt></ruby>までに」を<ruby>使<rt>つか</rt></ruby>います。",
       "tts": "夕食は七時からなので、六時まで旅館に戻ってください。",
       "options": [
         "チェックアウトの<ruby>時間<rt>じかん</rt></ruby>まで、<ruby>部屋<rt>へや</rt></ruby>でのんびりしていました。",
@@ -3227,9 +3227,9 @@
       "type": "particle",
       "typeLabel": "助詞辨析",
       "promptZh": "請選出最適合填入空格的表現。",
-      "promptJp": "<ruby>暖<rt>あたた</rt></ruby>かい<span class=\"q-blank\">（　）</span>、スープをどうぞお<ruby>召<rt>め</rt></ruby>し<ruby>上<rt>あ</rt></ruby>がりください。",
-      "fullRubyJp": "<ruby>暖<rt>あたた</rt></ruby>かい<span class=\"q-answer\">うちに</span>、スープをどうぞお<ruby>召<rt>め</rt></ruby>し<ruby>上<rt>あ</rt></ruby>がりください。",
-      "tts": "暖かいうちに、スープをどうぞお召し上がりください。",
+      "promptJp": "<ruby>温<rt>あたた</rt></ruby>かい<span class=\"q-blank\">（　）</span>、スープをどうぞお<ruby>召<rt>め</rt></ruby>し<ruby>上<rt>あ</rt></ruby>がりください。",
+      "fullRubyJp": "<ruby>温<rt>あたた</rt></ruby>かい<span class=\"q-answer\">うちに</span>、スープをどうぞお<ruby>召<rt>め</rt></ruby>し<ruby>上<rt>あ</rt></ruby>がりください。",
+      "tts": "温かいうちに、スープをどうぞお召し上がりください。",
       "options": [
         "たびに",
         "とおりに",
@@ -3466,7 +3466,7 @@
       "difficulty": 2,
       "type": "reorder",
       "typeLabel": "句子重組",
-      "promptZh": "請將下列片段重組成自然通順的日文句子。（提示：注意「〜らしい」與資訊出處的結構）",
+      "promptZh": "請將下列片段重組成自然通順的日文句子。（提示：注意時間、地點與傳聞「〜らしい」的語序）",
       "promptJp": "「聽說車站前面下個月好像要開一間新的麵包店。」",
       "fullRubyJp": "<ruby>来月<rt>らいげつ</rt></ruby>、<ruby>駅前<rt>えきまえ</rt></ruby>に<ruby>新<rt>あたら</rt></ruby>しいパン<ruby>屋<rt>や</rt></ruby>ができるらしいですよ。",
       "tts": "来月、駅前に新しいパン屋ができるらしいですよ。",
@@ -3512,7 +3512,7 @@
       "type": "reorder",
       "typeLabel": "句子重組",
       "promptZh": "請將下列片段重組成自然通順的日文句子。（提示：注意比喻句型「まるで〜ようだ」）",
-      "promptJp": "「這條老街安靜得簡直就像畫裡的世界一樣。」",
+      "promptJp": "「這條古老的街景簡直就像畫裡的世界一樣。」",
       "fullRubyJp": "この<ruby>古<rt>ふる</rt></ruby>い<ruby>町並<rt>まちな</rt></ruby>みは、まるで<ruby>絵<rt>え</rt></ruby>の<ruby>中<rt>なか</rt></ruby>の<ruby>世界<rt>せかい</rt></ruby>のようです。",
       "tts": "この古い町並みは、まるで絵の中の世界のようです。",
       "options": [],
@@ -3696,7 +3696,7 @@
       "typeLabel": "找出不自然表達",
       "promptZh": "以下四句關於「日常生活與習慣」的日文中，有一句誤用了「〜っぱなし」，請找出來。",
       "promptJp": "「〜っぱなし」を<ruby>使<rt>つか</rt></ruby>った<ruby>文<rt>ぶん</rt></ruby>の<ruby>中<rt>なか</rt></ruby>で、<ruby>不自然<rt>ふしぜん</rt></ruby>なものを<ruby>一<rt>ひと</rt></ruby>つ<ruby>選<rt>えら</rt></ruby>んでください。",
-      "fullRubyJp": "「<ruby>降<rt>ふ</rt></ruby>りっぱなし」のように<ruby>自然現象<rt>しぜんげんしょう</rt></ruby>や<ruby>無意志<rt>むいし</rt></ruby>ではなく、<ruby>本来<rt>ほんらい</rt></ruby><ruby>閉<rt>し</rt></ruby>める・<ruby>片付<rt>かたづ</rt></ruby>けるべき<ruby>動作<rt>どうさ</rt></ruby>に<ruby>使<rt>つか</rt></ruby>います。",
+      "fullRubyJp": "「<ruby>花<rt>はな</rt></ruby>が<ruby>咲<rt>さ</rt></ruby>きっぱなし」のような<ruby>自然<rt>しぜん</rt></ruby>で<ruby>好<rt>この</rt></ruby>ましい<ruby>状態<rt>じょうたい</rt></ruby>には<ruby>使<rt>つか</rt></ruby>えず、<ruby>本来<rt>ほんらい</rt></ruby><ruby>片付<rt>かたづ</rt></ruby>ける・<ruby>止<rt>と</rt></ruby>めるべき<ruby>状態<rt>じょうたい</rt></ruby>を<ruby>放置<rt>ほうち</rt></ruby>するときなどに<ruby>使<rt>つか</rt></ruby>います。",
       "tts": "昨日からずっと花が咲きっぱなしになっています。",
       "options": [
         "<ruby>玄関<rt>げんかん</rt></ruby>の<ruby>靴<rt>くつ</rt></ruby>を<ruby>脱<rt>ぬ</rt></ruby>ぎっぱなしにしないでください。",
@@ -3742,7 +3742,7 @@
       "difficulty": 2,
       "type": "unnatural",
       "typeLabel": "找出不自然表達",
-      "promptZh": "以下四句在「餐廳與店家互動」中的日文，有一句誤用了「〜わけにはいかない」，請找出來。",
+      "promptZh": "以下四句日常情境中的日文，有一句誤用了「〜わけにはいかない」，請找出來。",
       "promptJp": "「〜わけにはいかない」を<ruby>使<rt>つか</rt></ruby>った<ruby>文<rt>ぶん</rt></ruby>から、<ruby>不自然<rt>ふしぜん</rt></ruby>なものを<ruby>一<rt>ひと</rt></ruby>つ<ruby>選<rt>えら</rt></ruby>んでください。",
       "fullRubyJp": "「わけにはいかない」は<ruby>社会常識<rt>しゃかいじょうしき</rt></ruby>や<ruby>心理的<rt>しんりてき</rt></ruby>な<ruby>理由<rt>りゆう</rt></ruby>でできないときに<ruby>使<rt>つか</rt></ruby>い、<ruby>単<rt>たん</rt></ruby>なる<ruby>物理的<rt>ぶつりてき</rt></ruby>・<ruby>能力<rt>のうりょく</rt></ruby>の<ruby>不可能<rt>ふかのう</rt></ruby>には<ruby>使<rt>つか</rt></ruby>いません。",
       "tts": "手がふさがっているので、ドアを開けるわけにはいきません。",
@@ -5367,10 +5367,10 @@
       "typeLabel": "找出不自然表達",
       "promptZh": "請找出下列關於搬家與新生活的句子中「文法不自然」的一項。",
       "promptJp": "<ruby>引<rt>ひ</rt></ruby>っ<ruby>越<rt>こ</rt></ruby>し<ruby>後<rt>ご</rt></ruby>の<ruby>新生活<rt>しんせいかつ</rt></ruby>",
-      "fullRubyJp": "<ruby>三<rt>さん</rt></ruby>か月<ruby>前<rt>まえ</rt></ruby>にこの<ruby>町<rt>まち</rt></ruby>へ<ruby>引<rt>ひ</rt></ruby>っ<ruby>越<rt>こ</rt></ruby>したばかりです。",
+      "fullRubyJp": "<ruby>三<rt>さん</rt></ruby>か<ruby>月<rt>げつ</rt></ruby><ruby>前<rt>まえ</rt></ruby>にこの<ruby>町<rt>まち</rt></ruby>へ<ruby>引<rt>ひ</rt></ruby>っ<ruby>越<rt>こ</rt></ruby>したばかりです。",
       "tts": "三か月前にこの町へ引っ越したばかりです。",
       "options": [
-        "<ruby>三<rt>さん</rt></ruby>か月<ruby>前<rt>まえ</rt></ruby>にこの<ruby>町<rt>まち</rt></ruby>へ<ruby>引<rt>ひ</rt></ruby>っ<ruby>越<rt>こ</rt></ruby>したところです。",
+        "<ruby>三<rt>さん</rt></ruby>か<ruby>月<rt>げつ</rt></ruby><ruby>前<rt>まえ</rt></ruby>にこの<ruby>町<rt>まち</rt></ruby>へ<ruby>引<rt>ひ</rt></ruby>っ<ruby>越<rt>こ</rt></ruby>したところです。",
         "ちょうど<ruby>今<rt>いま</rt></ruby>、<ruby>荷造<rt>にづく</rt></ruby>りが<ruby>終<rt>お</rt></ruby>わったところです。",
         "<ruby>引<rt>ひ</rt></ruby>っ<ruby>越<rt>こ</rt></ruby>し<ruby>業者<rt>ぎょうしゃ</rt></ruby>が<ruby>今<rt>いま</rt></ruby>から<ruby>家具<rt>かぐ</rt></ruby>を<ruby>運<rt>はこ</rt></ruby>ぶところです。",
         "<ruby>新<rt>あたら</rt></ruby>しい<ruby>部屋<rt>へや</rt></ruby>の<ruby>掃除<rt>そうじ</rt></ruby>をしているところです。"
@@ -5462,8 +5462,8 @@
       "type": "reading",
       "typeLabel": "漢字讀音",
       "promptZh": "請選出畫線漢字的正確讀音。",
-      "promptJp": "<ruby>家賃<rt>やちん</rt></ruby>を<ruby>三<rt>さん</rt></ruby>か月<ruby>以上<rt>いじょう</rt></ruby><span class=\"q-target\">滞納</span>すると、<ruby>契約<rt>けいやく</rt></ruby>を<ruby>解除<rt>かいじょ</rt></ruby>される<ruby>恐<rt>おそ</rt></ruby>れがあります。",
-      "fullRubyJp": "<ruby>家賃<rt>やちん</rt></ruby>を<ruby>三<rt>さん</rt></ruby>か月<ruby>以上<rt>いじょう</rt></ruby><ruby>滞納<rt>たいのう</rt></ruby>すると、<ruby>契約<rt>けいやく</rt></ruby>を<ruby>解除<rt>かいじょ</rt></ruby>される<ruby>恐<rt>おそ</rt></ruby>れがあります。",
+      "promptJp": "<ruby>家賃<rt>やちん</rt></ruby>を<ruby>三<rt>さん</rt></ruby>か<ruby>月<rt>げつ</rt></ruby><ruby>以上<rt>いじょう</rt></ruby><span class=\"q-target\">滞納</span>すると、<ruby>契約<rt>けいやく</rt></ruby>を<ruby>解除<rt>かいじょ</rt></ruby>される<ruby>恐<rt>おそ</rt></ruby>れがあります。",
+      "fullRubyJp": "<ruby>家賃<rt>やちん</rt></ruby>を<ruby>三<rt>さん</rt></ruby>か<ruby>月<rt>げつ</rt></ruby><ruby>以上<rt>いじょう</rt></ruby><ruby>滞納<rt>たいのう</rt></ruby>すると、<ruby>契約<rt>けいやく</rt></ruby>を<ruby>解除<rt>かいじょ</rt></ruby>される<ruby>恐<rt>おそ</rt></ruby>れがあります。",
       "tts": "家賃を三か月以上滞納すると、契約を解除される恐れがあります。",
       "options": [
         "たいのう",
@@ -5510,8 +5510,8 @@
       "type": "particle",
       "typeLabel": "助詞辨析",
       "promptZh": "請選出最適合填入括號中的句型。",
-      "promptJp": "<ruby>賃貸<rt>ちんたい</rt></ruby><ruby>契約<rt>けいやく</rt></ruby>の<ruby>解約<rt>かいやく</rt></ruby><span class=\"q-blank\">（　）</span>、<ruby>退去日<rt>たいきょび</rt></ruby>の<ruby>一<rt>いっ</rt></ruby>か月<ruby>前<rt>まえ</rt></ruby>までに<ruby>管理<rt>かんり</rt></ruby><ruby>会社<rt>かいしゃ</rt></ruby>へ<ruby>連絡<rt>れんらく</rt></ruby>する<ruby>必要<rt>ひつよう</rt></ruby>がある。",
-      "fullRubyJp": "<ruby>賃貸<rt>ちんたい</rt></ruby><ruby>契約<rt>けいやく</rt></ruby>の<ruby>解約<rt>かいやく</rt></ruby><span class=\"q-answer\">に<ruby>際<rt>さい</rt></ruby>して</span>、<ruby>退去日<rt>たいきょび</rt></ruby>の<ruby>一<rt>いっ</rt></ruby>か月<ruby>前<rt>まえ</rt></ruby>までに<ruby>管理<rt>かんり</rt></ruby><ruby>会社<rt>かいしゃ</rt></ruby>へ<ruby>連絡<rt>れんらく</rt></ruby>する<ruby>必要<rt>ひつよう</rt></ruby>がある。",
+      "promptJp": "<ruby>賃貸<rt>ちんたい</rt></ruby><ruby>契約<rt>けいやく</rt></ruby>の<ruby>解約<rt>かいやく</rt></ruby><span class=\"q-blank\">（　）</span>、<ruby>退去日<rt>たいきょび</rt></ruby>の<ruby>一<rt>いっ</rt></ruby>か<ruby>月<rt>げつ</rt></ruby><ruby>前<rt>まえ</rt></ruby>までに<ruby>管理<rt>かんり</rt></ruby><ruby>会社<rt>かいしゃ</rt></ruby>へ<ruby>連絡<rt>れんらく</rt></ruby>する<ruby>必要<rt>ひつよう</rt></ruby>がある。",
+      "fullRubyJp": "<ruby>賃貸<rt>ちんたい</rt></ruby><ruby>契約<rt>けいやく</rt></ruby>の<ruby>解約<rt>かいやく</rt></ruby><span class=\"q-answer\">に<ruby>際<rt>さい</rt></ruby>して</span>、<ruby>退去日<rt>たいきょび</rt></ruby>の<ruby>一<rt>いっ</rt></ruby>か<ruby>月<rt>げつ</rt></ruby><ruby>前<rt>まえ</rt></ruby>までに<ruby>管理<rt>かんり</rt></ruby><ruby>会社<rt>かいしゃ</rt></ruby>へ<ruby>連絡<rt>れんらく</rt></ruby>する<ruby>必要<rt>ひつよう</rt></ruby>がある。",
       "tts": "賃貸契約の解約に際して、退去日の一か月前までに管理会社へ連絡する必要がある。",
       "options": [
         "にかけて",
@@ -7375,7 +7375,7 @@
       "promptZh": "職場前輩邀你下班後一起去聚餐，但你今晚早有約無法出席。請選出最不傷感情又得體的婉拒回應。",
       "promptJp": "<ruby>先輩<rt>せんぱい</rt></ruby>：「<ruby>今日<rt>きょう</rt></ruby>の<ruby>仕事終<rt>しごとお</rt></ruby>わり、みんなで<ruby>飲<rt>の</rt></ruby>みに<ruby>行<rt>い</rt></ruby>くんだけど、<ruby>佐藤<rt>さとう</rt></ruby>くんもどう？」<br><ruby>後輩<rt>こうはい</rt></ruby>：「お<ruby>誘<rt>さそ</rt></ruby>いありがとうございます。あいにく<ruby>今夜<rt>こんや</rt></ruby>は<ruby>先約<rt>せんやく</rt></ruby>がありまして、<span class=\"q-blank\">（　）</span>。」",
       "fullRubyJp": "<ruby>先輩<rt>せんぱい</rt></ruby>：「<ruby>今日<rt>きょう</rt></ruby>の<ruby>仕事終<rt>しごとお</rt></ruby>わり、みんなで<ruby>飲<rt>の</rt></ruby>みに<ruby>行<rt>い</rt></ruby>くんだけど、<ruby>佐藤<rt>さとう</rt></ruby>くんもどう？」<ruby>後輩<rt>こうはい</rt></ruby>：「お<ruby>誘<rt>さそ</rt></ruby>いありがとうございます。あいにく<ruby>今夜<rt>こんや</rt></ruby>は<ruby>先約<rt>せんやく</rt></ruby>がありまして、<span class=\"q-answer\">また<ruby>次<rt>つぎ</rt></ruby>の<ruby>機会<rt>きかい</rt></ruby>にぜひ<ruby>参加<rt>さんか</rt></ruby>させてください</span>。」",
-      "tts": "お誘いありがとうございます。あいにく今夜は先約がありまして、また次の機会にぜひ参加させてください。",
+      "tts": "今日の仕事終わり、みんなで飲みに行くんだけど、佐藤くんもどう？お誘いありがとうございます。あいにく今夜は先約がありまして、また次の機会にぜひ参加させてください。",
       "options": [
         "<ruby>今夜<rt>こんや</rt></ruby>は<ruby>行<rt>い</rt></ruby>きたくありません",
         "<ruby>先輩<rt>せんぱい</rt></ruby>だけで<ruby>勝手<rt>かって</rt></ruby>に<ruby>行<rt>い</rt></ruby>ってください",
@@ -8022,7 +8022,7 @@
       "kanaReading": "かきなおした",
       "correctDisplay": "書き直した",
       "wrongReason": "「書き切った」意為寫完；「書き出した」意為開始寫；「書きかけた」意為寫到一半，皆無「重新修改」之意。",
-      "explanation": "複合動詞「〜直す」接在動詞ます形後，表示「重新做一次以修正或改善」。句中提示「発見錯誤、從頭開始」，故選「書き直した」。",
+      "explanation": "複合動詞「〜直す」接在動詞ます形後，表示「重新做一次以修正或改善」。句中提示「發現錯誤、從頭開始」，故選「書き直した」。",
       "hint": "因為發現事實錯誤而「從頭重寫」，找表示「重新做」的複合動詞。"
     },
     {
@@ -8057,9 +8057,9 @@
       "type": "conjugation",
       "typeLabel": "動詞・敬語活用",
       "promptZh": "請選出最符合句意的複合動詞。",
-      "promptJp": "<ruby>取引先<rt>とりひきさき</rt></ruby>へメールを<span class=\"q-blank\">（　）</span>ところで、<ruby>添付<rt>てんぷ</rt></ruby>ファイルの<ruby>忘<rt>わす</rt></ruby>れに<ruby>気<rt>き</rt></ruby>づいた。",
-      "fullRubyJp": "<ruby>取引先<rt>とりひきさき</rt></ruby>へメールを<span class=\"q-answer\"><ruby>送<rt>おく</rt></ruby>りかけた</span>ところで、<ruby>添付<rt>てんぷ</rt></ruby>ファイルの<ruby>忘<rt>わす</rt></ruby>れに<ruby>気<rt>き</rt></ruby>づいた。",
-      "tts": "取引先へメールを送りかけたところで、添付ファイルの忘れに気づいた。",
+      "promptJp": "<ruby>取引先<rt>とりひきさき</rt></ruby>へメールを<span class=\"q-blank\">（　）</span>ところで、ファイルの<ruby>添付<rt>てんぷ</rt></ruby><ruby>忘<rt>わす</rt></ruby>れに<ruby>気<rt>き</rt></ruby>づいた。",
+      "fullRubyJp": "<ruby>取引先<rt>とりひきさき</rt></ruby>へメールを<span class=\"q-answer\"><ruby>送<rt>おく</rt></ruby>りかけた</span>ところで、ファイルの<ruby>添付<rt>てんぷ</rt></ruby><ruby>忘<rt>わす</rt></ruby>れに<ruby>気<rt>き</rt></ruby>づいた。",
+      "tts": "取引先へメールを送りかけたところで、ファイルの添付忘れに気づいた。",
       "options": [
         "<ruby>送<rt>おく</rt></ruby>りかけた",
         "<ruby>送<rt>おく</rt></ruby>り<ruby>切<rt>き</rt></ruby>った",
@@ -8925,20 +8925,20 @@
       "typeLabel": "動詞・敬語活用",
       "promptZh": "請選出最符合句意的複合動詞。",
       "promptJp": "<ruby>困難<rt>こんなん</rt></ruby>な<ruby>交渉<rt>こうしょう</rt></ruby>だったが、<ruby>自社<rt>じしゃ</rt></ruby>の<ruby>安全<rt>あんぜん</rt></ruby><ruby>基準<rt>きじゅん</rt></ruby>だけは<ruby>最後<rt>さいご</rt></ruby>まで<span class=\"q-blank\">（　）</span>。",
-      "fullRubyJp": "<ruby>困難<rt>こんなん</rt></ruby>な<ruby>交渉<rt>こうしょう</rt></ruby>だったが、<ruby>自社<rt>じしゃ</rt></ruby>の<ruby>安全<rt>あんぜん</rt></ruby><ruby>基準<rt>きじゅん</rt></ruby>だけは<ruby>最後<rt>さいご</rt></ruby>まで<span class=\"q-answer\"><ruby>貫<rt>つらぬ</rt></ruby>き<ruby>抜<rt>ぬ</rt></ruby>いた</span>。",
-      "tts": "困難な交渉だったが、自社の安全基準だけは最後まで貫き抜いた。",
+      "fullRubyJp": "<ruby>困難<rt>こんなん</rt></ruby>な<ruby>交渉<rt>こうしょう</rt></ruby>だったが、<ruby>自社<rt>じしゃ</rt></ruby>の<ruby>安全<rt>あんぜん</rt></ruby><ruby>基準<rt>きじゅん</rt></ruby>だけは<ruby>最後<rt>さいご</rt></ruby>まで<span class=\"q-answer\"><ruby>守<rt>まも</rt></ruby>り<ruby>抜<rt>ぬ</rt></ruby>いた</span>。",
+      "tts": "困難な交渉だったが、自社の安全基準だけは最後まで守り抜いた。",
       "options": [
-        "<ruby>貫<rt>つらぬ</rt></ruby>きかけた",
-        "<ruby>貫<rt>つらぬ</rt></ruby>き<ruby>直<rt>なお</rt></ruby>した",
-        "<ruby>貫<rt>つらぬ</rt></ruby>き<ruby>合<rt>あ</rt></ruby>った",
-        "<ruby>貫<rt>つらぬ</rt></ruby>き<ruby>抜<rt>ぬ</rt></ruby>いた"
+        "<ruby>守<rt>まも</rt></ruby>りかけた",
+        "<ruby>守<rt>まも</rt></ruby>り<ruby>直<rt>なお</rt></ruby>した",
+        "<ruby>守<rt>まも</rt></ruby>り<ruby>合<rt>あ</rt></ruby>った",
+        "<ruby>守<rt>まも</rt></ruby>り<ruby>抜<rt>ぬ</rt></ruby>いた"
       ],
       "answerIndex": 3,
-      "kanaReading": "つらぬきぬいた",
-      "correctDisplay": "貫き抜いた",
+      "kanaReading": "まもりぬいた",
+      "correctDisplay": "守り抜いた",
       "wrongReason": "「かけた」表未完成；「直した」表重來；「合った」表互相，皆不具克服阻力堅持到底的語氣。",
-      "explanation": "「動詞ます形＋抜く」強調在艱難環境下克服阻礙、堅持到底完成某事（如：やり抜く、考え抜く、貫き抜く）。",
-      "hint": "在困難談判中克服重重阻力「貫徹到底」，應搭配「〜抜く」。"
+      "explanation": "「動詞ます形＋抜く」強調在艱難環境下克服阻礙、堅持到底完成某事（如：やり抜く、考え抜く、守り抜く）。",
+      "hint": "在困難談判中克服重重阻力「堅守到底」，應搭配「〜抜く」。"
     },
     {
       "id": "q_r4_48",
@@ -8997,7 +8997,7 @@
       "typeLabel": "自然語境對話",
       "promptZh": "請根據客戶議價談判情境，選出最得體的商務回應。",
       "promptJp": "<ruby>顧客<rt>こきゃく</rt></ruby>「もう<ruby>少<rt>すこ</rt></ruby>し<ruby>予算<rt>よさん</rt></ruby>を<ruby>抑<rt>おさ</rt></ruby>えることはできませんか。」<br><ruby>営業<rt>えいぎょう</rt></ruby>「ご<ruby>要望<rt>ようぼう</rt></ruby>は<ruby>承知<rt>しょうち</rt></ruby>いたしましたが、<ruby>品質<rt>ひんしつ</rt></ruby><ruby>維持<rt>いじ</rt></ruby>のため、これ<ruby>以上<rt>いじょう</rt></ruby>の<ruby>値引<rt>ねび</rt></ruby>きは<span class=\"q-blank\">（　）</span>。」",
-      "fullRubyJp": "ご<ruby>要望<rt>ようぼう</rt></ruby>は<ruby>承知<rt>しょうち</rt></ruby>いたしましたが、<ruby>品質<rt>ひんしつ</rt></ruby><ruby>維持<rt>いじょう</rt></ruby>のため、これ<ruby>以上<rt>いじょう</rt></ruby>の<ruby>値引<rt>ねび</rt></ruby>きは<span class=\"q-answer\">お<ruby>受<rt>う</rt></ruby>けいたしかねます</span>。",
+      "fullRubyJp": "ご<ruby>要望<rt>ようぼう</rt></ruby>は<ruby>承知<rt>しょうち</rt></ruby>いたしましたが、<ruby>品質<rt>ひんしつ</rt></ruby><ruby>維持<rt>いじ</rt></ruby>のため、これ<ruby>以上<rt>いじょう</rt></ruby>の<ruby>値引<rt>ねび</rt></ruby>きは<span class=\"q-answer\">お<ruby>受<rt>う</rt></ruby>けいたしかねます</span>。",
       "tts": "ご要望は承知いたしましたが、品質維持のため、これ以上の値引きはお受けいたしかねます。",
       "options": [
         "お<ruby>受<rt>う</rt></ruby>けになりかねます",
@@ -9045,8 +9045,8 @@
       "typeLabel": "句子重組",
       "promptZh": "請將下列語塊重組為通順的日文句子（留意「だけに」的相稱結構）。",
       "promptJp": "「正因為對這項新技術寄予厚望，失敗時的失落感也格外強烈。」",
-      "fullRubyJp": "この<ruby>新技術<rt>しんぎじゅつ</rt></ruby>への<ruby>期待<rt>きたい</rt></ruby>が<ruby>大<rt>おお</rt></ruby>きかっただけに、<ruby>失敗<rt>しっぱい</rt></ruby>の<ruby>落胆<rt>らくたん</rt></ruby>も<ruby>大<rt>おお</rt></ruby>きかった。",
-      "tts": "この新技術への期待が大きかっただけに、失敗の落胆も大きかった。",
+      "fullRubyJp": "この<ruby>新技術<rt>しんぎじゅつ</rt></ruby>への<ruby>期待<rt>きたい</rt></ruby>が<ruby>大<rt>おお</rt></ruby>きかっただけに、<ruby>失敗<rt>しっぱい</rt></ruby>したときの<ruby>落胆<rt>らくたん</rt></ruby>も<ruby>大<rt>おお</rt></ruby>きかった。",
+      "tts": "この新技術への期待が大きかっただけに、失敗したときの落胆も大きかった。",
       "options": [],
       "chunks": [
         {
@@ -9069,14 +9069,14 @@
         },
         {
           "id": 3,
-          "text": "失敗の落胆も大きかった。",
-          "plain": "失敗の落胆も大きかった。",
-          "html": "<ruby>失敗<rt>しっぱい</rt></ruby>の<ruby>落胆<rt>らくたん</rt></ruby>も<ruby>大<rt>おお</rt></ruby>きかった。"
+          "text": "失敗したときの落胆も大きかった。",
+          "plain": "失敗したときの落胆も大きかった。",
+          "html": "<ruby>失敗<rt>しっぱい</rt></ruby>したときの<ruby>落胆<rt>らくたん</rt></ruby>も<ruby>大<rt>おお</rt></ruby>きかった。"
         }
       ],
       "answerIndex": 0,
-      "kanaReading": "このしんぎじゅつへのきたいがおおきかっただけに、しっぱいのらくたんもおおきかった。",
-      "correctDisplay": "この新技術への期待が大きかっただけに、失敗の落胆も大きかった。",
+      "kanaReading": "このしんぎじゅつへのきたいがおおきかっただけに、しっぱいしたときのらくたんもおおきかった。",
+      "correctDisplay": "この新技術への期待が大きかっただけに、失敗したときの落胆も大きかった。",
       "wrongReason": "「への」後必接名詞「期待」，而「だけに、」應接在形容詞過去形「大きかった」之後形成因果對照。",
       "explanation": "「〜だけに」除用於讚歎外，也常表示「正因為期待／付出越深，隨之而來的打擊或影響也越大」。",
       "hint": "「この新技術への」修飾「期待」，再接「だけに、」引出後句。"
@@ -9089,28 +9089,28 @@
       "type": "reorder",
       "typeLabel": "句子重組",
       "promptZh": "請將下列語塊重組為通順的日文句子（留意「だけでなく」與「べきだ」）。",
-      "promptJp": "「報社不只要追求即時性，更應該徹底查證事實的正確性。」",
-      "fullRubyJp": "<ruby>新聞社<rt>しんぶんしゃ</rt></ruby>は<ruby>速報性<rt>そくほうせい</rt></ruby>だけでなく、<ruby>事実<rt>じじつ</rt></ruby>の<ruby>正確<rt>せいかく</rt></ruby>さを<ruby>徹底的<rt>てっていてき</rt></ruby>に<ruby>検証<rt>けんしょう</rt></ruby>すべきだ。",
-      "tts": "新聞社は速報性だけでなく、事実の正確さを徹底的に検証すべきだ。",
+      "promptJp": "「報社不只要重視即時性，更應該徹底查證事實的正確性。」",
+      "fullRubyJp": "<ruby>新聞社<rt>しんぶんしゃ</rt></ruby>は<ruby>速報性<rt>そくほうせい</rt></ruby>を<ruby>重視<rt>じゅうし</rt></ruby>するだけでなく、<ruby>事実<rt>じじつ</rt></ruby>の<ruby>正確<rt>せいかく</rt></ruby>さも<ruby>徹底的<rt>てっていてき</rt></ruby>に<ruby>検証<rt>けんしょう</rt></ruby>すべきだ。",
+      "tts": "新聞社は速報性を重視するだけでなく、事実の正確さも徹底的に検証すべきだ。",
       "options": [],
       "chunks": [
         {
           "id": 0,
-          "text": "新聞社は速報性",
-          "plain": "新聞社は速報性",
-          "html": "<ruby>新聞社<rt>しんぶんしゃ</rt></ruby>は<ruby>速報性<rt>そくほうせい</rt></ruby>"
+          "text": "新聞社は速報性を",
+          "plain": "新聞社は速報性を",
+          "html": "<ruby>新聞社<rt>しんぶんしゃ</rt></ruby>は<ruby>速報性<rt>そくほうせい</rt></ruby>を"
         },
         {
           "id": 1,
-          "text": "だけでなく、",
-          "plain": "だけでなく、",
-          "html": "だけでなく、"
+          "text": "重視するだけでなく、",
+          "plain": "重視するだけでなく、",
+          "html": "<ruby>重視<rt>じゅうし</rt></ruby>するだけでなく、"
         },
         {
           "id": 2,
-          "text": "事実の正確さを",
-          "plain": "事実の正確さを",
-          "html": "<ruby>事実<rt>じじつ</rt></ruby>の<ruby>正確<rt>せいかく</rt></ruby>さを"
+          "text": "事実の正確さも",
+          "plain": "事実の正確さも",
+          "html": "<ruby>事実<rt>じじつ</rt></ruby>の<ruby>正確<rt>せいかく</rt></ruby>さも"
         },
         {
           "id": 3,
@@ -9120,11 +9120,11 @@
         }
       ],
       "answerIndex": 0,
-      "kanaReading": "しんぶんしゃはそくほうせいだけでなく、じじつのせいかくさをてっていてきにけんしょうすべきだ。",
-      "correctDisplay": "新聞社は速報性だけでなく、事実の正確さを徹底的に検証すべきだ。",
-      "wrongReason": "「だけでなく、」須緊接名詞「速報性」，而受詞「事実の正確さを」緊接他動詞「検証すべきだ」。",
+      "kanaReading": "しんぶんしゃはそくほうせいをじゅうしするだけでなく、じじつのせいかくさもてっていてきにけんしょうすべきだ。",
+      "correctDisplay": "新聞社は速報性を重視するだけでなく、事実の正確さも徹底的に検証すべきだ。",
+      "wrongReason": "「速報性を」搭配動詞「重視するだけでなく、」，後半的「事実の正確さも」則與「徹底的に検証すべきだ」呼應。",
       "explanation": "「〜だけでなく〜」引出遞進重點，句尾「〜すべきだ（サ變動詞常用 すべき）」表達新聞倫理上應盡的社會責任。",
-      "hint": "先構成「速報性だけでなく、」，再放入受詞與結尾動詞。"
+      "hint": "先構成「速報性を重視するだけでなく、」，再放入後半受詞與結尾動詞。"
     },
     {
       "id": "q_r4_54",
@@ -9273,8 +9273,8 @@
       "typeLabel": "找出不自然表達",
       "promptZh": "請從下列四句軟體與職場評論中，選出【「〜ばかりか」用法不自然】的一句。",
       "promptJp": "【<ruby>業務<rt>ぎょうむ</rt></ruby>レビュー】<ruby>論理<rt>ろんり</rt></ruby>が<ruby>不自然<rt>ふしぜん</rt></ruby>な<ruby>文<rt>ぶん</rt></ruby>を<ruby>一<rt>ひと</rt></ruby>つ<ruby>選<rt>えら</rt></ruby>びなさい。",
-      "fullRubyJp": "このソフトは<ruby>操作<rt>そうさ</rt></ruby>が<ruby>複雑<rt>ふくざつ</rt></ruby>なわりに、<ruby>機能<rt>きのう</rt></ruby>が<ruby>豊富<rt>ほうふ</rt></ruby>で<ruby>便利<rt>べんり</rt></ruby>だ。",
-      "tts": "このソフトは操作が複雑なわりに、機能が豊富で便利だ。",
+      "fullRubyJp": "このソフトは<ruby>操作<rt>そうさ</rt></ruby>が<ruby>複雑<rt>ふくざつ</rt></ruby>だが、<ruby>機能<rt>きのう</rt></ruby>が<ruby>豊富<rt>ほうふ</rt></ruby>で<ruby>便利<rt>べんり</rt></ruby>だ。",
+      "tts": "このソフトは操作が複雑だが、機能が豊富で便利だ。",
       "options": [
         "その<ruby>新製品<rt>しんせいひん</rt></ruby>は<ruby>省<rt>しょう</rt></ruby>エネ<ruby>性能<rt>せいのう</rt></ruby>が<ruby>高<rt>たか</rt></ruby>いばかりか、<ruby>価格<rt>かかく</rt></ruby>も<ruby>手頃<rt>てごろ</rt></ruby>だ。",
         "<ruby>遅刻<rt>ちこく</rt></ruby>したばかりか、<ruby>会議<rt>かいぎ</rt></ruby>の<ruby>資料<rt>しりょう</rt></ruby>まで<ruby>忘<rt>わす</rt></ruby>れてしまった。",
@@ -9282,8 +9282,8 @@
         "このソフトは<ruby>操作<rt>そうさ</rt></ruby>が<ruby>複雑<rt>ふくざつ</rt></ruby>なばかりか、<ruby>機能<rt>きのう</rt></ruby>が<ruby>豊富<rt>ほうふ</rt></ruby>で<ruby>便利<rt>べんり</rt></ruby>だ。"
       ],
       "answerIndex": 3,
-      "kanaReading": "このそふとはそうさがふくざつなわりに、きのうがほうふでべんりだ。",
-      "correctDisplay": "このソフトは操作が複雑なばかりか、機能が豊富で便利だ。（正：複雑だが／複雑なわりに）",
+      "kanaReading": "このそふとはそうさがふくざつだが、きのうがほうふでべんりだ。",
+      "correctDisplay": "このソフトは操作が複雑なばかりか、機能が豊富で便利だ。（正：複雑だが／複雑なものの）",
       "wrongReason": "前三句皆維持同方向疊加（好＋好、壞＋壞、範圍擴大），完全符合「〜ばかりか」語法。",
       "explanation": "「〜ばかりか」意為「不僅……而且甚至……」，前後評價方向必須一致（皆正面或皆負面）。前句「操作複雜（負）」接後句「功能豐富方便（正）」屬轉折，不可用「ばかりか」。",
       "hint": "「ばかりか」表示同方向的層層遞進，不能連接一褒一貶的句子。"
@@ -9897,12 +9897,12 @@
         "いたしませんか",
         "いただけませんか",
         "さしあげませんか",
-        "くださいませんかか"
+        "いらっしゃいませんか"
       ],
       "answerIndex": 1,
       "kanaReading": "いただけませんか",
       "correctDisplay": "いただけませんか",
-      "wrongReason": "「いたしませんか」是邀請一起做某事且主語不明；「さしあげる」是「給予」的謙讓語，方向相反；「くださいませんかか」多了重複的疑問助詞「か」。",
+      "wrongReason": "「いたしませんか」是邀請一起做某事且主語不明；「さしあげる」是「給予」的謙讓語，方向相反；「いらっしゃる」是「行く・来る・いる」的尊敬語，不可接在「ご記入」後。",
       "explanation": "「ご＋漢語名詞＋いただけませんか」是極具禮貌的請求句型，意為「能否請您……呢？」。在醫療院所、銀行或企業櫃檯接待時非常常用。",
       "hint": "「もらえませんか」的禮貌謙讓說法。"
     },
@@ -9920,13 +9920,13 @@
       "options": [
         "ようにしている",
         "ようになっている",
-        "ことにしているだ",
+        "ことになっている",
         "ことになった"
       ],
       "answerIndex": 0,
       "kanaReading": "ようにしている",
       "correctDisplay": "ようにしている",
-      "wrongReason": "「ようになっている」表客觀規定或構造；「ことにしているだ」接續錯誤（ている後不可加だ）；「ことになった」表外在決定的結果，非個人持續努力的習慣。",
+      "wrongReason": "「ようになっている」表客觀構造或機制；「ことになっている」表外在規定或既定安排；「ことになった」表外在決定的結果，皆非個人為了目標刻意養成的習慣。",
       "explanation": "「動詞辭書形／ない形＋ようにしている」表示個人出於某種目的，持續刻意地實踐某個習慣或努力做到某事。教育與心理學語境中常用於描述自我管理策略。",
       "hint": "表示「一直盡量／刻意做到……」。"
     },
@@ -11061,17 +11061,17 @@
       "typeLabel": "找出不自然表達",
       "promptZh": "在公司內部匯報客戶參訪行程時，下列哪一句把尊敬語和謙讓語用反了？",
       "promptJp": "【<ruby>来客<rt>らいきゃく</rt></ruby><ruby>予定<rt>よてい</rt></ruby>の<ruby>報告<rt>ほうこく</rt></ruby>】<ruby>敬語<rt>けいご</rt></ruby>の<ruby>種類<rt>しゅるい</rt></ruby>を<ruby>誤<rt>あやま</rt></ruby>っている<ruby>文<rt>ぶん</rt></ruby>を<ruby>選<rt>えら</rt></ruby>んでください。",
-      "fullRubyJp": "お<ruby>客様<rt>きゃくさま</rt></ruby>は<ruby>明日<rt>あした</rt></ruby>、<ruby>弊社<rt>へいしゃ</rt></ruby>の<ruby>工場<rt>こうじょう</rt></ruby>へお<ruby>越<rt>こ</rt></ruby>しになる<ruby>予定<rt>よてい</rt></ruby>でございます。",
-      "tts": "お客様は明日、弊社の工場へお越しになる予定でございます。",
+      "fullRubyJp": "お<ruby>客様<rt>きゃくさま</rt></ruby>は<ruby>明日<rt>あした</rt></ruby>、<ruby>当社<rt>とうしゃ</rt></ruby>の<ruby>工場<rt>こうじょう</rt></ruby>へお<ruby>越<rt>こ</rt></ruby>しになる<ruby>予定<rt>よてい</rt></ruby>でございます。",
+      "tts": "お客様は明日、当社の工場へお越しになる予定でございます。",
       "options": [
         "<ruby>先方<rt>せんぽう</rt></ruby>の<ruby>役員<rt>やくいん</rt></ruby>の<ruby>方<rt>かた</rt></ruby>が<ruby>三名<rt>さんめい</rt></ruby>いらっしゃいます。",
         "<ruby>工場長<rt>こうじょうちょう</rt></ruby>が<ruby>直接<rt>ちょくせつ</rt></ruby><ruby>製造<rt>せいぞう</rt></ruby>ラインをご<ruby>案内<rt>あんない</rt></ruby>する<ruby>予定<rt>よてい</rt></ruby>です。",
         "お<ruby>土産<rt>みやげ</rt></ruby>の<ruby>手配<rt>てはい</rt></ruby>もすでに<ruby>完了<rt>かんりょう</rt></ruby>しております。",
-        "お<ruby>客様<rt>きゃくさま</rt></ruby>は<ruby>明日<rt>あした</rt></ruby>、<ruby>弊社<rt>へいしゃ</rt></ruby>の<ruby>工場<rt>こうじょう</rt></ruby>へ<ruby>伺<rt>うかが</rt></ruby>う<ruby>予定<rt>よてい</rt></ruby>でございます。"
+        "お<ruby>客様<rt>きゃくさま</rt></ruby>は<ruby>明日<rt>あした</rt></ruby>、<ruby>当社<rt>とうしゃ</rt></ruby>の<ruby>工場<rt>こうじょう</rt></ruby>へ<ruby>伺<rt>うかが</rt></ruby>う<ruby>予定<rt>よてい</rt></ruby>でございます。"
       ],
       "answerIndex": 3,
-      "kanaReading": "おきゃくさまはあした、へいしゃのこうじょうへうかがうよていでございます。",
-      "correctDisplay": "お客様は明日、弊社の工場へ伺う予定でございます。（伺う為謙讓語）",
+      "kanaReading": "おきゃくさまはあした、とうしゃのこうじょうへうかがうよていでございます。",
+      "correctDisplay": "お客様は明日、当社の工場へ伺う予定でございます。（伺う為謙讓語）",
       "wrongReason": "「伺う」是謙讓語，只能用來壓低自己去拜訪對方的動作；用於客戶的行動會變成貶低客戶、抬高本公司，極為失禮。",
       "explanation": "描述客戶來訪本公司時，應使用尊敬語「お越しになる」「ご来社になる」或「いらっしゃる」，絕不可誤用謙讓語「伺う」「参る」。",
       "hint": "確認「伺う」究竟是尊敬語還是謙讓語。"
@@ -11336,7 +11336,7 @@
       "answerIndex": 2,
       "kanaReading": "もうしあげます",
       "correctDisplay": "申し上げます",
-      "wrongReason": "「存じ上げます」用於「認識・知道」某人或深感榮幸；「おっしゃいます」為尊敬語不可用於自己；「頂戴いたします」意為收領，不可接在「御礼」後表達致謝。",
+      "wrongReason": "「存じ上げます」為「知る」的謙讓語，僅用於「認識・知道」某人或其相關事務（表達「深感榮幸」等「思う」之意應用「存じます」）；「おっしゃいます」為尊敬語不可用於自己；「頂戴いたします」意為收領，不可接在「御礼」後表達致謝。",
       "explanation": "「日頃より格別のご高配を賜り、厚く御礼申し上げます（承蒙平日格外關照，謹致上深摯謝意）」是日本商界最莊重的書信與演講開頭。注意「賜る（たまわる）」為「もらう」的謙讓語，「申し上げる」為「言う」的最高謙讓語。",
       "hint": "「致上深摯謝意」的最高階商務謙讓語動詞。"
     },
@@ -11508,8 +11508,8 @@
       "typeLabel": "找出不自然表達",
       "promptZh": "在企業人事升遷就任致詞中，下列哪一句發生了日本母語者也常誤用的高階慣用語錯誤？",
       "promptJp": "【<ruby>役員<rt>やくいん</rt></ruby><ruby>就任<rt>しゅうにん</rt></ruby>の<ruby>挨拶<rt>あいさつ</rt></ruby>】<ruby>言葉<rt>ことば</rt></ruby>の<ruby>意味<rt>いみ</rt></ruby>を<ruby>誤用<rt>ごよう</rt></ruby>している<ruby>文<rt>ぶん</rt></ruby>を<ruby>一<rt>ひと</rt></ruby>つ<ruby>選<rt>えら</rt></ruby>んでください。",
-      "fullRubyJp": "<ruby>私<rt>わたくし</rt></ruby>のような<ruby>未熟者<rt>みじゅくもの</rt></ruby>には、この<ruby>重責<rt>じゅうせき</rt></ruby>は<ruby>力不足<rt>ちからぶそく</rt></ruby>でございますが、<ruby>精一杯<rt>せいいっぱい</rt></ruby><ruby>努<rt>つと</rt></ruby>めて<ruby>参<rt>まい</rt></ruby>ります。",
-      "tts": "私のような未熟者には、この重責は力不足でございますが、精一杯努めて参ります。",
+      "fullRubyJp": "この<ruby>重責<rt>じゅうせき</rt></ruby>を<ruby>担<rt>にな</rt></ruby>うには、<ruby>私<rt>わたくし</rt></ruby>のような<ruby>未熟者<rt>みじゅくもの</rt></ruby>では<ruby>力不足<rt>ちからぶそく</rt></ruby>でございますが、<ruby>精一杯<rt>せいいっぱい</rt></ruby><ruby>努<rt>つと</rt></ruby>めて<ruby>参<rt>まい</rt></ruby>ります。",
+      "tts": "この重責を担うには、私のような未熟者では力不足でございますが、精一杯努めて参ります。",
       "options": [
         "<ruby>身<rt>み</rt></ruby>に<ruby>余<rt>あま</rt></ruby>る<ruby>大任<rt>たいにん</rt></ruby>を<ruby>拝命<rt>はいめい</rt></ruby>し、<ruby>身<rt>み</rt></ruby>の<ruby>引<rt>ひ</rt></ruby>き<ruby>締<rt>し</rt></ruby>まる<ruby>思<rt>おも</rt></ruby>いでございます。",
         "<ruby>先輩<rt>せんぱい</rt></ruby><ruby>諸氏<rt>しょし</rt></ruby>の<ruby>築<rt>きず</rt></ruby>かれた<ruby>伝統<rt>でんとう</rt></ruby>を<ruby>受<rt>う</rt></ruby>け<ruby>継<rt>つ</rt></ruby>ぐ<ruby>所存<rt>しょぞん</rt></ruby>でございます。",
@@ -12061,7 +12061,7 @@
       "promptZh": "學術研討會上主持人請教授發表看法，請選出教授最自然得體的謙讓敬語回應。",
       "promptJp": "<ruby>司会<rt>しかい</rt></ruby>「<ruby>先生<rt>せんせい</rt></ruby>、この<ruby>仮説<rt>かせつ</rt></ruby>の<ruby>妥当性<rt>だとうせい</rt></ruby>について、<ruby>一言<rt>ひとこと</rt></ruby>いただけますでしょうか。」<ruby>教授<rt>きょうじゅ</rt></ruby>「はい、<ruby>私見<rt>しけん</rt></ruby>を<ruby>述<rt>の</rt></ruby>べ<span class=\"q-blank\">（　）</span>。」",
       "fullRubyJp": "<ruby>司会<rt>しかい</rt></ruby>「<ruby>先生<rt>せんせい</rt></ruby>、この<ruby>仮説<rt>かせつ</rt></ruby>の<ruby>妥当性<rt>だとうせい</rt></ruby>について、<ruby>一言<rt>ひとこと</rt></ruby>いただけますでしょうか。」<ruby>教授<rt>きょうじゅ</rt></ruby>「はい、<ruby>私見<rt>しけん</rt></ruby>を<ruby>述<rt>の</rt></ruby>べ<span class=\"q-answer\">させていただきます</span>。」",
-      "tts": "はい、私見を述べさせていただきます。",
+      "tts": "先生、この仮説の妥当性について、一言いただけますでしょうか。はい、私見を述べさせていただきます。",
       "options": [
         "させていただきます",
         "さしあげます",
@@ -12085,7 +12085,7 @@
       "promptZh": "記者採訪博物館館長關於古畫修復的過程，請選出館長最自然得體的正式回應。",
       "promptJp": "<ruby>記者<rt>きしゃ</rt></ruby>「<ruby>修復<rt>しゅうふく</rt></ruby><ruby>作業<rt>さぎょう</rt></ruby>で<ruby>最<rt>もっと</rt></ruby>もご<ruby>苦労<rt>くろう</rt></ruby>された<ruby>点<rt>てん</rt></ruby>はどちらですか。」<ruby>館長<rt>かんちょう</rt></ruby>「<ruby>当時<rt>とうじ</rt></ruby>の<ruby>顔料<rt>がんりょう</rt></ruby>を<ruby>再現<rt>さいげん</rt></ruby>するのに、<ruby>大変<rt>たいへん</rt></ruby><span class=\"q-blank\">（　）</span>。」",
       "fullRubyJp": "<ruby>記者<rt>きしゃ</rt></ruby>「<ruby>修復<rt>しゅうふく</rt></ruby><ruby>作業<rt>さぎょう</rt></ruby>で<ruby>最<rt>もっと</rt></ruby>もご<ruby>苦労<rt>くろう</rt></ruby>された<ruby>点<rt>てん</rt></ruby>はどちらですか。」<ruby>館長<rt>かんちょう</rt></ruby>「<ruby>当時<rt>とうじ</rt></ruby>の<ruby>顔料<rt>がんりょう</rt></ruby>を<ruby>再現<rt>さいげん</rt></ruby>するのに、<ruby>大変<rt>たいへん</rt></ruby><span class=\"q-answer\"><ruby>苦心<rt>くしん</rt></ruby>いたしました</span>。」",
-      "tts": "当時の顔料を再現するのに、大変苦心いたしました。",
+      "tts": "修復作業で最もご苦労された点はどちらですか。当時の顔料を再現するのに、大変苦心いたしました。",
       "options": [
         "ご<ruby>苦労<rt>くろう</rt></ruby>されました",
         "<ruby>苦心<rt>くしん</rt></ruby>いたしました",
@@ -12710,9 +12710,9 @@
       "type": "reading",
       "typeLabel": "漢字讀音",
       "promptZh": "請選出畫線漢字「漸進」的正確讀音。",
-      "promptJp": "<ruby>急進的<rt>きゅうしんてき</rt></ruby>な<ruby>革命<rt>かくめい</rt></ruby>よりも、<ruby>制度<rt>せいど</rt></ruby>の<ruby>対話<rt>たいわ</rt></ruby>と<ruby>修正<rt>しゅうせい</rt></ruby>を<ruby>重<rt>かさ</rt></ruby>ねる<span class=\"q-target\">漸進</span><ruby>的<rt>てき</rt></ruby>な<ruby>改革<rt>かいかく</rt></ruby>が<ruby>望<rt>のぞ</rt></ruby>ましい。",
-      "fullRubyJp": "<ruby>急進的<rt>きゅうしんてき</rt></ruby>な<ruby>革命<rt>かくめい</rt></ruby>よりも、<ruby>制度<rt>せいど</rt></ruby>の<ruby>対話<rt>たいわ</rt></ruby>と<ruby>修正<rt>しゅうせい</rt></ruby>を<ruby>重<rt>かさ</rt></ruby>ねる<ruby>漸進<rt>ぜんしん</rt></ruby><ruby>的<rt>てき</rt></ruby>な<ruby>改革<rt>かいかく</rt></ruby>が<ruby>望<rt>のぞ</rt></ruby>ましい。",
-      "tts": "急進的な革命よりも、制度の対話と修正を重ねる漸進的な改革が望ましい。",
+      "promptJp": "<ruby>急進的<rt>きゅうしんてき</rt></ruby>な<ruby>革命<rt>かくめい</rt></ruby>よりも、<ruby>対話<rt>たいわ</rt></ruby>と<ruby>制度<rt>せいど</rt></ruby>の<ruby>修正<rt>しゅうせい</rt></ruby>を<ruby>重<rt>かさ</rt></ruby>ねる<span class=\"q-target\">漸進</span><ruby>的<rt>てき</rt></ruby>な<ruby>改革<rt>かいかく</rt></ruby>が<ruby>望<rt>のぞ</rt></ruby>ましい。",
+      "fullRubyJp": "<ruby>急進的<rt>きゅうしんてき</rt></ruby>な<ruby>革命<rt>かくめい</rt></ruby>よりも、<ruby>対話<rt>たいわ</rt></ruby>と<ruby>制度<rt>せいど</rt></ruby>の<ruby>修正<rt>しゅうせい</rt></ruby>を<ruby>重<rt>かさ</rt></ruby>ねる<ruby>漸進<rt>ぜんしん</rt></ruby><ruby>的<rt>てき</rt></ruby>な<ruby>改革<rt>かいかく</rt></ruby>が<ruby>望<rt>のぞ</rt></ruby>ましい。",
+      "tts": "急進的な革命よりも、対話と制度の修正を重ねる漸進的な改革が望ましい。",
       "options": [
         "ざんしん",
         "せんしん",
@@ -12830,9 +12830,9 @@
       "type": "particle",
       "typeLabel": "助詞辨析",
       "promptZh": "請選出最適合填入括號中的高階表現。",
-      "promptJp": "<ruby>貴重<rt>きちょう</rt></ruby>な<ruby>文化<rt>ぶんか</rt></ruby><ruby>遺産<rt>いさん</rt></ruby>が<ruby>戦火<rt>せんか</rt></ruby>によって<ruby>失<rt>うしな</rt></ruby>われたとの<ruby>報<rt>ほう</rt></ruby>に<ruby>接<rt>せっ</rt></ruby>し、<ruby>深<rt>ふか</rt></ruby>い<ruby>哀悼<rt>あいとう</rt></ruby>の<ruby>念<rt>ねん</rt></ruby><span class=\"q-blank\">（　）</span>。",
-      "fullRubyJp": "<ruby>貴重<rt>きちょう</rt></ruby>な<ruby>文化<rt>ぶんか</rt></ruby><ruby>遺産<rt>いさん</rt></ruby>が<ruby>戦火<rt>せんか</rt></ruby>によって<ruby>失<rt>うしな</rt></ruby>われたとの<ruby>報<rt>ほう</rt></ruby>に<ruby>接<rt>せっ</rt></ruby>し、<ruby>深<rt>ふか</rt></ruby>い<ruby>哀悼<rt>あいとう</rt></ruby>の<ruby>念<rt>ねん</rt></ruby><span class=\"q-answer\">を<ruby>禁<rt>きん</rt></ruby>じ<ruby>得<rt>え</rt></ruby>ない</span>。",
-      "tts": "貴重な文化遺産が戦火によって失われたとの報に接し、深い哀悼の念を禁じ得ない。",
+      "promptJp": "<ruby>長年<rt>ながねん</rt></ruby><ruby>文化<rt>ぶんか</rt></ruby><ruby>遺産<rt>いさん</rt></ruby>の<ruby>保護<rt>ほご</rt></ruby>に<ruby>尽力<rt>じんりょく</rt></ruby>された<ruby>恩師<rt>おんし</rt></ruby>のご<ruby>逝去<rt>せいきょ</rt></ruby>の<ruby>報<rt>ほう</rt></ruby>に<ruby>接<rt>せっ</rt></ruby>し、<ruby>深<rt>ふか</rt></ruby>い<ruby>哀悼<rt>あいとう</rt></ruby>の<ruby>念<rt>ねん</rt></ruby><span class=\"q-blank\">（　）</span>。",
+      "fullRubyJp": "<ruby>長年<rt>ながねん</rt></ruby><ruby>文化<rt>ぶんか</rt></ruby><ruby>遺産<rt>いさん</rt></ruby>の<ruby>保護<rt>ほご</rt></ruby>に<ruby>尽力<rt>じんりょく</rt></ruby>された<ruby>恩師<rt>おんし</rt></ruby>のご<ruby>逝去<rt>せいきょ</rt></ruby>の<ruby>報<rt>ほう</rt></ruby>に<ruby>接<rt>せっ</rt></ruby>し、<ruby>深<rt>ふか</rt></ruby>い<ruby>哀悼<rt>あいとう</rt></ruby>の<ruby>念<rt>ねん</rt></ruby><span class=\"q-answer\">を<ruby>禁<rt>きん</rt></ruby>じ<ruby>得<rt>え</rt></ruby>ない</span>。",
+      "tts": "長年文化遺産の保護に尽力された恩師のご逝去の報に接し、深い哀悼の念を禁じ得ない。",
       "options": [
         "に<ruby>堪<rt>た</rt></ruby>えない",
         "を<ruby>禁<rt>きん</rt></ruby>じ<ruby>得<rt>え</rt></ruby>ない",
@@ -12926,9 +12926,9 @@
       "type": "conjugation",
       "typeLabel": "動詞・敬語活用",
       "promptZh": "請選出最適合填入括號中的高階書面表現。",
-      "promptJp": "<ruby>事実<rt>じじつ</rt></ruby>を<ruby>歪曲<rt>わいきょく</rt></ruby>した<ruby>扇情的<rt>せんじょうてき</rt></ruby>な<ruby>報道<rt>ほうどう</rt></ruby>は、<ruby>良識<rt>りょうしき</rt></ruby>ある<ruby>市民<rt>しみん</rt></ruby>の<ruby>鑑賞<rt>かんしょう</rt></ruby><span class=\"q-blank\">（　）</span>。",
-      "fullRubyJp": "<ruby>事実<rt>じじつ</rt></ruby>を<ruby>歪曲<rt>わいきょく</rt></ruby>した<ruby>扇情的<rt>せんじょうてき</rt></ruby>な<ruby>報道<rt>ほうどう</rt></ruby>は、<ruby>良識<rt>りょうしき</rt></ruby>ある<ruby>市民<rt>しみん</rt></ruby>の<ruby>鑑賞<rt>かんしょう</rt></ruby><span class=\"q-answer\">に<ruby>堪<rt>た</rt></ruby>えない</span>。",
-      "tts": "事実を歪曲した扇情的な報道は、良識ある市民の鑑賞に堪えない。",
+      "promptJp": "<ruby>内容<rt>ないよう</rt></ruby>が<ruby>余<rt>あま</rt></ruby>りにも<ruby>稚拙<rt>ちせつ</rt></ruby>なその<ruby>映画<rt>えいが</rt></ruby>は、<ruby>到底<rt>とうてい</rt></ruby><ruby>大人<rt>おとな</rt></ruby>の<ruby>鑑賞<rt>かんしょう</rt></ruby><span class=\"q-blank\">（　）</span>。",
+      "fullRubyJp": "<ruby>内容<rt>ないよう</rt></ruby>が<ruby>余<rt>あま</rt></ruby>りにも<ruby>稚拙<rt>ちせつ</rt></ruby>なその<ruby>映画<rt>えいが</rt></ruby>は、<ruby>到底<rt>とうてい</rt></ruby><ruby>大人<rt>おとな</rt></ruby>の<ruby>鑑賞<rt>かんしょう</rt></ruby><span class=\"q-answer\">に<ruby>堪<rt>た</rt></ruby>えない</span>。",
+      "tts": "内容が余りにも稚拙なその映画は、到底大人の鑑賞に堪えない。",
       "options": [
         "に<ruby>堪<rt>た</rt></ruby>えない",
         "に<ruby>堪<rt>た</rt></ruby>える",
@@ -12938,8 +12938,8 @@
       "answerIndex": 0,
       "kanaReading": "にたえない",
       "correctDisplay": "に堪えない",
-      "wrongReason": "「に堪える」為肯定（經得起鑑賞）；「に足りる」意為值得；「に余る」表超出限度（多接「想像に余る」「身に余る」），皆與批判歪曲報導不合。",
-      "explanation": "「（鑑賞・読む・聞く等）＋に堪えない」意為「粗劣或不當到令人看不下去／聽不下去（不堪入目、不堪卒讀）」。另需注意「感謝に堪えない」則表情感深切之極。",
+      "wrongReason": "「に堪える」為肯定（經得起鑑賞）；「に足りる」意為值得；「に余る」表超出限度（多接「想像に余る」「身に余る」），皆與「到底〜（完全不…）」的否定批評語氣不合。",
+      "explanation": "「鑑賞に堪えない」意為藝術作品、電影、文學等的品質過於拙劣，「不值得欣賞、完全無法入目」。另需注意「感謝に堪えない」「遺憾に堪えない」等「感情名詞＋に堪えない」則表示情感深切至極，切勿混淆。",
       "hint": "表達「低俗歪曲到令人不忍卒睹、不堪鑑賞」。"
     },
     {
@@ -13072,7 +13072,7 @@
       "promptZh": "在國際學術頒獎典禮上，請選出獲獎者致謝時最典雅得體的高階敬語表現。",
       "promptJp": "<ruby>司会<rt>しかい</rt></ruby>「<ruby>名誉<rt>めいよ</rt></ruby><ruby>学術賞<rt>がくじゅつしょう</rt></ruby>のご<ruby>受賞<rt>じゅしょう</rt></ruby>、<ruby>誠<rt>まこと</rt></ruby>におめでとうございます。」<ruby>受賞者<rt>じゅしょうしゃ</rt></ruby>「<ruby>身<rt>み</rt></ruby>に<ruby>余<rt>あま</rt></ruby>る<ruby>光栄<rt>こうえい</rt></ruby>に<ruby>存<rt>ぞん</rt></ruby>じます。ひとえに<ruby>皆様<rt>みなさま</rt></ruby>のご<ruby>支援<rt>しえん</rt></ruby>の<span class=\"q-blank\">（　）</span>。」",
       "fullRubyJp": "<ruby>司会<rt>しかい</rt></ruby>「<ruby>名誉<rt>めいよ</rt></ruby><ruby>学術賞<rt>がくじゅつしょう</rt></ruby>のご<ruby>受賞<rt>じゅしょう</rt></ruby>、<ruby>誠<rt>まこと</rt></ruby>におめでとうございます。」<ruby>受賞者<rt>じゅしょうしゃ</rt></ruby>「<ruby>身<rt>み</rt></ruby>に<ruby>余<rt>あま</rt></ruby>る<ruby>光栄<rt>こうえい</rt></ruby>に<ruby>存<rt>ぞん</rt></ruby>じます。ひとえに<ruby>皆様<rt>みなさま</rt></ruby>のご<ruby>支援<rt>しえん</rt></ruby>の<span class=\"q-answer\"><ruby>賜物<rt>たまもの</rt></ruby>でございます</span>。」",
-      "tts": "身に余る光栄に存じます。ひとえに皆様のご支援の賜物でございます。",
+      "tts": "名誉学術賞のご受賞、誠におめでとうございます。身に余る光栄に存じます。ひとえに皆様のご支援の賜物でございます。",
       "options": [
         "<ruby>結果<rt>けっか</rt></ruby>であります",
         "せいでございます",
@@ -13230,8 +13230,8 @@
       "typeLabel": "句子重組",
       "promptZh": "請重組以下語塊，表達「一旦翻譯失去了原文所擁有的細膩韻律，作品原有的餘韻便會蕩然無存。」（提示：使用「跡形もなく」）",
       "promptJp": "「一旦翻譯失去了原文所擁有的細膩韻律，作品原有的餘韻便會蕩然無存。」",
-      "fullRubyJp": "<ruby>翻訳<rt>ほんやく</rt></ruby>が<ruby>原文<rt>げんぶん</rt></ruby>の<ruby>持<rt>も</rt></ruby>つ<ruby>繊細<rt>せんさい</rt></ruby>な<ruby>韻律<rt>いんりつ</rt></ruby>を<ruby>失<rt>うしな</rt></ruby>えば、<ruby>作品<rt>さくひん</rt></ruby><ruby>本来<rt>ほんらい</rt></ruby>の<ruby>余韻<rt>よいん</rt></ruby>は<ruby>跡形<rt>あとかた</rt></ruby>もなく<ruby>損<rt>そこ</rt></ruby>なわれてしまう。",
-      "tts": "翻訳が原文の持つ繊細な韻律を失えば、作品本来の余韻は跡形もなく損なわれてしまう。",
+      "fullRubyJp": "<ruby>翻訳<rt>ほんやく</rt></ruby>が<ruby>原文<rt>げんぶん</rt></ruby>の<ruby>持<rt>も</rt></ruby>つ<ruby>繊細<rt>せんさい</rt></ruby>な<ruby>韻律<rt>いんりつ</rt></ruby>を<ruby>失<rt>うしな</rt></ruby>えば、<ruby>作品<rt>さくひん</rt></ruby><ruby>本来<rt>ほんらい</rt></ruby>の<ruby>余韻<rt>よいん</rt></ruby>は<ruby>跡形<rt>あとかた</rt></ruby>もなく<ruby>消<rt>き</rt></ruby>え<ruby>去<rt>さ</rt></ruby>ってしまう。",
+      "tts": "翻訳が原文の持つ繊細な韻律を失えば、作品本来の余韻は跡形もなく消え去ってしまう。",
       "options": [],
       "chunks": [
         {
@@ -13254,16 +13254,16 @@
         },
         {
           "id": 3,
-          "text": "跡形もなく損なわれてしまう。",
-          "plain": "跡形もなく損なわれてしまう。",
-          "html": "<ruby>跡形<rt>あとかた</rt></ruby>もなく<ruby>損<rt>そこ</rt></ruby>なわれてしまう。"
+          "text": "跡形もなく消え去ってしまう。",
+          "plain": "跡形もなく消え去ってしまう。",
+          "html": "<ruby>跡形<rt>あとかた</rt></ruby>もなく<ruby>消<rt>き</rt></ruby>え<ruby>去<rt>さ</rt></ruby>ってしまう。"
         }
       ],
       "answerIndex": 0,
-      "kanaReading": "ほんやくがげんぶんのもつせんさいないんりつをうしなえば、さくひんほんらいのよいんはあとかたもなくそこなわれてしまう。",
-      "correctDisplay": "翻訳が原文の持つ繊細な韻律を失えば、作品本来の余韻は跡形もなく損なわれてしまう。",
+      "kanaReading": "ほんやくがげんぶんのもつせんさいないんりつをうしなえば、さくひんほんらいのよいんはあとかたもなくきえさってしまう。",
+      "correctDisplay": "翻訳が原文の持つ繊細な韻律を失えば、作品本来の余韻は跡形もなく消え去ってしまう。",
       "wrongReason": "「原文の持つ」修飾「繊細な韻律」，構成條件子句「〜を失えば、」；後半主語「作品本来の余韻は」對應「跡形もなく損なわれてしまう」。",
-      "explanation": "「跡形もなく（あとかたもなく）」意為「蕩然無存、不留一絲痕跡」，搭配「損なわれる（受損）」生動表達翻譯美學中的損失。",
+      "explanation": "「跡形もなく（あとかたもなく）」意為「蕩然無存、不留一絲痕跡」，搭配「消え去る（消失殆盡）」生動表達翻譯美學中的損失。",
       "hint": "「原文の持つ」後面必須接被修飾的名詞片語「繊細な韻律」。"
     },
     {
@@ -13417,7 +13417,7 @@
       "tts": "先駆的な業績を残した恩師の研究姿勢を模範として、今後も精進してまいりたい。",
       "options": [
         "<ruby>先駆的<rt>せんくてき</rt></ruby>な<ruby>業績<rt>ぎょうせき</rt></ruby>を<ruby>残<rt>のこ</rt></ruby>した<ruby>恩師<rt>おんし</rt></ruby>の<ruby>研究<rt>けんきゅう</rt></ruby><ruby>姿勢<rt>しせい</rt></ruby>を<ruby>他山<rt>たざん</rt></ruby>の<ruby>石<rt>いし</rt></ruby>として、<ruby>今後<rt>こんご</rt></ruby>も<ruby>精進<rt>しょうじん</rt></ruby>してまいりたい。",
-        "<ruby>他国<rt>たこく</rt></ruby>で<ruby>起<rt>お</rt></ruby>きた<ruby>政策<rt>せいさく</rt></ruby>の<ruby>失敗<rt>しっぱい</rt></ruby>を<ruby>他山<rt>たざん</rt></ruby>の<ruby>石<rt>いし</rt></ruby>とし、<ruby>法整備<rt>ほうせいび</rt></ruby>の<ruby>欠陥<rt>けっかん</rt></ruby>を<ruby>未然<rt>みぜん</rt></ruby>に<ruby>見直<rt>みなお</rt></ruby>すべきだ。",
+        "<ruby>他国<rt>たこく</rt></ruby>で<ruby>起<rt>お</rt></ruby>きた<ruby>政策<rt>せいさく</rt></ruby>の<ruby>失敗<rt>しっぱい</rt></ruby>を<ruby>他山<rt>たざん</rt></ruby>の<ruby>石<rt>いし</rt></ruby>とし、<ruby>自国<rt>じこく</rt></ruby>の<ruby>法整備<rt>ほうせいび</rt></ruby>を<ruby>見直<rt>みなお</rt></ruby>すべきだ。",
         "<ruby>前任者<rt>ぜんにんしゃ</rt></ruby>の<ruby>独断的<rt>どくだんてき</rt></ruby>な<ruby>運営<rt>うんえい</rt></ruby>が<ruby>招<rt>まね</rt></ruby>いた<ruby>混乱<rt>こんらん</rt></ruby>を<ruby>他山<rt>たざん</rt></ruby>の<ruby>石<rt>いし</rt></ruby>として、<ruby>合意<rt>ごうい</rt></ruby><ruby>形成<rt>けいせい</rt></ruby>を<ruby>重視<rt>じゅうし</rt></ruby>した。",
         "<ruby>歴史<rt>れきし</rt></ruby>に<ruby>刻<rt>きざ</rt></ruby>まれた<ruby>幾多<rt>いくた</rt></ruby>の<ruby>過<rt>あやま</rt></ruby>ちを<ruby>他山<rt>たざん</rt></ruby>の<ruby>石<rt>いし</rt></ruby>とすることで、<ruby>人類<rt>じんるい</rt></ruby>は<ruby>知恵<rt>ちえ</rt></ruby>を<ruby>育<rt>はぐく</rt></ruby>んできた。"
       ],
@@ -13615,7 +13615,7 @@
           "tts": "しかし近年、デジタル技術の普及により通勤風景は徐々に変わりつつあります。鉄道会社のアプリでは、車両ごとの混雑状況をリアルタイムで確認でき、空いている時間帯を選ぶとポイントが貯まる仕組みも広がっています。"
         },
         {
-          "html": "さらに<ruby>在宅勤務<rt>ざいたくきんむ</rt></ruby>や<ruby>時差出勤<rt>じさしゅっきん</rt></ruby>を<ruby>導入<rt>どうにゅう</rt></ruby>する<ruby>企業<rt>きぎょう</rt></ruby>が<ruby>増<rt>ふ</rt></ruby>えたことで、<span class=\"key-sentence\" data-q=\"1\">「<ruby>毎日<rt>まいにち</rt></ruby><ruby>同<rt>おな</rt></ruby>じ<ruby>時刻<rt>じこく</rt></ruby>に<ruby>全員<rt>ぜんいん</rt></ruby>が<ruby>出社<rt>しゅっしゃ</rt></ruby>する」という<ruby>常識<rt>じょうしき</rt></ruby>そのものが<ruby>見直<rt>みなお</rt></ruby>され<ruby>始<rt>はじ</rt></ruby>めました。</span><span class=\"key-sentence\" data-q=\"2\"><ruby>技術<rt>ぎじゅつ</rt></ruby>の<ruby>力<rt>ちから</rt></ruby>と<ruby>働<rt>はたら</rt></ruby>き<ruby>方<rt>かた</rt></ruby>の<ruby>柔軟化<rt>じゅうなんか</rt></ruby>が<ruby>両輪<rt>りょうりん</rt></ruby>となってこそ、<ruby>快適<rt>かいてき</rt></ruby>な<ruby>都市生活<rt>としせいかつ</rt></ruby>が<ruby>実現<rt>じつげん</rt></ruby>するのです。</span>",
+          "html": "<span class=\"key-sentence\" data-q=\"1\">さらに<ruby>在宅勤務<rt>ざいたくきんむ</rt></ruby>や<ruby>時差出勤<rt>じさしゅっきん</rt></ruby>を<ruby>導入<rt>どうにゅう</rt></ruby>する<ruby>企業<rt>きぎょう</rt></ruby>が<ruby>増<rt>ふ</rt></ruby>えたことで、「<ruby>毎日<rt>まいにち</rt></ruby><ruby>同<rt>おな</rt></ruby>じ<ruby>時刻<rt>じこく</rt></ruby>に<ruby>全員<rt>ぜんいん</rt></ruby>が<ruby>出社<rt>しゅっしゃ</rt></ruby>する」という<ruby>常識<rt>じょうしき</rt></ruby>そのものが<ruby>見直<rt>みなお</rt></ruby>され<ruby>始<rt>はじ</rt></ruby>めました。</span><span class=\"key-sentence\" data-q=\"2\"><ruby>技術<rt>ぎじゅつ</rt></ruby>の<ruby>力<rt>ちから</rt></ruby>と<ruby>働<rt>はたら</rt></ruby>き<ruby>方<rt>かた</rt></ruby>の<ruby>柔軟化<rt>じゅうなんか</rt></ruby>が<ruby>両輪<rt>りょうりん</rt></ruby>となってこそ、<ruby>快適<rt>かいてき</rt></ruby>な<ruby>都市生活<rt>としせいかつ</rt></ruby>が<ruby>実現<rt>じつげん</rt></ruby>するのです。</span>",
           "tts": "さらに在宅勤務や時差出勤を導入する企業が増えたことで、「毎日同じ時刻に全員が出社する」という常識そのものが見直され始めました。技術の力と働き方の柔軟化が両輪となってこそ、快適な都市生活が実現するのです。"
         }
       ],
@@ -13871,7 +13871,7 @@
           "tts": "日本を鉄道で旅するとき、多くの旅行者が心待ちにしているのが駅のホームや車内で売られる「駅弁」です。長距離の移動は新幹線や特急列車でずっと快適になりましたが、移りゆく車窓の景色を眺めながら弁当のふたを開ける楽しみは、明治時代から今も変わらず人々に親しまれています。"
         },
         {
-          "html": "<span class=\"key-sentence\" data-q=\"0\"><ruby>駅弁<rt>えきべん</rt></ruby>の<ruby>最大<rt>さいだい</rt></ruby>の<ruby>特徴<rt>とくちょう</rt></ruby>は、<ruby>海<rt>うみ</rt></ruby>の<ruby>幸<rt>さち</rt></ruby>や<ruby>山<rt>やま</rt></ruby>の<ruby>恵<rt>めぐ</rt></ruby>みなど、その<ruby>土地<rt>とち</rt></ruby>ならではの<ruby>旬<rt>しゅん</rt></ruby>の<ruby>特産品<rt>とくさんひん</rt></ruby>や<ruby>伝統的<rt>でんとうてき</rt></ruby>な<ruby>郷土料理<rt>きょうどりょうり</rt></ruby>が<ruby>彩<rt>いろど</rt></ruby>りよく<ruby>詰<rt>つ</rt></ruby>め<ruby>込<rt>こ</rt></ruby>まれている<ruby>点<rt>てん</rt></ruby>にあります。</span><span class=\"key-sentence\" data-q=\"1\"><ruby>冷<rt>さ</rt></ruby>めてもおいしく<ruby>食<rt>た</rt></ruby>べられるよう<ruby>ご飯<rt>はん</rt></ruby>の<ruby>炊<rt>た</rt></ruby>き<ruby>方<rt>かた</rt></ruby>や<ruby>味付<rt>あじつ</rt></ruby>けが<ruby>丁寧<rt>ていねい</rt></ruby>に<ruby>工夫<rt>くふう</rt></ruby>され、<ruby>容器<rt>ようき</rt></ruby>の<ruby>形<rt>かたち</rt></ruby>や<ruby>掛<rt>か</rt></ruby>け<ruby>紙<rt>がみ</rt></ruby>のデザインにまで<ruby>旅情<rt>りょじょう</rt></ruby>を<ruby>誘<rt>さそ</rt></ruby>う<ruby>遊<rt>あそ</rt></ruby>び<ruby>心<rt>ごころ</rt></ruby>が<ruby>見<rt>み</rt></ruby>られます。</span>",
+          "html": "<span class=\"key-sentence\" data-q=\"0\"><ruby>駅弁<rt>えきべん</rt></ruby>の<ruby>最大<rt>さいだい</rt></ruby>の<ruby>特徴<rt>とくちょう</rt></ruby>は、<ruby>海<rt>うみ</rt></ruby>の<ruby>幸<rt>さち</rt></ruby>や<ruby>山<rt>やま</rt></ruby>の<ruby>恵<rt>めぐ</rt></ruby>みなど、その<ruby>土地<rt>とち</rt></ruby>ならではの<ruby>旬<rt>しゅん</rt></ruby>の<ruby>特産品<rt>とくさんひん</rt></ruby>や<ruby>伝統的<rt>でんとうてき</rt></ruby>な<ruby>郷土料理<rt>きょうどりょうり</rt></ruby>が<ruby>彩<rt>いろど</rt></ruby>りよく<ruby>詰<rt>つ</rt></ruby>め<ruby>込<rt>こ</rt></ruby>まれている<ruby>点<rt>てん</rt></ruby>にあります。</span><span class=\"key-sentence\" data-q=\"1\"><ruby>冷<rt>さ</rt></ruby>めてもおいしく<ruby>食<rt>た</rt></ruby>べられるようご<ruby>飯<rt>はん</rt></ruby>の<ruby>炊<rt>た</rt></ruby>き<ruby>方<rt>かた</rt></ruby>や<ruby>味付<rt>あじつ</rt></ruby>けが<ruby>丁寧<rt>ていねい</rt></ruby>に<ruby>工夫<rt>くふう</rt></ruby>され、<ruby>容器<rt>ようき</rt></ruby>の<ruby>形<rt>かたち</rt></ruby>や<ruby>掛<rt>か</rt></ruby>け<ruby>紙<rt>がみ</rt></ruby>のデザインにまで<ruby>旅情<rt>りょじょう</rt></ruby>を<ruby>誘<rt>さそ</rt></ruby>う<ruby>遊<rt>あそ</rt></ruby>び<ruby>心<rt>ごころ</rt></ruby>が<ruby>見<rt>み</rt></ruby>られます。</span>",
           "tts": "駅弁の最大の特徴は、海の幸や山の恵みなど、その土地ならではの旬の特産品や伝統的な郷土料理が彩りよく詰め込まれている点にあります。冷めてもおいしく食べられるようご飯の炊き方や味付けが丁寧に工夫され、容器の形や掛け紙のデザインにまで旅情を誘う遊び心が見られます。"
         },
         {
@@ -14016,7 +14016,7 @@
           "options": [
             "電力成本低廉到讓傳統印刷機全部消失",
             "輸出似是而非的錯誤資訊之風險，以及圍繞著作權與個人資料的法律及倫理課題",
-            "AI 只懂得翻譯外語，完全無法製作企画草稿或摘要",
+            "AI 只懂得翻譯外語，完全無法製作企劃草稿或摘要",
             "法律已經全面禁止職場使用任何數位摘要工具"
           ],
           "answerIndex": 1,
@@ -14274,7 +14274,7 @@
       id: 'q_side_3',
       category: 'side',
       title: '言靈鍛造工坊的學徒',
-      desc: '在背包／裝備介面中消耗金幣強化任意裝備達 2 次，提升自身作戰屬性。',
+      desc: '在背包（裝備詳情）或城鎮旅人商會「鍛造強化」分頁中，消耗金幣強化任意裝備達 2 次。',
       targetType: 'enhance_item',
       targetId: null,
       targetCount: 2,

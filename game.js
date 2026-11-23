@@ -134,17 +134,17 @@
       mpCost: 10,
       maxLevel: 3,
       spCost: 1,
-      desc: '戰鬥中消耗 10 MP，強制顯示本題全部漢字振假名（無視假名開關）。Lv2 起附帶攻擊加成，Lv3 額外 +1 破防。',
+      desc: '解析敵方言靈結構，在戰鬥中消除錯誤選項並顯示解題提示，高等級更可追加傷害與破防。',
       levels: [
-        'Lv.1：強制揭示全漢字振假名（10 MP）',
-        'Lv.2：揭示假名 + 本題傷害 +15%',
-        'Lv.3：揭示假名 + 本題傷害 +30% 且破防傷害 +1'
+        'Lv.1：消除 1 個錯誤選項（句子重組則提示首個語塊），並顯示文法提示。',
+        'Lv.2：消除 2 個錯誤選項（句子重組提示前 2 個語塊），本回合答對傷害 +20%。',
+        'Lv.3：消除 2 個錯誤選項，本回合答對傷害 +35% 且額外造成 +1 點破防。'
       ]
     },
     grammar_shield: {
       id: 'grammar_shield',
       name: '助詞護盾',
-      jpName: '<ruby>助詞<rt>じょし</rt></ruby>シールド',
+      jpName: '<ruby>助詞<rt>じょし</rt></ruby>の<ruby>盾<rt>たて</rt></ruby>',
       branch: '文法系',
       type: 'passive',
       mpCost: 0,
@@ -2225,10 +2225,14 @@
     openModal('modal-shop');
   }
 
+  let lastPurchasedGearId = null;
+
   function renderShopModal() {
     const stats = getTotalStats();
     const banner = $('shop-discount-banner');
     if (banner) {
+      const quickGear = lastPurchasedGearId ? getItemById(lastPurchasedGearId) : null;
+      const showQuickEquip = quickGear && ['weapon', 'armor', 'accessory'].includes(quickGear.type) && getItemQty(quickGear.id) > 0 && !isItemEquipped(quickGear.id);
       banner.innerHTML = `
         <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;">
           <span>🪙 持有金幣：<strong class="text-gold">${state.player.gold}</strong></span>
@@ -2237,7 +2241,21 @@
             <span class="text-muted" style="font-size:0.84rem;">（魅力 CHA -${stats.chaShopDiscount}% + 言靈交涉 -${stats.skillShopDiscount}%）</span>
           </span>
         </div>
+        ${showQuickEquip ? `
+          <div class="shop-quick-equip-bar">
+            <span>🆕 剛購入裝備：<strong>${escapeHtml(quickGear.name)}</strong></span>
+            <button type="button" class="btn btn-sm btn-gold" id="btn-shop-quick-equip">⚔️ 立即裝備</button>
+          </div>
+        ` : ''}
       `;
+      const qBtn = $('btn-shop-quick-equip');
+      if (qBtn && showQuickEquip) {
+        qBtn.addEventListener('click', () => {
+          equipItem(quickGear.id);
+          lastPurchasedGearId = null;
+          renderShopModal();
+        });
+      }
     }
 
     const content = $('shop-content');
@@ -2253,7 +2271,10 @@
         ${items.map((item) => {
           const basePrice = Number(item.price ?? item.cost ?? 50);
           const finalPrice = getShopBuyPrice(item);
-          const owned = getItemQty(item.id) + (isItemEquipped(item.id) ? 1 : 0);
+          const isGear = ['weapon', 'armor', 'accessory'].includes(item.type);
+          const invQty = getItemQty(item.id);
+          const equipped = isItemEquipped(item.id);
+          const owned = invQty + (equipped ? 1 : 0);
           const statBadges = renderItemStatTags(item, 0);
           const canAfford = state.player.gold >= finalPrice;
           return `
@@ -2262,20 +2283,24 @@
                 <div style="width:44px;height:44px;flex-shrink:0;">${Art.itemIcon(item)}</div>
                 <div style="flex:1;">
                   <div style="font-weight:700;">${escapeHtml(item.name)}</div>
-                  <div style="display:flex;gap:6px;align-items:center;margin-top:2px;">
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:2px;flex-wrap:wrap;">
                     <span class="rarity-badge rarity-${item.rarity || 'common'}">${RARITY_LABELS[item.rarity] || '普通'}</span>
                     <span class="text-muted" style="font-size:0.78rem;">持有：${owned}</span>
+                    ${equipped ? '<span class="badge badge-gold">裝備中</span>' : ''}
                   </div>
                 </div>
               </div>
               <div style="font-size:0.84rem;" class="text-muted">${escapeHtml(item.desc || item.description || '')}</div>
               ${statBadges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">${statBadges}</div>` : ''}
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:auto;padding-top:6px;flex-wrap:wrap;">
                 <div>
                   ${finalPrice < basePrice ? `<span class="text-muted" style="text-decoration:line-through;font-size:0.8rem;margin-right:6px;">${basePrice}</span>` : ''}
                   <strong class="text-gold">🪙 ${finalPrice}</strong>
                 </div>
-                <button type="button" class="btn btn-sm ${canAfford ? 'btn-gold' : 'btn-secondary'}" data-buy-id="${escapeHtml(item.id)}" ${canAfford ? '' : 'disabled'}>購買</button>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  ${isGear && invQty > 0 && !equipped ? `<button type="button" class="btn btn-sm btn-primary" data-quick-equip-id="${escapeHtml(item.id)}">⚔️ 立即裝備</button>` : ''}
+                  <button type="button" class="btn btn-sm ${canAfford ? 'btn-gold' : 'btn-secondary'}" data-buy-id="${escapeHtml(item.id)}" ${canAfford ? '' : 'disabled'}>購買</button>
+                </div>
               </div>
             </div>
           `;
@@ -2293,10 +2318,23 @@
           }
           state.player.gold -= cost;
           addItem(item.id, 1);
+          if (['weapon', 'armor', 'accessory'].includes(item.type)) {
+            lastPurchasedGearId = item.id;
+          }
           Audio.playSFX('chest');
           showToast(`🛒 購買了【${item.name}】（-${cost} 金幣）`, 'success');
           autoSave();
           updateHUD();
+          renderShopModal();
+        });
+      });
+
+      content.querySelectorAll('[data-quick-equip-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-quick-equip-id');
+          if (!id) return;
+          equipItem(id);
+          if (lastPurchasedGearId === id) lastPurchasedGearId = null;
           renderShopModal();
         });
       });
@@ -2872,7 +2910,7 @@
       zh: '看穿了！接下會心一擊的言靈吧！'
     },
     break: {
-      jp: '<ruby>護盾<rt>たて</rt></ruby>は<ruby>砕<rt>くだ</rt></ruby>けた！<ruby>今<rt>いま</rt></ruby>が<ruby>決<rt>き</rt></ruby>め<ruby>時<rt>どき</rt></ruby>だ！',
+      jp: '<ruby>盾<rt>たて</rt></ruby>は<ruby>砕<rt>くだ</rt></ruby>けた！<ruby>今<rt>いま</rt></ruby>が<ruby>決<rt>き</rt></ruby>め<ruby>時<rt>どき</rt></ruby>だ！',
       zh: '護盾碎裂了！現在正是決勝時刻！'
     },
     hurt: [
@@ -2890,8 +2928,8 @@
       zh: '太好了！成功守護了言靈的秩序！'
     },
     skillVocab: {
-      jp: '<ruby>発動<rt>はつどう</rt></ruby>——【<ruby>単語洞察<rt>たんごどうさつ</rt></ruby>】！すべての<ruby>読<rt>よ</rt></ruby>みを<ruby>照<rt>て</rt></ruby>らせ！',
-      zh: '發動——【單字洞察】！照亮所有讀音吧！'
+      jp: '<ruby>発動<rt>はつどう</rt></ruby>——【<ruby>単語洞察<rt>たんごどうさつ</rt></ruby>】！<ruby>偽<rt>いつわ</rt></ruby>りの<ruby>選択肢<rt>せんたくし</rt></ruby>を<ruby>見抜<rt>みぬ</rt></ruby>け！',
+      zh: '發動——【單字洞察】！看破錯誤的選項吧！'
     },
     skillListen: {
       jp: '<ruby>発動<rt>はつどう</rt></ruby>——【<ruby>順風耳<rt>じゅんぷうじ</rt></ruby>】！<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>響<rt>ひび</rt></ruby>きよ、わが<ruby>力<rt>ちから</rt></ruby>に！',
@@ -3552,7 +3590,7 @@
       const stats = getTotalStats();
       const isCrit = Math.random() * 100 < stats.critRate;
       const insightLv = state.skills.vocab_insight || 0;
-      const insightMult = battle.insightActive ? [1, 1, 1.15, 1.30][insightLv] : 1;
+      const insightMult = battle.insightActive ? [1, 1, 1.20, 1.35][insightLv] : 1;
       const wasAlreadyStunned = battle.enemyStunned;
 
       const dmg = Math.max(
@@ -3857,23 +3895,60 @@
 
     state.player.mp -= 10;
     battle.insightActive = true;
+    const q = battle.currentQ;
     const qCard = $('battle-question-card');
     if (qCard) qCard.classList.add('force-furigana');
-    const jpEl = $('battle-q-prompt-jp');
-    if (jpEl && battle.currentQ.type === 'reading' && battle.currentQ.fullRubyJp) {
-      jpEl.innerHTML = battle.currentQ.fullRubyJp;
-    }
+
     const hintEl = $('battle-q-hint');
-    if (hintEl && battle.currentQ.hint) {
-      hintEl.textContent = `👁️ 洞察提示：${battle.currentQ.hint}`;
-      hintEl.classList.remove('hidden');
+    let effectSummary = '';
+
+    if (q.type === 'reorder' && Array.isArray(q.chunks) && q.chunks.length > 0) {
+      const hintCount = lv >= 2 ? Math.min(2, q.chunks.length) : 1;
+      const firstChunks = q.chunks.slice(0, hintCount);
+      const firstIds = new Set(firstChunks.map((c) => c.id));
+      const orderPreview = firstChunks.map((c, idx) => `第${idx + 1}塊「${c.plain || c.text}」`).join(' → ');
+      document.querySelectorAll('#battle-options-container [data-add-id]').forEach((chipBtn) => {
+        const cid = Number(chipBtn.getAttribute('data-add-id'));
+        if (firstIds.has(cid)) {
+          chipBtn.classList.add('chip-insight-hint');
+        }
+      });
+      if (hintEl) {
+        hintEl.textContent = `👁️ 洞察提示：${orderPreview}${q.hint ? `｜${q.hint}` : ''}`;
+        hintEl.classList.remove('hidden');
+      }
+      effectSummary = `已標示前 ${hintCount} 個語塊順序`;
+    } else {
+      // 4-choice question: eliminate 1 wrong option at Lv.1, 2 wrong options at Lv.2/Lv.3
+      const elimCount = lv >= 2 ? 2 : 1;
+      const optionBtns = Array.from(document.querySelectorAll('#battle-options-container .option-btn'));
+      const wrongBtns = optionBtns.filter((btn) => {
+        const idx = Number(btn.getAttribute('data-opt-idx'));
+        return idx !== q.answerIndex && !btn.disabled;
+      });
+      const toEliminate = shuffleArray(wrongBtns).slice(0, elimCount);
+      toEliminate.forEach((btn) => {
+        btn.disabled = true;
+        btn.classList.add('eliminated');
+        if (!btn.querySelector('.eliminated-tag')) {
+          const tag = document.createElement('span');
+          tag.className = 'eliminated-tag';
+          tag.textContent = '✕ 已排除';
+          btn.appendChild(tag);
+        }
+      });
+      if (hintEl && q.hint) {
+        hintEl.textContent = `👁️ 洞察提示：${q.hint}`;
+        hintEl.classList.remove('hidden');
+      }
+      effectSummary = `已劃除 ${toEliminate.length} 個錯誤選項`;
     }
 
     Audio.playSFX('skill');
     showHeroSpeech(HERO_BATTLE_LINES.skillVocab.jp, HERO_BATTLE_LINES.skillVocab.zh, 'speech-skill');
     setBattlePoses('attack', battle.enemyStunned ? 'break' : 'idle', 1100);
-    const extra = lv === 3 ? '（本題傷害 +30%、破防 +1）' : lv === 2 ? '（本題傷害 +15%）' : '';
-    showToast(`👁️ 發動【單字洞察 Lv.${lv}】！全漢字假名已顯現${extra}`, 'info');
+    const extra = lv === 3 ? '（本題傷害 +35%、破防 +1）' : lv === 2 ? '（本題傷害 +20%）' : '';
+    showToast(`👁️ 發動【單字洞察 Lv.${lv}】！${effectSummary}並顯示提示${extra}`, 'info');
     updateBattleUI();
     updateHUD();
   }
@@ -4021,7 +4096,16 @@
   function renderReadingList() {
     const grid = $('reading-cards-grid');
     if (!grid) return;
-    const dungeons = getReadingDungeons();
+    const jlptOrder = { N4: 1, N3: 2, N2: 3, N1: 4 };
+    const dungeons = getReadingDungeons().slice().sort((a, b) => {
+      const aUnl = isReadingUnlocked(a) ? 0 : 1;
+      const bUnl = isReadingUnlocked(b) ? 0 : 1;
+      if (aUnl !== bUnl) return aUnl - bUnl;
+      const aLv = jlptOrder[normalizeJlptLevel(a.jlpt)] || 9;
+      const bLv = jlptOrder[normalizeJlptLevel(b.jlpt)] || 9;
+      if (aLv !== bLv) return aLv - bLv;
+      return String(a.id).localeCompare(String(b.id));
+    });
 
     grid.innerHTML = dungeons.map((rd) => {
       const unlocked = isReadingUnlocked(rd);
@@ -4911,9 +4995,12 @@
 
     let actionBtns = '';
     if (isGear) {
+      const enhBtnHtml = lv < 5
+        ? `<button type="button" class="btn btn-primary btn-block" id="btn-inv-enhance" style="margin-top:8px;">⚒️ 鍛造強化至 +${lv + 1}（🪙 ${getEnhanceCost(item, lv)}）</button>`
+        : `<div class="badge badge-gold" style="margin-top:8px;justify-content:center;width:100%;">✨ 已達最高強化 +5</div>`;
       actionBtns = card.equipped
-        ? `<button type="button" class="btn btn-secondary btn-block" id="btn-inv-unequip">卸下裝備</button>`
-        : `<button type="button" class="btn btn-gold btn-block" id="btn-inv-equip">⚔️ 穿戴裝備</button>
+        ? `<button type="button" class="btn btn-secondary btn-block" id="btn-inv-unequip">卸下裝備</button>${enhBtnHtml}`
+        : `<button type="button" class="btn btn-gold btn-block" id="btn-inv-equip">⚔️ 穿戴裝備</button>${enhBtnHtml}
            <button type="button" class="btn btn-secondary btn-block" id="btn-inv-sell" style="margin-top:8px;">💰 出售（+${getSellPrice(item)} 金幣）</button>`;
     } else if (item.type === 'consumable') {
       const eff = item.effect || {};
@@ -4940,6 +5027,27 @@
     if (eqBtn) eqBtn.onclick = () => { equipItem(item.id); renderInventory(); };
     const uneqBtn = $('btn-inv-unequip');
     if (uneqBtn) uneqBtn.onclick = () => { unequipSlot(item.type); renderInventory(); };
+    const enhBtn = $('btn-inv-enhance');
+    if (enhBtn) {
+      enhBtn.onclick = () => {
+        const curLv = getItemEnhancementLevel(item.id);
+        if (curLv >= 5) return;
+        const cost = getEnhanceCost(item, curLv);
+        if (state.player.gold < cost) {
+          showToast(`金幣不足（需要 ${cost} 金幣）！`, 'error');
+          return;
+        }
+        state.player.gold -= cost;
+        state.player.enhancements[item.id] = curLv + 1;
+        state.stats.enhanceCount += 1;
+        Audio.playSFX('levelup');
+        showToast(`⚒️ 鍛造成功！【${item.name}】提升至 +${curLv + 1}！`, 'gold');
+        checkAchievements();
+        autoSave();
+        updateHUD();
+        renderInventory();
+      };
+    }
     const useBtn = $('btn-inv-use');
     if (useBtn) {
       useBtn.onclick = () => {
@@ -5855,6 +5963,14 @@
 
   function init() {
     bindStaticEvents();
+    // Show dev/debug corner toggle ONLY when ?debug=1 is explicitly present
+    const debugBtn = $('btn-dev-toggle');
+    if (debugBtn) {
+      const params = new URLSearchParams(window.location.search);
+      const isDebug = params.get('debug') === '1';
+      debugBtn.classList.toggle('hidden', !isDebug);
+      if (!isDebug && $('dev-drawer')) $('dev-drawer').classList.add('hidden');
+    }
     applyFuriganaSetting();
     syncAudioButtons();
     syncDifficultyControls();
