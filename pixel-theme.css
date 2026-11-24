@@ -1012,3 +1012,445 @@ textarea {
     animation: none !important;
   }
 }
+
+/* ============================================================================
+ * P13+. Merged layout (v1.4): friend's mock-up strengths + this theme's guardrails
+ *   - Scene backdrops: village wave pattern in town/menus, night sky for title/battle
+ *   - Bottom 5-slot dock + per-group sub-tabs
+ *   - HUD ⚙ settings popover (desktop) and larger HUD bars
+ *   - Pixelated portraits (filter: index.html #px-pixelate via game.js pixelArt())
+ *   - NPC "character cards", cream AVG speech box
+ *   - Text diet: fewer subtitles / descriptions, compact explanation modal
+ * ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+ * P13. Scene backdrops
+ * ---------------------------------------------------------------------------- */
+#app[data-view]:not([data-view="title"]):not([data-view="create"]):not([data-view="battle"]) {
+  background-color: #1d5753;
+  /* 32x16 stepped-wave tile, shown at 3x with hard pixels */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='16' shape-rendering='crispEdges'%3E%3Cpath fill='%23246660' d='M0 4H8V3H16V4H24V5H32V8H24V7H16V6H8V7H0ZM0 12H8V13H16V12H24V11H32V14H24V15H16V16H8V15H0Z'/%3E%3Cpath fill='%23194b47' d='M0 7H8V8H0ZM8 6H16V7H8ZM16 7H24V8H16ZM24 8H32V9H24Z'/%3E%3C/svg%3E");
+  background-size: 96px 48px;
+  background-attachment: fixed;
+  image-rendering: pixelated;
+}
+
+/* Stars / mountains / scanlines only belong to night scenes */
+#app[data-view]:not([data-view="title"]):not([data-view="create"]):not([data-view="battle"]) .bg-atmosphere {
+  display: none;
+}
+
+/* ----------------------------------------------------------------------------
+ * P14. Bottom dock (main menu, 5 groups)
+ * ---------------------------------------------------------------------------- */
+.nav-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 130;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--px-ink);
+  box-shadow: inset 0 3px 0 var(--px-cream-dk), 0 -3px 0 var(--px-ink);
+}
+
+.dock-btn {
+  position: relative;
+  flex: 1 1 0;
+  max-width: 150px;
+  min-height: 54px;
+  padding: 4px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: transparent;
+  border: 2px solid transparent;
+  box-shadow: none;
+  transition: none;
+}
+
+.dock-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.dock-btn:hover:not(.active) {
+  color: var(--px-cream);
+  background: var(--px-win-2);
+  border-color: var(--px-win-3);
+}
+
+.dock-btn:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+/* Active slot: cream "selected tab" block, like a SNES menu cursor */
+.dock-btn.active {
+  color: var(--px-ink);
+  background: var(--px-cream);
+  border-color: var(--px-ink);
+  box-shadow: inset 0 -4px 0 var(--px-cream-dk), inset 2px 2px 0 #ffffff;
+}
+
+.dock-badge {
+  position: absolute;
+  top: 3px;
+  left: calc(50% + 8px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-num);
+  font-size: 0.5rem;
+  line-height: 1;
+  color: #ffffff;
+  background: var(--px-red);
+  border: 2px solid var(--px-ink);
+}
+
+/* Reserve space under content for the dock; float toasts / dev button above it */
+#app.has-dock .main-stage {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+#app.has-dock #toast-container {
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+#app.has-dock #btn-dev-toggle {
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ----------------------------------------------------------------------------
+ * P15. Sub-tab strip: only the active group's tabs
+ * ---------------------------------------------------------------------------- */
+#nav-bar[data-active-group] .nav-btn {
+  display: none;
+}
+
+#nav-bar[data-active-group="town"] .nav-btn[data-group="town"],
+#nav-bar[data-active-group="adventure"] .nav-btn[data-group="adventure"],
+#nav-bar[data-active-group="training"] .nav-btn[data-group="training"],
+#nav-bar[data-active-group="traveler"] .nav-btn[data-group="traveler"],
+#nav-bar[data-active-group="journal"] .nav-btn[data-group="journal"] {
+  display: inline-flex;
+}
+
+/* ----------------------------------------------------------------------------
+ * P16. HUD: ⚙ settings popover (desktop) + bigger, readable bars
+ * ---------------------------------------------------------------------------- */
+.hud-settings-btn {
+  min-width: 40px;
+  font-size: 1rem;
+}
+
+#top-hud.settings-open .hud-settings-btn {
+  background: var(--px-cream);
+  color: var(--px-ink);
+}
+
+@media (min-width: 769px) {
+  .hud-toggles {
+    position: relative;
+  }
+
+  .hud-settings-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 140;
+    min-width: 210px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px;
+    border-style: solid;
+    border-width: var(--frame-w);
+    border-color: transparent;
+    border-image: var(--frame-cream) 3 stretch;
+    background: var(--px-win);
+    background-clip: padding-box;
+    box-shadow: 6px 6px 0 rgba(11, 10, 24, 0.7);
+  }
+
+  #top-hud.settings-open .hud-settings-menu {
+    display: flex;
+  }
+
+  .hud-settings-menu .btn-hud {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Bigger bars with a readable pixel label (desktop has the room) */
+  #top-hud .hud-bars .stat-bar {
+    height: 22px;
+  }
+
+  #app #top-hud .stat-bar-text {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Mobile: settings are already inside the collapsible HUD body — no popover */
+  .hud-settings-btn {
+    display: none;
+  }
+
+  .hud-settings-menu {
+    display: contents;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * P17. Pixel portraits & NPC character cards
+ * ---------------------------------------------------------------------------- */
+/* Opt-in only: a filter whose sample dot is smaller than a device pixel blanks the art,
+   so each container gets the filter tuned to its rendered size (see index.html). */
+.npc-card .npc-avatar .px-g,
+.dialogue-portrait .px-g {
+  filter: url(#px-lg);
+}
+
+.combatant-art .px-g {
+  filter: url(#px-md);
+}
+
+.town-npc-grid {
+  gap: 12px;
+}
+
+.npc-card {
+  padding: 0;
+  gap: 0;
+  align-items: stretch;
+  text-align: left;
+  overflow: hidden;
+  /* Unselected = blue banner cloth */
+  background: repeating-linear-gradient(135deg, #2b4f8f 0 8px, #24457d 8px 16px);
+  background-clip: padding-box;
+}
+
+.npc-card.selected {
+  /* Selected = red banner cloth + gold frame (P4) */
+  background: repeating-linear-gradient(135deg, #9c3326 0 8px, #872a20 8px 16px);
+  background-clip: padding-box;
+}
+
+.npc-card .npc-avatar {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.npc-card.selected .npc-avatar {
+  border: 0;
+  box-shadow: none;
+}
+
+.npc-card .npc-avatar svg {
+  transform: scale(1.18) translateY(8%);
+}
+
+/* Name plate overlaid on the portrait (stepped, not smooth, fade) */
+.npc-card-info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 22px 8px 8px;
+  background: linear-gradient(
+    180deg,
+    transparent 0 18%,
+    rgba(11, 10, 24, 0.55) 18% 40%,
+    rgba(11, 10, 24, 0.88) 40% 100%
+  );
+}
+
+.npc-card .npc-name {
+  font-family: var(--font-pixel);
+  font-size: 1.3rem;
+  line-height: 1.15;
+  color: var(--px-cream);
+  text-shadow: 2px 0 0 var(--px-ink), -2px 0 0 var(--px-ink), 0 2px 0 var(--px-ink), 0 -2px 0 var(--px-ink);
+}
+
+.npc-card .npc-role {
+  font-family: var(--font-pixel);
+  font-size: 0.74rem;
+  color: var(--px-cream-dk);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 1px 1px 0 var(--px-ink);
+}
+
+.npc-card .npc-card-affection {
+  height: 14px;
+  margin-top: 5px;
+}
+
+/* ----------------------------------------------------------------------------
+ * P18. Cream "paper" AVG speech box (high contrast, readable)
+ * ---------------------------------------------------------------------------- */
+.dialogue-speech-box {
+  background: var(--px-cream);
+  border: 3px solid var(--px-ink);
+  box-shadow: inset 0 0 0 2px #d8cda9, 4px 4px 0 rgba(11, 10, 24, 0.6);
+  color: var(--px-ink);
+}
+
+.dialogue-speech-box .dialogue-text-jp {
+  color: var(--px-ink);
+  -webkit-text-fill-color: currentColor;
+}
+
+.dialogue-speech-box .dialogue-text-zh {
+  color: #4f4878;
+}
+
+.dialogue-speech-box rt {
+  color: var(--px-blue-dk);
+  -webkit-text-fill-color: var(--px-blue-dk);
+}
+
+.dialogue-speech-box .btn-peek-zh {
+  background: transparent;
+  color: var(--px-blue-dk);
+  border-color: var(--px-blue-dk);
+}
+
+.dialogue-speech-box .dialogue-next-cursor {
+  color: var(--px-red);
+  text-shadow: none;
+}
+
+/* ----------------------------------------------------------------------------
+ * P19. Text diet — players said screens had "too much text to read"
+ *      (DOM kept so JS bindings / ids stay valid; only hidden or shortened)
+ * ---------------------------------------------------------------------------- */
+.view-subtitle,
+.town-banner-sub,
+.daily-training-sub,
+.daily-training-item-desc,
+.daily-training-header .badge {
+  display: none;
+}
+
+/* Town shortcuts duplicated by the dock's 冒險 slot */
+#btn-town-map,
+#btn-town-reading,
+#btn-town-shrine {
+  display: none;
+}
+
+.view-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.town-banner {
+  margin-bottom: 12px;
+}
+
+.daily-training-panel .daily-training-header {
+  margin-bottom: 8px;
+}
+
+.daily-training-item {
+  padding: 10px 12px;
+}
+
+.daily-training-reward {
+  font-family: var(--font-pixel);
+  color: var(--px-gold-lt);
+}
+
+/* ----------------------------------------------------------------------------
+ * P20. Compact wrong-answer modal: answer + one key point, details folded
+ * ---------------------------------------------------------------------------- */
+.explain-reading {
+  margin-top: 4px;
+  font-family: var(--font-pixel);
+  color: var(--px-blue-lt);
+}
+
+.explain-audio-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.explain-keypoint {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--px-cream);
+  background: var(--px-ink);
+  border-left: 4px solid var(--px-gold);
+}
+
+.explain-keypoint:empty {
+  display: none;
+}
+
+.explain-more {
+  margin-top: 10px;
+}
+
+.explain-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 10px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-pixel);
+  color: var(--px-blue-lt);
+  border: 2px dashed var(--px-blue);
+  user-select: none;
+}
+
+.explain-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.explain-more > summary:focus-visible {
+  outline: 3px solid var(--px-gold);
+  outline-offset: 2px;
+}
+
+.explain-more[open] > summary {
+  margin-bottom: 8px;
+  border-style: solid;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-btn:active:not(:disabled) {
+    transform: none;
+  }
+}

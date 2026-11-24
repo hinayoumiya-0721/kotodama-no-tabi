@@ -646,6 +646,20 @@
   };
 
   // Safe SVGArt wrapper
+  // Wraps a character SVG's contents in <g class="px-g">. pixel-theme.css (P17) then applies a
+  // pixelate filter (index.html #px-lg / #px-md) only inside containers of known size.
+  // Filtering the inner group — not the <svg> — keeps the existing CSS pose / emotion
+  // animations (which set transform/filter on the <svg>) working unchanged. Without the theme
+  // or filter support, the original art renders as before.
+  function pixelArt(svgStr) {
+    const s = String(svgStr || '');
+    const open = s.match(/<svg\b[^>]*>/);
+    const closeIdx = s.lastIndexOf('</svg>');
+    if (!open || closeIdx < 0) return s;
+    const start = open.index + open[0].length;
+    return `${s.slice(0, start)}<g class="px-g">${s.slice(start, closeIdx)}</g>${s.slice(closeIdx)}`;
+  }
+
   const Art = {
     logo() {
       try {
@@ -658,7 +672,7 @@
     hero(jobId, poseOrOpts) {
       try {
         if (global.SVGArt && typeof global.SVGArt.hero === 'function') {
-          return global.SVGArt.hero(jobId, poseOrOpts);
+          return pixelArt(global.SVGArt.hero(jobId, poseOrOpts));
         }
       } catch (_) {}
       return '<svg viewBox="0 0 120 120"><circle cx="60" cy="48" r="24" fill="#38bdf8"/><path d="M24 108 C24 78 96 78 96 108 Z" fill="#1e293b" stroke="#d4af37" stroke-width="3"/></svg>';
@@ -666,7 +680,7 @@
     npc(npcId, emotion) {
       try {
         if (global.SVGArt && typeof global.SVGArt.npc === 'function') {
-          return global.SVGArt.npc(npcId, emotion || 'neutral');
+          return pixelArt(global.SVGArt.npc(npcId, emotion || 'neutral'));
         }
       } catch (_) {}
       return '<svg viewBox="0 0 120 120"><circle cx="60" cy="50" r="24" fill="#d4af37"/><rect x="30" y="80" width="60" height="32" rx="14" fill="#334155"/></svg>';
@@ -674,7 +688,7 @@
     enemy(enemyId, isBoss, pose) {
       try {
         if (global.SVGArt && typeof global.SVGArt.enemy === 'function') {
-          return global.SVGArt.enemy(enemyId, Boolean(isBoss), pose || 'idle');
+          return pixelArt(global.SVGArt.enemy(enemyId, Boolean(isBoss), pose || 'idle'));
         }
       } catch (_) {}
       return '<svg viewBox="0 0 140 140"><polygon points="70,14 124,116 16,116" fill="#7f1d1d" stroke="#ef4444" stroke-width="4"/><circle cx="56" cy="70" r="7" fill="#fef08a"/><circle cx="84" cy="70" r="7" fill="#fef08a"/></svg>';
@@ -1732,7 +1746,7 @@
               <div class="progress-track daily-training-bar">
                 <div class="progress-fill" style="width: ${pct}%;"></div>
               </div>
-              <div class="daily-training-reward">獎勵：⭐ ${task.reward.exp} EXP・🪙 ${task.reward.gold} 金幣</div>
+              <div class="daily-training-reward">⭐ ${task.reward.exp}　🪙 ${task.reward.gold}</div>
             </div>
           `;
         }).join('')}
@@ -1816,14 +1830,17 @@
 
   function updateNavMistakeBadge() {
     const badge = $('nav-notes-badge');
-    if (!badge) return;
+    const dockBadge = $('dock-notes-badge');
+    if (!badge && !dockBadge) return;
     const { dueCount } = getWrongNotesSummary();
-    if (dueCount > 0) {
-      badge.textContent = `(${dueCount})`;
-      badge.classList.remove('hidden');
-    } else {
-      badge.textContent = '(0)';
-      badge.classList.add('hidden');
+    if (badge) {
+      badge.textContent = dueCount > 0 ? `(${dueCount})` : '(0)';
+      badge.classList.toggle('hidden', dueCount <= 0);
+    }
+    // Mirror the due count on the 修練 dock slot so it is visible from any screen
+    if (dockBadge) {
+      dockBadge.textContent = dueCount > 99 ? '99+' : String(dueCount);
+      dockBadge.classList.toggle('hidden', dueCount <= 0);
     }
   }
 
@@ -1866,6 +1883,16 @@
     openModal('modal-generic');
   }
 
+  // First sentence of the explanation (HTML-safe: data HTML is trusted ruby markup and
+  // "。" never appears inside a tag). Falls back to the short hint.
+  function getExplainKeyPoint(q) {
+    const src = String((q && (q.explanation || q.hint)) || '');
+    if (!src) return '';
+    const cut = src.indexOf('。');
+    const first = cut >= 0 ? src.slice(0, cut + 1) : src;
+    return `💡 ${first}`;
+  }
+
   function openExplainModal(q, damageNotice, onConfirm) {
     const dmgEl = $('explain-damage-notice');
     const ansEl = $('explain-correct-answer');
@@ -1882,10 +1909,17 @@
       `;
     }
     if (readEl) {
-      readEl.textContent = `假名讀音：${q.kanaReading || stripRubyHtml(q.correctDisplay)}`;
+      readEl.textContent = q.kanaReading || stripRubyHtml(q.correctDisplay);
     }
     if (wrongEl) wrongEl.innerHTML = q.wrongReason || '';
     if (detailEl) detailEl.innerHTML = q.explanation || '';
+
+    // Players reported the old modal as "too much text": show ONE key line by default,
+    // keep the full analysis folded (and re-folded on every open).
+    const keyEl = $('explain-keypoint');
+    if (keyEl) keyEl.innerHTML = getExplainKeyPoint(q);
+    const moreEl = $('explain-more');
+    if (moreEl) moreEl.open = false;
 
     const ttsBtn = $('btn-explain-tts');
     const ttsSlowBtn = $('btn-explain-tts-slow');
@@ -2142,7 +2176,7 @@
       (viewName === 'shrine' && shrine.active);
 
     if (hud) hud.classList.toggle('hidden', hideHud);
-    if (nav) nav.classList.toggle('hidden', hideNav);
+    if (hud && hideHud) setHudSettingsOpen(false);
     applyMobileHudCollapseState();
 
     document.querySelectorAll('#nav-bar .nav-btn').forEach((btn) => {
@@ -2152,6 +2186,56 @@
         (viewName === 'explore' && target === 'map');
       btn.classList.toggle('active', active);
     });
+
+    // Bottom dock + group sub-tabs
+    const group = getNavGroupForView(viewName);
+    if (group) navLastViewByGroup[group] = viewName === 'explore' ? 'map' : viewName;
+    const groupSize = group ? document.querySelectorAll(`#nav-bar .nav-btn[data-group="${group}"]`).length : 0;
+    if (nav) {
+      nav.setAttribute('data-active-group', group || '');
+      // A single-view group (城鎮) needs no sub-tab strip
+      nav.classList.toggle('hidden', hideNav || groupSize <= 1);
+    }
+    const dock = $('nav-dock');
+    if (dock) dock.classList.toggle('hidden', hideNav);
+    document.querySelectorAll('#nav-dock .dock-btn').forEach((btn) => {
+      const isActive = btn.getAttribute('data-group') === group;
+      btn.classList.toggle('active', isActive);
+      if (isActive) btn.setAttribute('aria-current', 'page');
+      else btn.removeAttribute('aria-current');
+    });
+    if ($('app')) $('app').classList.toggle('has-dock', !hideNav);
+  }
+
+  // ---- Bottom dock: 5 groups over the existing 10 views ----
+  const NAV_GROUP_DEFAULT_VIEW = {
+    town: 'town',
+    adventure: 'map',
+    training: 'notes',
+    traveler: 'character',
+    journal: 'quests'
+  };
+  const navLastViewByGroup = {};
+
+  function getNavGroupForView(viewName) {
+    const key = viewName === 'explore' ? 'map' : viewName;
+    const btn = document.querySelector(`#nav-bar .nav-btn[data-view="${key}"]`);
+    return btn ? btn.getAttribute('data-group') : null;
+  }
+
+  function openNavGroup(group) {
+    const view = navLastViewByGroup[group] || NAV_GROUP_DEFAULT_VIEW[group];
+    // Route through the original nav button so its per-view setup (reading/shrine reset) still runs
+    const btn = view ? document.querySelector(`#nav-bar .nav-btn[data-view="${view}"]`) : null;
+    if (btn) btn.click();
+  }
+
+  // ---- HUD ⚙ settings menu (desktop popover; inline on mobile via CSS) ----
+  function setHudSettingsOpen(open) {
+    const hud = $('top-hud');
+    const btn = $('btn-hud-settings');
+    if (hud) hud.classList.toggle('settings-open', Boolean(open));
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   function switchView(viewName) {
@@ -2176,7 +2260,11 @@
     }
 
     currentView = viewName;
-    if ($('app')) $('app').classList.toggle('view-battle-active', viewName === 'battle');
+    if ($('app')) {
+      $('app').classList.toggle('view-battle-active', viewName === 'battle');
+      // Lets the theme pick a scene backdrop per screen (night sky vs. village pattern)
+      $('app').setAttribute('data-view', viewName);
+    }
 
     document.querySelectorAll('.game-view').forEach((v) => {
       v.classList.toggle('active', v.id === `view-${viewName}`);
@@ -2596,12 +2684,12 @@
       return `
         <button type="button" class="npc-card ${selected ? 'selected' : ''}" data-npc-id="${escapeHtml(npc.id)}">
           <div class="npc-avatar">${Art.npc(npc.id, 'neutral')}</div>
-          <div style="flex:1;text-align:left;">
+          <div class="npc-card-info">
             <div class="npc-name">${escapeHtml(npc.name)}</div>
             <div class="npc-role">${escapeHtml(npc.title || npc.role || '')}</div>
-            <div class="stat-bar affection-bar" style="height:14px;margin-top:6px;">
+            <div class="stat-bar affection-bar npc-card-affection">
               <div class="stat-bar-fill" style="width:${clamp(nState.affection, 0, 100)}%;"></div>
-              <span class="stat-bar-text" style="font-size:0.68rem;">♥ ${nState.affection}/100</span>
+              <span class="stat-bar-text">♥ ${nState.affection}/100</span>
             </div>
           </div>
         </button>
@@ -4661,7 +4749,7 @@
 
       if (battle.enemyStunned) {
         dmg = 0;
-        damageNotice = '💫 敵人處於【破防暈眩】狀態，無法反擊！（受到 0 點傷害）';
+        damageNotice = '💫 敵人暈眩中，沒有反擊';
         battle.enemyStunned = false;
         battle.enemyBreak = battle.enemyBreakMax;
         spawnFloatingNumber('player', 'STUNNED 0', 'num-shield');
@@ -4672,23 +4760,16 @@
         const shieldRed = [0, 0.50, 0.58, 0.65][shieldLv];
         const reduced = Math.round(rawAtk * (1 - wisRed) * (1 - shieldRed));
         const cap = Math.max(1, Math.floor(stats.maxHp * 0.35));
-        const capped = reduced > cap;
         dmg = Math.max(1, Math.min(reduced, cap));
 
         state.player.hp = Math.max(0, state.player.hp - dmg);
 
-        let mpRestoreNote = '';
         if (shieldLv >= 3) {
           state.player.mp = Math.min(stats.maxMp, state.player.mp + 5);
-          mpRestoreNote = '，並回復 +5 MP';
         }
 
-        const tags = [];
-        if (wisRed > 0) tags.push(`智慧 WIS -${Math.round(wisRed * 100)}%`);
-        if (shieldLv > 0) tags.push(`【助詞護盾 Lv.${shieldLv}】-${Math.round(shieldRed * 100)}%${mpRestoreNote}`);
-        if (capped) tags.push('友善學習上限保護（單次最高 35% 最大 HP）');
-
-        damageNotice = `💥 答錯承受 ${enemy.name} 反擊：<strong>-${dmg} HP</strong>${tags.length ? `（${tags.join('；')}）` : ''}`;
+        // Short line only — the WIS / shield breakdown lives in the character screen
+        damageNotice = `💥 受到反擊 <strong>-${dmg} HP</strong>${shieldLv >= 3 ? "　+5 MP" : ""}`;
         spawnFloatingNumber('player', `-${dmg}`, 'num-enemy-dmg');
       }
 
@@ -7169,7 +7250,35 @@
       });
     }
 
-    // Main Navigation Bar
+    // Bottom dock (5 groups) → delegates to the matching #nav-bar button
+    document.querySelectorAll('#nav-dock .dock-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const group = btn.getAttribute('data-group');
+        if (group) openNavGroup(group);
+      });
+    });
+
+    // HUD ⚙ settings popover: toggle, close on outside click / Escape
+    if ($('btn-hud-settings')) {
+      $('btn-hud-settings').addEventListener('click', (e) => {
+        e.stopPropagation();
+        Audio.playSFX('click');
+        const hud = $('top-hud');
+        setHudSettingsOpen(!(hud && hud.classList.contains('settings-open')));
+      });
+      document.addEventListener('click', (e) => {
+        const menu = $('hud-settings-menu');
+        if (menu && !menu.contains(e.target)) setHudSettingsOpen(false);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && $('top-hud') && $('top-hud').classList.contains('settings-open')) {
+          setHudSettingsOpen(false);
+          $('btn-hud-settings').focus();
+        }
+      });
+    }
+
+    // Main Navigation Bar (now the group sub-tab strip)
     document.querySelectorAll('#nav-bar .nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const view = btn.getAttribute('data-view');
