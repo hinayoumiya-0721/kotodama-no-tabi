@@ -245,6 +245,18 @@
     return document.getElementById(id);
   }
 
+  // Integer coercion for untrusted save data: rejects NaN / ±Infinity (falls back), then clamps.
+  function toSafeInt(v, fallback, min = 0, max = 1e9) {
+    const n = Math.floor(Number(v));
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  }
+
+  // Keys that must never be copied from untrusted JSON into plain objects.
+  const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+  function safeOwnKeys(obj) {
+    return Object.keys(obj).filter((k) => !UNSAFE_OBJECT_KEYS.has(k));
+  }
+
   function clamp(val, min, max) {
     const n = Number(val);
     if (!Number.isFinite(n)) return min;
@@ -856,18 +868,19 @@
     const rp = raw.player && typeof raw.player === 'object' ? raw.player : {};
     out.player.name = typeof rp.name === 'string' && rp.name.trim() ? rp.name.trim().slice(0, 12) : def.player.name;
     out.player.jobId = typeof rp.jobId === 'string' && getJobById(rp.jobId) ? rp.jobId : def.player.jobId;
-    out.player.level = Math.max(1, Math.floor(Number(rp.level) || 1));
-    out.player.exp = Math.max(0, Math.floor(Number(rp.exp) || 0));
-    out.player.nextExp = Math.max(50, Math.floor(Number(rp.nextExp) || calcNextExp(out.player.level)));
-    out.player.maxHp = Math.max(30, Math.floor(Number(rp.maxHp) || def.player.maxHp));
+    // toSafeInt rejects NaN/Infinity from malformed imports (e.g. "gold":"abc", "level":1e400)
+    out.player.level = toSafeInt(rp.level, 1, 1, 999);
+    out.player.exp = toSafeInt(rp.exp, 0, 0);
+    out.player.nextExp = toSafeInt(rp.nextExp, Math.max(50, calcNextExp(out.player.level)), 50);
+    out.player.maxHp = toSafeInt(rp.maxHp, def.player.maxHp, 30, 99999);
     out.player.hp = clamp(Math.floor(Number(rp.hp ?? out.player.maxHp)), 1, out.player.maxHp * 3);
-    out.player.maxMp = Math.max(20, Math.floor(Number(rp.maxMp) || def.player.maxMp));
+    out.player.maxMp = toSafeInt(rp.maxMp, def.player.maxMp, 20, 99999);
     out.player.mp = clamp(Math.floor(Number(rp.mp ?? out.player.maxMp)), 0, out.player.maxMp * 3);
-    out.player.baseINT = Math.max(1, Math.floor(Number(rp.baseINT) || def.player.baseINT));
-    out.player.baseWIS = Math.max(1, Math.floor(Number(rp.baseWIS) || def.player.baseWIS));
-    out.player.baseCHA = Math.max(1, Math.floor(Number(rp.baseCHA) || def.player.baseCHA));
-    out.player.gold = Math.max(0, Math.floor(Number(rp.gold ?? def.player.gold)));
-    out.player.sp = Math.max(0, Math.floor(Number(rp.sp ?? def.player.sp)));
+    out.player.baseINT = toSafeInt(rp.baseINT, def.player.baseINT, 1, 9999);
+    out.player.baseWIS = toSafeInt(rp.baseWIS, def.player.baseWIS, 1, 9999);
+    out.player.baseCHA = toSafeInt(rp.baseCHA, def.player.baseCHA, 1, 9999);
+    out.player.gold = toSafeInt(rp.gold, def.player.gold, 0);
+    out.player.sp = toSafeInt(rp.sp, def.player.sp, 0);
     out.player.unlockedTitles = Array.isArray(rp.unlockedTitles) && rp.unlockedTitles.length > 0
       ? Array.from(new Set(rp.unlockedTitles.map(String)))
       : ['初醒的旅人'];
@@ -884,7 +897,7 @@
 
     const renh = rp.enhancements && typeof rp.enhancements === 'object' ? rp.enhancements : {};
     out.player.enhancements = {};
-    Object.keys(renh).forEach((k) => {
+    safeOwnKeys(renh).forEach((k) => {
       out.player.enhancements[k] = clamp(Math.floor(Number(renh[k]) || 0), 0, 5);
     });
 
@@ -916,7 +929,7 @@
     out.progress.defeatedBosses = Array.isArray(rpr.defeatedBosses) ? Array.from(new Set(rpr.defeatedBosses.map(String))) : [];
     out.progress.unlockedAllOverride = Boolean(rpr.unlockedAllOverride);
     out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(rpr.clearedReadings.map(String))) : [];
-    out.progress.shrineBest = rpr.shrineBest && typeof rpr.shrineBest === 'object' ? Object.assign({}, rpr.shrineBest) : {};
+    out.progress.shrineBest = rpr.shrineBest && typeof rpr.shrineBest === 'object' ? safeOwnKeys(rpr.shrineBest).reduce((acc, k) => { acc[k] = rpr.shrineBest[k]; return acc; }, {}) : {};
 
     const rsj = rpr.solvedByJlpt && typeof rpr.solvedByJlpt === 'object' ? rpr.solvedByJlpt : {};
     const rbg = rpr.bagByJlpt && typeof rpr.bagByJlpt === 'object' ? rpr.bagByJlpt : {};
@@ -987,10 +1000,11 @@
     out.wrongNotes = {};
     if (raw.wrongNotes && typeof raw.wrongNotes === 'object' && !Array.isArray(raw.wrongNotes)) {
       const nowMs = Date.now();
-      Object.keys(raw.wrongNotes).forEach((qid) => {
+      safeOwnKeys(raw.wrongNotes).forEach((qid) => {
         const entry = raw.wrongNotes[qid];
         if (!entry || typeof entry !== 'object') return;
         const id = typeof entry.id === 'string' && entry.id ? entry.id : String(qid);
+        if (UNSAFE_OBJECT_KEYS.has(id)) return;
         const rawMastered = Boolean(entry.mastered);
         const rawSrs = entry.srsLevel !== undefined && entry.srsLevel !== null
           ? clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 4)
@@ -1006,7 +1020,10 @@
           id,
           wrongCount: Math.max(1, Math.floor(Number(entry.wrongCount) || 1)),
           lastWrongAt: typeof entry.lastWrongAt === 'string' ? entry.lastWrongAt : new Date().toISOString(),
-          playerLastChoice: entry.playerLastChoice !== undefined ? entry.playerLastChoice : null,
+          playerLastChoice: typeof entry.playerLastChoice === 'number' && Number.isFinite(entry.playerLastChoice)
+            ? Math.floor(entry.playerLastChoice)
+            : (typeof entry.playerLastChoice === 'string' ? entry.playerLastChoice.slice(0, 200) : null),
+          correctCount: toSafeInt(entry.correctCount, 0, 0),
           mastered: isMastered,
           srsLevel,
           nextReviewAt
@@ -1561,7 +1578,9 @@
     updateNavMistakeBadge();
   }
 
-  function advanceWrongNoteSRS(questionId, isCorrect = true) {
+  // opts.requireDue: when true, a correct answer on a not-yet-due note only bumps correctCount
+  // and does NOT raise srsLevel (prevents "all"-mode grinding from skipping the forgetting curve).
+  function advanceWrongNoteSRS(questionId, isCorrect = true, opts = {}) {
     if (!questionId) {
       return { advanced: false, mastered: false, srsLevel: 0, daysAdded: 0, label: '' };
     }
@@ -1581,6 +1600,18 @@
     const entry = state.wrongNotes[questionId];
     if (entry.mastered) {
       return { advanced: false, mastered: true, srsLevel: 4, daysAdded: 0, label: '已完全掌握' };
+    }
+    entry.correctCount = toSafeInt(entry.correctCount, 0, 0) + 1;
+    if (opts && opts.requireDue && !isWrongNoteDue(entry)) {
+      const lv = clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 3);
+      return {
+        advanced: false,
+        mastered: false,
+        early: true,
+        srsLevel: lv,
+        daysAdded: 0,
+        label: `SRS Lv.${lv}（未到期，提前複習不推進等級）`
+      };
     }
     const curLv = clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 3);
     const nextLv = curLv + 1;
@@ -1869,11 +1900,22 @@
   // ============================================================================
   // 9. HUD, Three-Tier Immersion Mode, Mobile Collapsible HUD & View Router
   // ============================================================================
-  function resetZhPeekWrap(wrapEl) {
+  // A peek wrap may mirror its revealed state onto elements outside it, listed by id in
+  // data-peek-targets (e.g. the NPC dialogue peek also reveals #dialogue-choices translations).
+  function setZhPeekState(wrapEl, revealed) {
     if (!wrapEl) return;
-    wrapEl.classList.remove('zh-revealed');
+    wrapEl.classList.toggle('zh-revealed', revealed);
     const btn = wrapEl.querySelector('.btn-peek-zh');
-    if (btn) btn.textContent = '👁 點擊偷看中文提示';
+    if (btn) btn.textContent = revealed ? '🙈 隱藏中文提示' : '👁 點擊偷看中文提示';
+    const targets = (wrapEl.getAttribute('data-peek-targets') || '').split(/\s+/).filter(Boolean);
+    targets.forEach((id) => {
+      const el = $(id);
+      if (el) el.classList.toggle('zh-revealed', revealed);
+    });
+  }
+
+  function resetZhPeekWrap(wrapEl) {
+    setZhPeekState(wrapEl, false);
   }
 
   function applyFuriganaSetting() {
@@ -1889,6 +1931,12 @@
     }
 
     if (app) {
+      // Leaving/entering a mode must not carry over a previously revealed peek state.
+      const prevMode = app.classList.contains('immersion-full') ? 'immersion'
+        : (app.classList.contains('immersion-advanced') ? 'advanced' : 'standard');
+      if (prevMode !== mode) {
+        document.querySelectorAll('.zh-peek-wrap').forEach(resetZhPeekWrap);
+      }
       app.classList.remove('furigana-on', 'furigana-off', 'immersion-standard', 'immersion-advanced', 'immersion-full');
       if (mode === 'standard') {
         app.classList.add('furigana-on', 'immersion-standard');
@@ -1949,6 +1997,24 @@
       toggleBtn.setAttribute('aria-expanded', shouldCollapse ? 'false' : 'true');
       toggleBtn.textContent = shouldCollapse ? '▼ 角色狀態' : '▲ 收合狀態';
     }
+  }
+
+  // Publishes the live #top-hud height as --hud-h on #app so the mobile battle view can size
+  // itself to the remaining viewport (no page scroll + inner scroll = no double scrollbar).
+  // Single observer for the app lifetime; guarded against double init.
+  let hudResizeObserver = null;
+  function initHudHeightSync() {
+    const hud = $('top-hud');
+    const app = $('app');
+    if (!hud || !app || hudResizeObserver) return;
+    const sync = () => {
+      app.style.setProperty('--hud-h', `${Math.ceil(hud.getBoundingClientRect().height)}px`);
+    };
+    if (typeof ResizeObserver === 'function') {
+      hudResizeObserver = new ResizeObserver(sync);
+      hudResizeObserver.observe(hud);
+    }
+    sync();
   }
 
   function syncAudioButtons() {
@@ -2110,6 +2176,7 @@
     }
 
     currentView = viewName;
+    if ($('app')) $('app').classList.toggle('view-battle-active', viewName === 'battle');
 
     document.querySelectorAll('.game-view').forEach((v) => {
       v.classList.toggle('active', v.id === `view-${viewName}`);
@@ -4405,7 +4472,9 @@
 
     if (isCorrect) {
       recordQuestionOutcomeInShuffleBag(q, true);
-      const srsRes = advanceWrongNoteSRS(q.id);
+      const srsRes = advanceWrongNoteSRS(q.id, true, {
+        requireDue: battle.isWrongNoteTraining && battle.trainingMode === 'all'
+      });
       recordDailyTrainingProgress('correct', 1);
       battle.consecutiveCorrect += 1;
       battle.consecutiveWrong = 0;
@@ -4431,7 +4500,9 @@
         showToast(
           srsRes.advanced
             ? `✔ 錯題推進至 ${srsRes.label}！獲得 +${bonusExp} EXP、+${bonusGold} 金幣`
-            : `✔ 複習答對！+${bonusExp} EXP、+${bonusGold} 金幣`,
+            : (srsRes.early
+                ? `✔ 提前複習答對（${srsRes.label}）！+${bonusExp} EXP、+${bonusGold} 金幣`
+                : `✔ 複習答對！+${bonusExp} EXP、+${bonusGold} 金幣`),
           'success'
         );
       } else if (srsRes.advanced) {
@@ -6899,7 +6970,7 @@
     return jsonStr;
   }
 
-  function importSaveJsonCode(rawJsonOverride = null) {
+  function importSaveJsonCode(rawJsonOverride = null, { skipConfirm = false } = {}) {
     const ta = $('save-json-textarea');
     const rawText = typeof rawJsonOverride === 'string'
       ? rawJsonOverride
@@ -6925,12 +6996,41 @@
       return false;
     }
 
+    // Sanitize BEFORE touching any live timers/state, so a throw here leaves the session intact.
+    let nextState;
+    try {
+      nextState = sanitizeSaveData(parsed);
+    } catch (err) {
+      Audio.playSFX('wrong');
+      showToast('❌ 存檔碼內容損毀，無法解析，未覆蓋現有存檔。', 'error');
+      return false;
+    }
+
+    // Confirm before replacing the live session / auto slot (autoSave writes SAVE_KEYS.auto).
+    const existing = hasActiveSession ? state : readRawSlot(SAVE_KEYS.auto);
+    if (!skipConfirm && existing && existing.player && typeof global.confirm === 'function') {
+      const describe = (s) => {
+        const p = s.player || {};
+        const pr = s.progress || {};
+        const bosses = Array.isArray(pr.defeatedBosses) ? pr.defeatedBosses.length : 0;
+        const region = getRegionById(pr.currentRegionId);
+        return `${p.name || '旅人'}（Lv.${Number(p.level) || 1}｜已擊敗 Boss ${bosses}｜位於 ${region ? region.name : '未知區域'}）`;
+      };
+      const ok = global.confirm(
+        `匯入將覆蓋目前的冒險進度：\n現有：${describe(existing)}\n匯入：${describe(nextState)}\n\n確定要覆蓋嗎？`
+      );
+      if (!ok) {
+        showToast('已取消匯入，現有存檔未變更。', 'info');
+        return false;
+      }
+    }
+
     stopBattleTimers();
     stopShrineTimer();
     stopTypewriter();
     Audio.stopSpeak();
 
-    state = sanitizeSaveData(parsed);
+    state = nextState;
     hasActiveSession = true;
     battle.active = false;
     shrine.active = false;
@@ -7024,6 +7124,7 @@
         applyMobileHudCollapseState();
       });
     }
+    initHudHeightSync();
 
     // Delegated handler for Immersion Mode Chinese hint peek buttons (.btn-peek-zh)
     document.addEventListener('click', (e) => {
@@ -7032,8 +7133,7 @@
       e.stopPropagation();
       const wrap = peekBtn.closest('.zh-peek-wrap');
       if (!wrap) return;
-      const revealed = wrap.classList.toggle('zh-revealed');
-      peekBtn.textContent = revealed ? '🙈 隱藏中文提示' : '👁 點擊偷看中文提示';
+      setZhPeekState(wrap, !wrap.classList.contains('zh-revealed'));
       Audio.playSFX('click');
     });
 

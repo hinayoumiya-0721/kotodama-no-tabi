@@ -5260,10 +5260,17 @@ select:focus {
     gap: 8px;
     padding: 8px 10px 10px;
     border-top: 1px solid rgba(212, 175, 55, 0.2);
-    max-height: 420px;
-    overflow: hidden;
+    /* Viewport-relative cap (was a fixed 420px that clipped wrapped buttons on narrow phones).
+       Content taller than the cap scrolls inside the HUD instead of being cut off, and the
+       battle view below always keeps at least ~40% of the screen. */
+    max-height: 60vh;
+    max-height: 60dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     opacity: 1;
-    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+    visibility: visible;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease, visibility 0s linear 0s;
   }
 
   #hud-collapsible-body .hud-bars,
@@ -5296,6 +5303,11 @@ select:focus {
     padding-bottom: 0;
     border-top-color: transparent;
     pointer-events: none;
+    overflow-y: hidden;
+    /* visibility:hidden removes collapsed controls from the Tab order / screen readers;
+       delayed until the collapse animation ends so the closing transition stays visible. */
+    visibility: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease, visibility 0s linear 0.25s;
   }
 
   #nav-bar {
@@ -5306,12 +5318,19 @@ select:focus {
     min-height: 28px;
   }
 
-  /* Mobile Battle 100dvh Anti-Clipping Compact Layout */
+  /* Mobile Battle 100dvh Anti-Clipping Compact Layout
+     Height follows the live HUD height (--hud-h, published by initHudHeightSync in game.js),
+     so expanding the HUD shrinks the battle box instead of pushing it off-screen. The only
+     scroll region is #view-battle itself; the page never scrolls during battle. */
+  #app.view-battle-active .main-stage {
+    padding-bottom: 0;
+  }
+
   .game-view#view-battle.active,
   #view-battle.active {
-    min-height: calc(100vh - 46px);
-    min-height: calc(100dvh - 46px);
-    height: calc(100dvh - 46px);
+    min-height: 0;
+    height: calc(100vh - var(--hud-h, 46px));
+    height: calc(100dvh - var(--hud-h, 46px));
     display: flex;
     flex-direction: column;
     gap: 5px;
