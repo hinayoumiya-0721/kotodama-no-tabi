@@ -4019,6 +4019,25 @@
     return false;
   }
 
+  // ---- Fixed answers-per-battle balance ----
+  // Correct answers needed to defeat an enemy at base damage (no combo / crit / stun).
+  // An enemy may override this with `hitsToDefeat` in data.js.
+  const BATTLE_HITS_NORMAL = 4;
+  const BATTLE_HITS_BOSS = 8;
+  // Max per-hit multiplier from in-battle performance. With 1.5 a fight still needs at least
+  // ceil(hits / 1.5) correct answers: 3 for normal enemies, 6 for bosses.
+  const BATTLE_PERFORMANCE_CAP = 1.5;
+
+  function getRequiredHits(enemy) {
+    const override = enemy ? Math.floor(Number(enemy.hitsToDefeat)) : NaN;
+    if (Number.isFinite(override) && override >= 1) return override;
+    return enemy && enemy.isBoss ? BATTLE_HITS_BOSS : BATTLE_HITS_NORMAL;
+  }
+
+  function getMinAnswersToDefeat(enemy) {
+    return Math.ceil(getRequiredHits(enemy) / BATTLE_PERFORMANCE_CAP);
+  }
+
   function startBattle(enemyOrId, options = {}) {
     const enemy = typeof enemyOrId === 'string' ? getEnemyById(enemyOrId) : enemyOrId;
     if (!enemy) {
@@ -4708,17 +4727,22 @@
       const insightMult = battle.insightActive ? [1, 1, 1.20, 1.35][insightLv] : 1;
       const wasAlreadyStunned = battle.enemyStunned;
 
-      let dmg = Math.max(
-        5,
-        Math.round(
-          (18 + stats.INT * 2.1) *
-          (1 + Math.min(battle.combo, 10) * 0.08) *
-          (battle.feverActive ? 1.25 : 1.0) *
-          (wasAlreadyStunned ? 1.6 : 1.0) *
-          (isCrit ? 1.5 : 1.0) *
-          insightMult
-        )
+      // Fixed "answers per battle" damage model (player feedback: better gear used to mean
+      // fewer questions per fight). Each correct answer deals maxHp / requiredHits; in-battle
+      // performance (combo, FEVER, stun, crit, insight) can speed it up, but only up to
+      // BATTLE_PERFORMANCE_CAP, so a fight always needs >= ceil(requiredHits / cap) answers
+      // no matter how strong the gear is.
+      const requiredHits = getRequiredHits(enemy);
+      const perHit = battle.enemyMaxHp / requiredHits;
+      const performanceMult = Math.min(
+        BATTLE_PERFORMANCE_CAP,
+        (1 + Math.min(battle.combo, 10) * 0.08) *
+        (battle.feverActive ? 1.25 : 1.0) *
+        (wasAlreadyStunned ? 1.6 : 1.0) *
+        (isCrit ? 1.5 : 1.0) *
+        insightMult
       );
+      let dmg = Math.max(1, Math.round(perHit * performanceMult));
 
       if (battle.isWrongNoteTraining) {
         const remainingToMaster = Math.max(0, battle.trainingTotal - battle.masteredIdsInRun.length);
@@ -5934,7 +5958,8 @@
         { label: '智力 INT', val: `${stats.INT}`, sub: `基礎 ${p.baseINT} + 裝備 ${stats.gearINT}` },
         { label: '智慧 WIS', val: `${stats.WIS}`, sub: `基礎 ${p.baseWIS} + 裝備 ${stats.gearWIS}` },
         { label: '魅力 CHA', val: `${stats.CHA}`, sub: `基礎 ${p.baseCHA} + 裝備 ${stats.gearCHA}` },
-        { label: '基礎言霊傷害', val: `${stats.baseAtk}`, sub: `暴擊率 ${stats.critRate}%` },
+        // Damage no longer scales with INT (fixed answers per battle); INT drives crit rate
+        { label: '暴擊率', val: `${stats.critRate}%`, sub: `每場至少答對 ${Math.ceil(BATTLE_HITS_NORMAL / BATTLE_PERFORMANCE_CAP)} 題（Boss ${Math.ceil(BATTLE_HITS_BOSS / BATTLE_PERFORMANCE_CAP)} 題）` },
         { label: '智慧防禦減傷', val: `${Math.round(stats.wisDmgReduce * 100)}%`, sub: `閱讀獎勵 +${Math.round(stats.readingBonus * 100)}%` },
         { label: '商店總折扣', val: `-${stats.totalShopDiscount}%`, sub: `好感加成 +${stats.chaAffectionBonus}` }
       ];
