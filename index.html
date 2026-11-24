@@ -163,13 +163,13 @@
             <ruby>言霊<rt>ことだま</rt></ruby>の<ruby>旅<rt>たび</rt></ruby>
           </h1>
           <p class="title-subtitle">KOTODAMA NO TABI｜JLPT N4 ～ N1</p>
-          <p class="title-synopsis">用正確的日文，擊退吞噬語言的魔物。</p>
+          <p class="title-synopsis">詠唱正確的日文，奪回被魔物吞噬的言靈。</p>
           <div class="title-actions">
-            <button id="btn-title-continue" type="button" class="btn btn-primary btn-lg hidden">▶ 繼續冒險</button>
-            <button id="btn-title-new" type="button" class="btn btn-gold btn-lg">✨ 開始新旅程</button>
-            <button id="btn-title-load" type="button" class="btn btn-secondary btn-lg">💾 讀取存檔</button>
+            <button id="btn-title-continue" type="button" class="btn btn-primary btn-lg hidden">▶ 延續旅途</button>
+            <button id="btn-title-new" type="button" class="btn btn-gold btn-lg">✨ 踏上新旅途</button>
+            <button id="btn-title-load" type="button" class="btn btn-secondary btn-lg">💾 記憶書卷</button>
           </div>
-          <p class="title-footer-note">🎧 建議開啟音效</p>
+          <p class="title-footer-note">🎧 建議開啟音效與語音朗讀</p>
         </div>
       </section>
 
@@ -177,8 +177,8 @@
       <section id="view-create" class="game-view" aria-label="創建角色">
         <div class="view-header">
           <div>
-            <h2>喚醒記憶・創建旅行者</h2>
-            <p class="view-subtitle">在迷霧散盡前銘刻你的名號，擇定初始職業以面對言霊大陸的試煉。</p>
+            <h2>喚醒記憶・締約旅人</h2>
+            <p class="view-subtitle">於晨霧散盡前銘刻真名、擇定命途職階，迎接言靈大陸的試煉。</p>
           </div>
         </div>
 
@@ -190,27 +190,27 @@
 
           <div class="panel-card create-form-panel">
             <div class="form-group">
-              <label for="create-name-input" class="form-label">旅人名稱</label>
-              <input id="create-name-input" class="text-input" type="text" maxlength="12" placeholder="輸入旅人名稱（預設：旅人）" autocomplete="off">
+              <label for="create-name-input" class="form-label">旅人真名</label>
+              <input id="create-name-input" class="text-input" type="text" maxlength="12" placeholder="輸入旅人名號（預設：旅人）" autocomplete="off">
             </div>
 
             <div class="form-group">
-              <span class="form-label">選擇初始職業</span>
+              <span class="form-label">擇定初始職階</span>
               <div id="create-job-cards" class="create-job-cards"></div>
             </div>
 
             <div class="form-group">
-              <span class="form-label">選擇題庫難度模式（遊戲中隨時可於頂部欄／世界地圖切換）</span>
+              <span class="form-label">言靈試煉難度（旅途中可隨時於頂部欄或地圖切換）</span>
               <div id="create-difficulty-cards" class="difficulty-mode-grid"></div>
               <div id="create-adaptive-start-row" class="adaptive-start-row">
-                <span class="adaptive-start-label">自適應起步等級：</span>
-                <button type="button" class="btn btn-sm adaptive-start-btn active" data-adaptive-start="N4">從 N4 起步（推薦）</button>
-                <button type="button" class="btn btn-sm adaptive-start-btn" data-adaptive-start="N3">從 N3 起步</button>
+                <span class="adaptive-start-label">自適應起點：</span>
+                <button type="button" class="btn btn-sm adaptive-start-btn active" data-adaptive-start="N4">N4 起步（推薦）</button>
+                <button type="button" class="btn btn-sm adaptive-start-btn" data-adaptive-start="N3">N3 起步</button>
               </div>
             </div>
 
             <div class="create-actions">
-              <button id="btn-create-confirm" type="button" class="btn btn-gold btn-lg">⚔️ 喚醒記憶・啟程</button>
+              <button id="btn-create-confirm" type="button" class="btn btn-gold btn-lg">⚔️ 締結言靈・啟程</button>
               <button id="btn-create-back" type="button" class="btn btn-secondary">返回標題</button>
             </div>
           </div>
@@ -222,11 +222,11 @@
         <div class="town-banner panel-card">
           <div class="town-banner-info">
             <h2 id="town-banner-title" class="town-banner-title">黎明之村・言霊據點</h2>
-            <p id="town-banner-sub" class="town-banner-sub">被古老結界守護的邊境村落，旅人可在此休憩整頓、與居民以日文交流並開啟各項設施。</p>
+            <p id="town-banner-sub" class="town-banner-sub">古老言靈結界庇護的邊境村落。篝火常明，旅人可在此歇息整備、與居民寒暄修習日語，或前往各處聖域。</p>
           </div>
           <div class="town-quick-actions">
-            <button id="btn-town-rest" type="button" class="btn btn-heal">🛏️ 免費休憩（全回復）</button>
-            <button id="btn-town-map" type="button" class="btn btn-primary">🗺️ 前往世界地圖</button>
+            <button id="btn-town-rest" type="button" class="btn btn-heal">🛏️ 宿屋休憩</button>
+            <button id="btn-town-map" type="button" class="btn btn-primary">🗺️ 世界地圖</button>
             <button id="btn-town-reading" type="button" class="btn btn-secondary">📚 閱讀副本</button>
             <button id="btn-town-shrine" type="button" class="btn btn-gold">⛩️ 試煉神殿</button>
           </div>
@@ -245,7 +245,7 @@
               <div id="dialogue-portrait" class="dialogue-portrait"></div>
               <div class="dialogue-meta">
                 <div class="dialogue-speaker-row">
-                  <h3 id="dialogue-speaker" class="dialogue-speaker">請選擇一位城鎮居民</h3>
+                  <h3 id="dialogue-speaker" class="dialogue-speaker">請選擇交談對象</h3>
                   <span id="dialogue-role-tag" class="tag-pill">據點交流</span>
                   <span id="dialogue-register-tag" class="npc-speech-register-badge"></span>
                 </div>
@@ -263,12 +263,12 @@
               <div class="dialogue-speech-box">
                 <div id="dialogue-text-jp" class="dialogue-text-jp"></div>
                 <div id="dialogue-zh-peek-wrap" class="zh-peek-wrap" data-peek-targets="dialogue-choices">
-                  <button id="btn-dialogue-peek-zh" type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
-                  <div id="dialogue-text-zh" class="dialogue-text-zh zh-collapsible">點擊左側的居民卡片，以禮貌的日文與其對話、累積好感度並解鎖專屬獎勵。</div>
+                  <button id="btn-dialogue-peek-zh" type="button" class="btn-peek-zh">👁 偷看中譯</button>
+                  <div id="dialogue-text-zh" class="dialogue-text-zh zh-collapsible">點選左側居民展開對話。體察對方的身分與語體，以得體的日文回應即可提升好感度、獲贈秘寶。</div>
                 </div>
                 <div class="dialogue-audio-row">
-                  <button id="btn-dialogue-tts" type="button" class="btn btn-sm btn-audio">🔊 正常朗讀</button>
-                  <button id="btn-dialogue-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速 0.65x</button>
+                  <button id="btn-dialogue-tts" type="button" class="btn btn-sm btn-audio">🔊 朗讀</button>
+                  <button id="btn-dialogue-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速</button>
                 </div>
                 <span id="dialogue-next-cursor" class="dialogue-next-cursor hidden" aria-hidden="true">▼</span>
               </div>
@@ -309,12 +309,12 @@
             <h2 id="explore-region-title">探索區域</h2>
             <span id="explore-region-jlpt" class="jlpt-badge">N4</span>
           </div>
-          <button id="btn-explore-retreat" type="button" class="btn btn-secondary">🗺️ 返回世界地圖</button>
+          <button id="btn-explore-retreat" type="button" class="btn btn-secondary">🗺️ 返回地圖</button>
         </div>
 
         <div class="explore-progress-card panel-card">
           <div class="explore-progress-header">
-            <span>區域探索度（達 100% 可挑戰區域 Boss）</span>
+            <span>領域踏破率（100% 解鎖首領決戰）</span>
             <span id="explore-progress-text">0%</span>
           </div>
           <div class="explore-progress-track">
@@ -329,19 +329,19 @@
           <div id="explore-visual" class="explore-visual"></div>
           <div class="explore-event-content">
             <h3 id="explore-event-title" class="explore-event-title">踏入荒野</h3>
-            <p id="explore-event-desc" class="explore-event-desc">點擊下方「前進探索」深入領域，遭遇魔物、解開古代石碑或發現隱藏寶箱。</p>
+            <p id="explore-event-desc" class="explore-event-desc">點擊「前進探索」深入未知地界，迎擊徘徊魔物、破譯古碑或尋獲秘寶。</p>
             <div id="explore-event-choices" class="explore-event-choices"></div>
           </div>
         </div>
 
         <div class="explore-action-bar">
           <button id="btn-explore-step" type="button" class="btn btn-primary btn-lg">🧭 前進探索</button>
-          <button id="btn-explore-boss" type="button" class="btn btn-danger btn-lg">👹 挑戰區域 Boss</button>
-          <button id="btn-explore-camp" type="button" class="btn btn-secondary">🎒 快速整備／背包</button>
+          <button id="btn-explore-boss" type="button" class="btn btn-danger btn-lg">👹 挑戰首領</button>
+          <button id="btn-explore-camp" type="button" class="btn btn-secondary">🎒 行囊整備</button>
         </div>
 
         <div class="explore-log-card panel-card">
-          <h3 class="section-heading">探索日誌</h3>
+          <h3 class="section-heading">行軍手札</h3>
           <div id="explore-log" class="explore-log" aria-live="polite"></div>
         </div>
       </section>
@@ -350,11 +350,11 @@
       <section id="view-battle" class="game-view" aria-label="日文言霊戰鬥">
         <div class="battle-status-strip">
           <span id="battle-region-label" class="battle-badge region-badge">區域戰鬥</span>
-          <span id="battle-boss-phase-badge" class="battle-badge boss-phase-badge hidden">【第一階段】詞彙識讀試煉</span>
+          <span id="battle-boss-phase-badge" class="battle-badge boss-phase-badge hidden">【第一幕】詞彙識讀</span>
           <span id="battle-combo-badge" class="battle-badge combo-badge">🔥 Combo x0</span>
           <span id="battle-fever-badge" class="battle-badge fever-badge hidden">⚡ FEVER TIME</span>
           <span id="battle-difficulty-badge" class="battle-badge diff-badge">難度：動態自適應（N4）</span>
-          <span id="battle-n1-bonus-badge" class="battle-badge n1-bonus-badge hidden">🔥 N1 魔境加成：EXP ×2・掉落 ×2</span>
+          <span id="battle-n1-bonus-badge" class="battle-badge n1-bonus-badge hidden">🔥 N1 魔境：EXP・掉落 ×2</span>
         </div>
 
         <div class="battle-arena">
@@ -409,13 +409,13 @@
               <span id="battle-speed-text" class="speed-text">⚡ 速答加成</span>
             </div>
             <div class="question-audio-btns">
-              <button id="btn-battle-tts-normal" type="button" class="btn btn-sm btn-audio">🔊 朗讀 1.0x</button>
-              <button id="btn-battle-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速 0.65x</button>
+              <button id="btn-battle-tts-normal" type="button" class="btn btn-sm btn-audio">🔊 朗讀</button>
+              <button id="btn-battle-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速</button>
             </div>
           </div>
 
           <div id="battle-zh-peek-wrap" class="zh-peek-wrap">
-            <button id="btn-battle-peek-zh" type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
+            <button id="btn-battle-peek-zh" type="button" class="btn-peek-zh">👁 偷看中譯</button>
             <div id="battle-q-prompt-zh" class="q-prompt-zh zh-collapsible"></div>
           </div>
           <div id="battle-q-prompt-jp" class="q-prompt-jp"></div>
@@ -430,7 +430,7 @@
             <button id="btn-skill-listen" type="button" class="btn btn-skill">🎐 順風耳</button>
           </div>
           <div id="battle-consumables" class="battle-consumables"></div>
-          <button id="btn-battle-flee" type="button" class="btn btn-secondary">🏃 撤退回營地</button>
+          <button id="btn-battle-flee" type="button" class="btn btn-secondary">🏃 撤退</button>
         </div>
       </section>
 
@@ -646,12 +646,12 @@
         <div class="view-header notes-view-header">
           <div>
             <h2>📓 言霊錯題筆記（ミスノート）</h2>
-            <p class="view-subtitle">自動收錄戰鬥與閱讀副本中的答錯題目，複習錯誤剖析並發起「記憶試煉復仇戰」徹底攻克弱點。</p>
+            <p class="view-subtitle">自動銘刻失誤的言靈，依遺忘曲線排程複習，隨時發起「記憶幻影復仇戰」斬斷弱點。</p>
           </div>
           <div class="notes-header-actions">
-            <button id="btn-start-wrong-training" type="button" class="btn btn-crimson" disabled>⚔️ 特訓今日到期錯題 (0)</button>
-            <button id="btn-start-wrong-training-all" type="button" class="btn btn-gold btn-sm" disabled>🔁 提前全量特訓</button>
-            <button id="btn-clear-mastered-notes" type="button" class="btn btn-secondary btn-sm" disabled>🧹 一鍵清除已攻克</button>
+            <button id="btn-start-wrong-training" type="button" class="btn btn-crimson" disabled>⚔️ 今日到期特訓 (0)</button>
+            <button id="btn-start-wrong-training-all" type="button" class="btn btn-gold btn-sm" disabled>🔁 全量特訓</button>
+            <button id="btn-clear-mastered-notes" type="button" class="btn btn-secondary btn-sm" disabled>🧹 清除已掌握</button>
           </div>
         </div>
 
@@ -668,7 +668,7 @@
     <div id="modal-explain" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="explain-modal-title">
       <div class="modal-dialog modal-explain-dialog">
         <div class="modal-header">
-          <h3 id="explain-modal-title">💥 答錯了！</h3>
+          <h3 id="explain-modal-title">💥 言靈詠唱偏離！</h3>
         </div>
         <div class="modal-body">
           <div id="explain-damage-notice" class="explain-damage-notice"></div>
@@ -687,9 +687,9 @@
 
           <!-- Full analysis stays available but folded; game.js closes it on every open -->
           <details id="explain-more" class="explain-more">
-            <summary>📖 看完整解析</summary>
+            <summary>📖 展開言靈詳解</summary>
             <div class="explain-section">
-              <span class="explain-label">錯誤原因</span>
+              <span class="explain-label">為什麼錯</span>
               <div id="explain-wrong-reason" class="explain-wrong-reason"></div>
             </div>
             <div class="explain-section">
@@ -699,7 +699,7 @@
           </details>
         </div>
         <div class="modal-footer">
-          <button id="btn-explain-confirm" type="button" class="btn btn-gold btn-lg btn-block">▶ 繼續</button>
+          <button id="btn-explain-confirm" type="button" class="btn btn-gold btn-lg btn-block">▶ 銘記言靈・繼續</button>
         </div>
       </div>
     </div>
@@ -708,14 +708,14 @@
     <div id="modal-shop" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
       <div class="modal-dialog modal-shop-dialog">
         <div class="modal-header">
-          <h3 id="shop-modal-title">🏪 旅人商會與鍛造爐</h3>
+          <h3 id="shop-modal-title">🏪 旅人商會與言靈鍛造爐</h3>
           <button id="btn-shop-close" type="button" class="btn-icon-close" aria-label="關閉商店">✕</button>
         </div>
         <div id="shop-discount-banner" class="shop-discount-banner"></div>
         <div id="shop-tabs" class="tab-bar" role="tablist">
-          <button type="button" class="tab-btn active" data-tab="buy" role="tab">🛒 購買裝備道具</button>
-          <button type="button" class="tab-btn" data-tab="enhance" role="tab">⚒️ 鍛造強化</button>
-          <button type="button" class="tab-btn" data-tab="sell" role="tab">💰 出售物品</button>
+          <button type="button" class="tab-btn active" data-tab="buy" role="tab">🛒 選購武具</button>
+          <button type="button" class="tab-btn" data-tab="enhance" role="tab">⚒️ 言靈鍛造</button>
+          <button type="button" class="tab-btn" data-tab="sell" role="tab">💰 變賣戰利品</button>
         </div>
         <div id="shop-content" class="shop-content modal-body"></div>
       </div>
@@ -725,21 +725,21 @@
     <div id="modal-save" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
       <div class="modal-dialog modal-save-dialog">
         <div class="modal-header">
-          <h3 id="save-modal-title">💾 存檔與讀取進度</h3>
+          <h3 id="save-modal-title">💾 旅途記憶書卷</h3>
           <button id="btn-save-close" type="button" class="btn-icon-close" aria-label="關閉存檔視窗">✕</button>
         </div>
         <div class="modal-body">
-          <p class="modal-hint">所有進度均儲存於本機瀏覽器，支援多組存檔欄位隨時切換。</p>
+          <p class="modal-hint">旅途記憶皆銘刻於本機瀏覽器，可隨時於多卷書籤間自由切換。</p>
           <div id="save-slots-list" class="save-slots-list"></div>
           <div id="save-transfer-section" class="save-transfer-section">
             <div class="save-transfer-header">
-              <strong>📦 存檔備份與跨裝置移轉（JSON）</strong>
+              <strong>📦 跨裝置引繼碼（JSON）</strong>
               <div class="save-transfer-actions">
-                <button id="btn-export-save-json" type="button" class="btn btn-sm btn-primary">📤 匯出存檔碼</button>
-                <button id="btn-import-save-json" type="button" class="btn btn-sm btn-gold">📥 匯入存檔碼</button>
+                <button id="btn-export-save-json" type="button" class="btn btn-sm btn-primary">📤 匯出引繼碼</button>
+                <button id="btn-import-save-json" type="button" class="btn btn-sm btn-gold">📥 匯入引繼碼</button>
               </div>
             </div>
-            <textarea id="save-json-textarea" class="save-json-textarea" rows="3" placeholder="點擊「📤 匯出存檔碼」產生並複製 JSON，或貼上備份存檔碼後點擊「📥 匯入存檔碼」…"></textarea>
+            <textarea id="save-json-textarea" class="save-json-textarea" rows="3" placeholder="點擊「📤 匯出引繼碼」複製 JSON，或貼上引繼碼後點擊「📥 匯入引繼碼」…"></textarea>
           </div>
         </div>
       </div>
