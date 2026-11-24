@@ -660,6 +660,39 @@
     return `${s.slice(0, start)}<g class="px-g">${s.slice(start, closeIdx)}</g>${s.slice(closeIdx)}`;
   }
 
+  // Hand-drawn pixel portraits (512x512 WebP, transparent bg) — one image per character.
+  // They replace the generated SVG art for heroes and town NPCs; enemies keep SVG art.
+  const PORTRAIT_IMAGES = {
+    hero: {
+      swordsman: 'assets/portraits/hero_swordsman.webp',
+      scholar: 'assets/portraits/hero_scholar.webp',
+      bard: 'assets/portraits/hero_bard.webp'
+    },
+    npc: {
+      mayor: 'assets/portraits/npc_mayor.webp',
+      merchant: 'assets/portraits/npc_merchant.webp',
+      scholar: 'assets/portraits/npc_scholar.webp',
+      priest: 'assets/portraits/npc_priest.webp'
+    }
+  };
+
+  // Wraps a portrait image in an <svg> carrying the SAME root classes / data attributes as
+  // SVGArt output (svg-hero hero-<job> hero-pose-<pose> / svg-npc npc-<id> emo-<mood>), so all
+  // existing pose, emotion and sizing CSS keeps targeting it. No .px-g → no pixelate filter.
+  function portraitImageSvg(kind, id, variant) {
+    const src = PORTRAIT_IMAGES[kind] && Object.prototype.hasOwnProperty.call(PORTRAIT_IMAGES[kind], id)
+      ? PORTRAIT_IMAGES[kind][id]
+      : null;
+    if (!src) return null;
+    const v = String(variant || (kind === 'hero' ? 'idle' : 'neutral')).replace(/[^a-z0-9_-]/gi, '');
+    const rootAttrs = kind === 'hero'
+      ? `class="svg-art svg-hero hero-${id} hero-pose-${v} has-portrait-img" data-job="${id}" data-pose="${v}"`
+      : `class="svg-art svg-npc npc-${id} emo-${v} has-portrait-img" data-npc="${id}" data-mood="${v}"`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" ${rootAttrs}>`
+      + `<image href="${src}" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>`
+      + '</svg>';
+  }
+
   const Art = {
     logo() {
       try {
@@ -670,6 +703,9 @@
       return '<svg viewBox="0 0 120 120" width="96" height="96"><circle cx="60" cy="60" r="52" fill="#182038" stroke="#d4af37" stroke-width="4"/><text x="60" y="72" text-anchor="middle" fill="#f3d57a" font-size="44" font-family="serif">言</text></svg>';
     },
     hero(jobId, poseOrOpts) {
+      const pose = poseOrOpts && typeof poseOrOpts === 'object' ? poseOrOpts.pose : poseOrOpts;
+      const img = portraitImageSvg('hero', jobId, pose);
+      if (img) return img;
       try {
         if (global.SVGArt && typeof global.SVGArt.hero === 'function') {
           return pixelArt(global.SVGArt.hero(jobId, poseOrOpts));
@@ -678,6 +714,8 @@
       return '<svg viewBox="0 0 120 120"><circle cx="60" cy="48" r="24" fill="#38bdf8"/><path d="M24 108 C24 78 96 78 96 108 Z" fill="#1e293b" stroke="#d4af37" stroke-width="3"/></svg>';
     },
     npc(npcId, emotion) {
+      const img = portraitImageSvg('npc', npcId, emotion);
+      if (img) return img;
       try {
         if (global.SVGArt && typeof global.SVGArt.npc === 'function') {
           return pixelArt(global.SVGArt.npc(npcId, emotion || 'neutral'));
