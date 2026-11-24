@@ -223,6 +223,7 @@
   var sfxMuted = false;
   var currentTrack = null;
   var isDucked = false;
+  var lastTypeTickAt = 0;
 
   // Sequencer state
   var schedulerId = null;
@@ -689,8 +690,41 @@
   // ============================================================================
   // 8-bit Sound Effects Suite
   // ============================================================================
+  function playTypeTick() {
+    if (sfxMuted) return;
+    try {
+      if (!ctx || ctx.state !== 'running' || !sfxGain) return;
+      var nowMs = Date.now();
+      if (nowMs - lastTypeTickAt < 30) return;
+      lastTypeTickAt = nowMs;
+
+      var t = ctx.currentTime + 0.002;
+      var freq = 760 + Math.random() * 140;
+      var dur = 0.025;
+      scheduleTone(sfxGain, {
+        wave: 'triangle',
+        freq: freq,
+        freqEnd: freq * 0.92,
+        sweepDuration: dur,
+        time: t,
+        duration: dur,
+        gain: 0.07,
+        attack: 0.003,
+        release: 0.014,
+        sustain: 0.45
+      });
+    } catch (_) {
+      // Safe no-op in headless, muted, or locked audio contexts
+    }
+  }
+
   function playSFX(type) {
     if (sfxMuted) return;
+    var key = String(type || '').toLowerCase();
+    if (key === 'type') {
+      playTypeTick();
+      return;
+    }
     var audioCtx = ensureContext();
     if (!audioCtx || !sfxGain) return;
     if (audioCtx.state === 'suspended') {
@@ -698,9 +732,13 @@
     }
 
     var t = audioCtx.currentTime + 0.005;
-    var key = String(type || '').toLowerCase();
 
     switch (key) {
+      case 'type': {
+        playTypeTick();
+        break;
+      }
+
       case 'click':
       case 'confirm': {
         scheduleTone(sfxGain, {
@@ -1405,6 +1443,7 @@
     setSFXMuted: setSFXMuted,
     getState: getState,
     playSFX: playSFX,
+    playTypeTick: playTypeTick,
     speak: speak,
     stopSpeak: stopSpeak
   };

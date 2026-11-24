@@ -1,0 +1,9 @@
+# Temporary & scratch scripts
+scratch_*
+_qa_*
+tmp_*
+*.bak
+
+# OS metadata
+.DS_Store
+Thumbs.db

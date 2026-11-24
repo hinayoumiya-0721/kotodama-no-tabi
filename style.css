@@ -4755,3 +4755,719 @@ select:focus {
   border-color: rgba(192, 132, 252, 0.55);
   box-shadow: 0 0 24px rgba(168, 85, 247, 0.2), inset 0 0 28px rgba(88, 28, 135, 0.18);
 }
+
+/* ==========================================================================
+ * v1.3.0 Upgrade: Mobile Collapsible HUD & 100dvh Battle, AVG Dialogue,
+ * Three-Tier Immersion Mode, SRS/Boss-Phase Badges, Daily Training & Save I/O
+ * ========================================================================== */
+
+/* --------------------------------------------------------------------------
+ * 23. AVG Visual Novel Dialogue Presentation
+ * -------------------------------------------------------------------------- */
+@keyframes npcFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes npcTalkBob {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-4px) scale(1.025);
+  }
+}
+
+@keyframes cursorBlink {
+  0%, 49% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50%, 100% {
+    opacity: 0.15;
+    transform: translateY(2px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dialogue-portrait svg {
+  animation: npcFloat 3s ease-in-out infinite;
+}
+
+.dialogue-portrait.is-talking svg {
+  animation: npcTalkBob 0.28s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(243, 213, 122, 0.35));
+}
+
+.npc-speech-register-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(165, 180, 252, 0.45);
+  color: #e0e7ff;
+  white-space: nowrap;
+}
+
+.dialogue-speech-box {
+  position: relative;
+  cursor: pointer;
+  padding-bottom: 24px;
+}
+
+.dialogue-next-cursor {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  color: var(--gold-bright);
+  font-size: 0.86rem;
+  animation: cursorBlink 0.9s steps(1, end) infinite;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dialogue-next-cursor.hidden {
+  display: none;
+}
+
+.dialogue-choices.is-locked,
+.dialogue-actions.is-locked {
+  opacity: 0.52;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+/* --------------------------------------------------------------------------
+ * 24. Three-Tier Japanese Immersion Mode
+ * -------------------------------------------------------------------------- */
+#app.immersion-standard rt {
+  display: ruby-text;
+}
+
+#app.immersion-standard .btn-peek-zh {
+  display: none;
+}
+
+#app.immersion-advanced rt,
+#app.immersion-full rt {
+  display: none;
+}
+
+#app.immersion-advanced .force-furigana rt,
+#app.immersion-full .force-furigana rt {
+  display: ruby-text !important;
+  color: var(--gold-bright);
+  -webkit-text-fill-color: var(--gold-bright);
+}
+
+.btn-peek-zh {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #bae6fd;
+  cursor: pointer;
+  margin: 2px 0 4px;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.btn-peek-zh:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.24);
+  border-color: var(--cyan-bright);
+  color: #f0f9ff;
+}
+
+#app.immersion-full .btn-peek-zh {
+  display: inline-flex;
+}
+
+#app.immersion-full .zh-peek-wrap .zh-collapsible {
+  display: none;
+}
+
+#app.immersion-full .zh-peek-wrap.zh-revealed .zh-collapsible {
+  display: block;
+  animation: fadeIn 0.18s ease;
+}
+
+#app.immersion-full .dialogue-choice-zh,
+#app.immersion-full .dialogue-choices .zh-collapsible {
+  display: none;
+}
+
+#app.immersion-full .zh-revealed .dialogue-choice-zh,
+#app.immersion-full .dialogue-choices.zh-revealed .dialogue-choice-zh,
+#app.immersion-full .dialogue-choices.zh-revealed .zh-collapsible {
+  display: block;
+  animation: fadeIn 0.18s ease;
+}
+
+/* --------------------------------------------------------------------------
+ * 25. SRS Badges, Boss 3-Phase Badge, Daily Training & Save Transfer
+ * -------------------------------------------------------------------------- */
+.badge-srs-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  background: rgba(220, 38, 38, 0.25);
+  border: 1px solid rgba(248, 113, 113, 0.65);
+  color: #fecaca;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  white-space: nowrap;
+}
+
+.badge-srs-scheduled {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #bae6fd;
+  white-space: nowrap;
+}
+
+@keyframes bossPhaseCrimsonPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+    border-color: rgba(252, 165, 165, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(239, 68, 68, 0.9), 0 0 8px rgba(251, 191, 36, 0.45);
+    border-color: #fde68a;
+  }
+}
+
+.boss-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.boss-phase-badge.boss-phase-1 {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.24), rgba(146, 103, 17, 0.34));
+  border: 1px solid var(--gold-bright);
+  color: var(--gold-bright);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.32);
+}
+
+.boss-phase-badge.boss-phase-2 {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(88, 28, 135, 0.42));
+  border: 1px solid var(--violet-bright);
+  color: #f3e8ff;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.42);
+}
+
+.boss-phase-badge.boss-phase-3 {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.38), rgba(127, 29, 29, 0.56));
+  border: 1px solid #fca5a5;
+  color: #fef2f2;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.58);
+  animation: bossPhaseCrimsonPulse 1.5s ease-in-out infinite;
+}
+
+/* Daily Training Panel */
+.daily-training-panel {
+  margin-bottom: 16px;
+}
+
+.daily-training-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.daily-training-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--gold-bright);
+  line-height: 1.3;
+}
+
+.daily-training-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.daily-training-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.daily-training-card,
+.daily-training-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(170deg, rgba(24, 31, 52, 0.94), rgba(14, 19, 32, 0.97));
+  border: 1px solid var(--gold-dim);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.daily-training-card.is-done,
+.daily-training-item.is-done,
+.daily-training-item.is-ready {
+  border-color: rgba(34, 197, 94, 0.72);
+  background: linear-gradient(170deg, rgba(14, 46, 36, 0.92), rgba(12, 24, 30, 0.97));
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.24);
+}
+
+.daily-training-card.is-claimed,
+.daily-training-item.is-claimed {
+  opacity: 0.62;
+  border-color: rgba(148, 163, 184, 0.25);
+  filter: saturate(0.75);
+}
+
+.daily-training-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.daily-training-item-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.daily-training-item-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.daily-training-item-action {
+  flex-shrink: 0;
+}
+
+.progress-track,
+.daily-training-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+  transition: width 0.28s ease;
+}
+
+.daily-training-item.is-ready .progress-fill,
+.daily-training-item.is-done .progress-fill,
+.daily-training-item.is-claimed .progress-fill {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+.daily-training-reward {
+  font-size: 0.76rem;
+  color: var(--gold-bright);
+  font-weight: 600;
+}
+
+/* Save Transfer (JSON Import/Export) */
+.save-transfer-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.save-transfer-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.save-json-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(9, 13, 24, 0.85);
+  color: var(--text-main);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  resize: vertical;
+}
+
+.save-json-textarea:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.22);
+}
+
+/* --------------------------------------------------------------------------
+ * 26. Mobile Collapsible HUD & 100dvh Battle Layout
+ * -------------------------------------------------------------------------- */
+@media (min-width: 769px) {
+  #hud-mini-bar,
+  .hud-mini-bar {
+    display: none;
+  }
+
+  #hud-collapsible-body,
+  .hud-collapsible-body {
+    display: contents;
+  }
+}
+
+@media (max-width: 768px) {
+  #top-hud {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    gap: 0;
+    min-height: 44px;
+    z-index: 120;
+  }
+
+  #hud-mini-bar,
+  .hud-mini-bar {
+    height: 44px;
+    min-height: 44px;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    box-sizing: border-box;
+  }
+
+  .hud-mini-summary,
+  .hud-mini-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hud-mini-name {
+    font-family: var(--font-serif);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gold-bright);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+  }
+
+  .hud-mini-stat,
+  .hud-mini-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .hud-mini-stat.hp,
+  .hud-mini-hp {
+    color: #86efac;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.42);
+  }
+
+  .hud-mini-stat.mp,
+  .hud-mini-mp {
+    color: #7dd3fc;
+    background: rgba(56, 189, 248, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.42);
+  }
+
+  #hud-mini-bar .hud-collapse-btn,
+  .hud-collapse-btn {
+    min-height: 30px;
+    height: 30px;
+    padding: 3px 8px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    background: rgba(23, 29, 47, 0.92);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold-bright);
+  }
+
+  #hud-collapsible-body,
+  .hud-collapsible-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px 10px;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    max-height: 420px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+  }
+
+  #hud-collapsible-body .hud-bars,
+  .hud-collapsible-body .hud-bars {
+    order: 0;
+    flex-basis: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    min-width: 0;
+    max-width: none;
+  }
+
+  #hud-collapsible-body .hud-bars .stat-bar,
+  .hud-collapsible-body .hud-bars .stat-bar {
+    height: 16px;
+  }
+
+  #hud-collapsible-body .btn-hud,
+  .hud-collapsible-body .btn-hud {
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 0.74rem;
+  }
+
+  #top-hud.hud-collapsed #hud-collapsible-body,
+  #top-hud.hud-collapsed .hud-collapsible-body {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-color: transparent;
+    pointer-events: none;
+  }
+
+  #nav-bar {
+    top: 0;
+  }
+
+  .btn-peek-zh {
+    min-height: 28px;
+  }
+
+  /* Mobile Battle 100dvh Anti-Clipping Compact Layout */
+  .game-view#view-battle.active,
+  #view-battle.active {
+    min-height: calc(100vh - 46px);
+    min-height: calc(100dvh - 46px);
+    height: calc(100dvh - 46px);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 8px 8px;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  #view-battle .battle-status-strip {
+    gap: 4px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  #view-battle .battle-status-strip .battle-badge,
+  #view-battle .battle-status-strip .badge,
+  #view-battle .battle-status-strip .boss-phase-badge {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+  }
+
+  #view-battle .battle-arena {
+    grid-template-columns: 1fr 1fr;
+    padding: 6px 8px;
+    gap: 6px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  #view-battle .combatant-card {
+    padding: 6px;
+    gap: 4px;
+  }
+
+  #view-battle .combatant-art {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+
+  #view-battle .combatant-art svg {
+    max-height: 62px;
+    max-width: 62px;
+  }
+
+  #view-battle .hero-speech-bubble,
+  #view-battle .enemy-speech-bubble {
+    min-height: 26px;
+    max-height: 44px;
+    padding: 3px 6px;
+    font-size: 0.68rem;
+    line-height: 1.32;
+  }
+
+  #view-battle .combatant-info {
+    gap: 3px;
+  }
+
+  #view-battle .combatant-name {
+    font-size: 0.78rem;
+  }
+
+  #view-battle .stat-bar,
+  #view-battle .combatant-info .stat-bar {
+    height: 15px;
+    font-size: 0.68rem;
+  }
+
+  #view-battle .stat-bar-text,
+  #view-battle .combatant-info .stat-bar-text {
+    font-size: 0.65rem;
+  }
+
+  #view-battle .speed-bar {
+    height: 8px;
+  }
+
+  #view-battle #battle-question-card,
+  #view-battle .battle-question-card {
+    padding: 8px 10px;
+    margin-bottom: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 0;
+  }
+
+  #view-battle .question-card-header {
+    gap: 4px 8px;
+    margin-bottom: 4px;
+  }
+
+  #view-battle .battle-speed-wrap {
+    min-width: 120px;
+  }
+
+  #view-battle .question-audio-btns .btn-audio,
+  #view-battle .question-audio-btns button {
+    min-height: 30px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+  }
+
+  #view-battle .q-prompt-zh {
+    font-size: 0.78rem;
+    margin-bottom: 2px;
+    line-height: 1.35;
+  }
+
+  #view-battle .q-prompt-jp {
+    font-size: 0.96rem;
+    line-height: 1.65;
+    margin: 4px 0;
+    padding: 6px 8px;
+  }
+
+  #view-battle .battle-q-hint {
+    margin: 3px 0;
+    padding: 5px 8px;
+    font-size: 0.76rem;
+  }
+
+  #view-battle .options-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  #view-battle .option-btn {
+    min-height: 44px;
+    padding: 6px 8px;
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  #view-battle .battle-action-bar {
+    gap: 5px;
+    padding: 4px 6px;
+    flex-shrink: 0;
+  }
+
+  #view-battle .battle-action-bar .btn,
+  #view-battle .battle-action-bar button {
+    min-height: 34px;
+    padding: 4px 8px;
+    font-size: 0.76rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogue-portrait svg,
+  .dialogue-portrait.is-talking svg,
+  .dialogue-next-cursor,
+  .boss-phase-badge.boss-phase-3 {
+    animation: none !important;
+  }
+}

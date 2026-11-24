@@ -7,12 +7,22 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app" class="furigana-on">
+  <div id="app" class="furigana-on immersion-standard">
     <!-- Atmospheric Background Layer -->
     <div class="bg-atmosphere" aria-hidden="true"></div>
 
     <!-- Persistent Top HUD -->
     <header id="top-hud" class="top-hud hidden" aria-label="旅人狀態列">
+      <div id="hud-mini-bar" class="hud-mini-bar">
+        <div class="hud-mini-stats">
+          <span id="hud-mini-name" class="hud-mini-name">旅人 Lv.1</span>
+          <span id="hud-mini-hp" class="hud-mini-chip hud-mini-hp">HP 100/100</span>
+          <span id="hud-mini-mp" class="hud-mini-chip hud-mini-mp">MP 50/50</span>
+        </div>
+        <button id="btn-hud-collapse-toggle" type="button" class="btn-hud hud-collapse-btn" aria-expanded="false" aria-controls="hud-collapsible-body">▼ 角色狀態</button>
+      </div>
+
+      <div id="hud-collapsible-body" class="hud-collapsible-body">
       <div class="hud-profile">
         <div id="hud-avatar" class="hud-avatar" aria-label="角色頭像"></div>
         <div class="hud-identity">
@@ -52,11 +62,12 @@
             <option value="fixed_n2">🔮 固定 N2</option>
             <option value="fixed_n1">🔥 N1 魔境 ×2</option>
           </select>
-          <button id="btn-toggle-furigana" type="button" class="btn-hud active" title="切換漢字假名顯示">假名: 開</button>
+          <button id="btn-toggle-furigana" type="button" class="btn-hud active" title="切換三段式日文沉浸模式">標準: 假名+中</button>
           <button id="btn-toggle-bgm" type="button" class="btn-hud" title="切換背景音樂">🎵 BGM</button>
           <button id="btn-toggle-sfx" type="button" class="btn-hud" title="切換音效">🔊 SFX</button>
           <button id="btn-open-save" type="button" class="btn-hud" title="存檔與讀取">💾 存檔</button>
         </div>
+      </div>
       </div>
     </header>
 
@@ -159,6 +170,8 @@
           </div>
         </div>
 
+        <div id="town-daily-training" class="daily-training-panel panel-card"></div>
+
         <div class="town-layout">
           <div class="town-npc-column">
             <h3 class="section-heading">據點居民</h3>
@@ -172,6 +185,7 @@
                 <div class="dialogue-speaker-row">
                   <h3 id="dialogue-speaker" class="dialogue-speaker">請選擇一位城鎮居民</h3>
                   <span id="dialogue-role-tag" class="tag-pill">據點交流</span>
+                  <span id="dialogue-register-tag" class="npc-speech-register-badge"></span>
                 </div>
                 <div class="affection-wrap">
                   <div class="stat-bar affection-bar">
@@ -186,11 +200,15 @@
             <div class="dialogue-body">
               <div class="dialogue-speech-box">
                 <div id="dialogue-text-jp" class="dialogue-text-jp"></div>
-                <div id="dialogue-text-zh" class="dialogue-text-zh">點擊左側的居民卡片，以禮貌的日文與其對話、累積好感度並解鎖專屬獎勵。</div>
+                <div id="dialogue-zh-peek-wrap" class="zh-peek-wrap">
+                  <button id="btn-dialogue-peek-zh" type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
+                  <div id="dialogue-text-zh" class="dialogue-text-zh zh-collapsible">點擊左側的居民卡片，以禮貌的日文與其對話、累積好感度並解鎖專屬獎勵。</div>
+                </div>
                 <div class="dialogue-audio-row">
                   <button id="btn-dialogue-tts" type="button" class="btn btn-sm btn-audio">🔊 正常朗讀</button>
                   <button id="btn-dialogue-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速 0.65x</button>
                 </div>
+                <span id="dialogue-next-cursor" class="dialogue-next-cursor hidden" aria-hidden="true">▼</span>
               </div>
 
               <div id="dialogue-feedback" class="dialogue-feedback"></div>
@@ -270,6 +288,7 @@
       <section id="view-battle" class="game-view" aria-label="日文言霊戰鬥">
         <div class="battle-status-strip">
           <span id="battle-region-label" class="battle-badge region-badge">區域戰鬥</span>
+          <span id="battle-boss-phase-badge" class="battle-badge boss-phase-badge hidden">【第一階段】詞彙識讀試煉</span>
           <span id="battle-combo-badge" class="battle-badge combo-badge">🔥 Combo x0</span>
           <span id="battle-fever-badge" class="battle-badge fever-badge hidden">⚡ FEVER TIME</span>
           <span id="battle-difficulty-badge" class="battle-badge diff-badge">難度：動態自適應（N4）</span>
@@ -333,7 +352,10 @@
             </div>
           </div>
 
-          <div id="battle-q-prompt-zh" class="q-prompt-zh"></div>
+          <div id="battle-zh-peek-wrap" class="zh-peek-wrap">
+            <button id="btn-battle-peek-zh" type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
+            <div id="battle-q-prompt-zh" class="q-prompt-zh zh-collapsible"></div>
+          </div>
           <div id="battle-q-prompt-jp" class="q-prompt-jp"></div>
           <div id="battle-q-hint" class="battle-q-hint hidden"></div>
           <div id="battle-options-container" class="options-grid"></div>
@@ -527,6 +549,8 @@
           </div>
         </div>
 
+        <div id="quests-daily-training" class="daily-training-panel panel-card"></div>
+
         <div id="quest-tabs" class="tab-bar" role="tablist">
           <button type="button" class="tab-btn active" data-tab="main" role="tab">⭐ 主線任務</button>
           <button type="button" class="tab-btn" data-tab="side" role="tab">🌿 支線委託</button>
@@ -563,7 +587,8 @@
             <p class="view-subtitle">自動收錄戰鬥與閱讀副本中的答錯題目，複習錯誤剖析並發起「記憶試煉復仇戰」徹底攻克弱點。</p>
           </div>
           <div class="notes-header-actions">
-            <button id="btn-start-wrong-training" type="button" class="btn btn-crimson" disabled>⚔️ 啟動錯題特訓（專攻未攻克題庫）</button>
+            <button id="btn-start-wrong-training" type="button" class="btn btn-crimson" disabled>⚔️ 特訓今日到期錯題 (0)</button>
+            <button id="btn-start-wrong-training-all" type="button" class="btn btn-gold btn-sm" disabled>🔁 提前全量特訓</button>
             <button id="btn-clear-mastered-notes" type="button" class="btn btn-secondary btn-sm" disabled>🧹 一鍵清除已攻克</button>
           </div>
         </div>
@@ -641,6 +666,16 @@
         <div class="modal-body">
           <p class="modal-hint">所有進度均儲存於本機瀏覽器，支援多組存檔欄位隨時切換。</p>
           <div id="save-slots-list" class="save-slots-list"></div>
+          <div id="save-transfer-section" class="save-transfer-section">
+            <div class="save-transfer-header">
+              <strong>📦 存檔備份與跨裝置移轉（JSON）</strong>
+              <div class="save-transfer-actions">
+                <button id="btn-export-save-json" type="button" class="btn btn-sm btn-primary">📤 匯出存檔碼</button>
+                <button id="btn-import-save-json" type="button" class="btn btn-sm btn-gold">📥 匯入存檔碼</button>
+              </div>
+            </div>
+            <textarea id="save-json-textarea" class="save-json-textarea" rows="3" placeholder="點擊「📤 匯出存檔碼」產生並複製 JSON，或貼上備份存檔碼後點擊「📥 匯入存檔碼」…"></textarea>
+          </div>
         </div>
       </div>
     </div>

@@ -37,6 +37,37 @@
   };
 
   const JLPT_LEVELS = ['N4', 'N3', 'N2', 'N1'];
+  const DAY_MS = 86400000;
+  const SRS_INTERVAL_DAYS = [1, 3, 7];
+
+  const NPC_REGISTER_LABELS = {
+    mayor: '【村長・長輩敬語】',
+    merchant: '【商人・丁寧語】',
+    scholar: '【學者・丁寧解説】',
+    priest: '【祭司・書面語】',
+    default: '【宿屋・日常會話】'
+  };
+
+  const IMMERSION_MODES = ['standard', 'advanced', 'immersion'];
+
+  const DAILY_TRAINING_DEFS = [
+    {
+      id: 'dt_correct_10',
+      title: '今日答對 10 題',
+      desc: '於戰鬥、閱讀副本或錯題特訓中累計答對 10 題日文試題。',
+      target: 10,
+      metric: 'correctCount',
+      reward: { exp: 80, gold: 100 }
+    },
+    {
+      id: 'dt_review_3',
+      title: '完成 3 題錯題複習',
+      desc: '於錯題特訓、戰鬥或閱讀中答對並推進 3 題錯題複習進度。',
+      target: 3,
+      metric: 'reviewCount',
+      reward: { exp: 90, gold: 120 }
+    }
+  ];
   const DIFFICULTY_MODES = [
     {
       id: 'adaptive',
@@ -572,6 +603,9 @@
     playSFX(name) {
       try { if (global.AudioEngine && global.AudioEngine.playSFX) global.AudioEngine.playSFX(name); } catch (_) {}
     },
+    playTypeTick() {
+      try { if (global.AudioEngine && global.AudioEngine.playTypeTick) global.AudioEngine.playTypeTick(); } catch (_) {}
+    },
     speak(text, rate, onEnd) {
       try {
         if (global.AudioEngine && global.AudioEngine.speak) {
@@ -794,9 +828,16 @@
       },
       mistakes: [],
       wrongNotes: {},
+      dailyTraining: {
+        dateStr: new Date().toDateString(),
+        correctCount: 0,
+        reviewCount: 0,
+        claimedIds: []
+      },
       achievements: [],
       settings: {
         furigana: true,
+        immersionMode: 'standard',
         difficultyMode: 'adaptive',
         adaptiveStartJlpt: 'N4'
       }
@@ -942,29 +983,69 @@
         }));
     }
 
-    // Wrong Notes (言霊錯題筆記 - backwards compatible with old saves)
+    // Wrong Notes (言霊錯題筆記 + SRS Forgetting Curve - backwards compatible with old saves)
     out.wrongNotes = {};
     if (raw.wrongNotes && typeof raw.wrongNotes === 'object' && !Array.isArray(raw.wrongNotes)) {
+      const nowMs = Date.now();
       Object.keys(raw.wrongNotes).forEach((qid) => {
         const entry = raw.wrongNotes[qid];
         if (!entry || typeof entry !== 'object') return;
         const id = typeof entry.id === 'string' && entry.id ? entry.id : String(qid);
+        const rawMastered = Boolean(entry.mastered);
+        const rawSrs = entry.srsLevel !== undefined && entry.srsLevel !== null
+          ? clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 4)
+          : (rawMastered ? 4 : 0);
+        const isMastered = rawMastered || rawSrs >= 4;
+        const srsLevel = isMastered ? 4 : rawSrs;
+        const nextReviewAt = isMastered
+          ? null
+          : (entry.nextReviewAt !== undefined && entry.nextReviewAt !== null && Number.isFinite(Number(entry.nextReviewAt))
+              ? Number(entry.nextReviewAt)
+              : nowMs);
         out.wrongNotes[id] = {
           id,
           wrongCount: Math.max(1, Math.floor(Number(entry.wrongCount) || 1)),
           lastWrongAt: typeof entry.lastWrongAt === 'string' ? entry.lastWrongAt : new Date().toISOString(),
           playerLastChoice: entry.playerLastChoice !== undefined ? entry.playerLastChoice : null,
-          mastered: Boolean(entry.mastered)
+          mastered: isMastered,
+          srsLevel,
+          nextReviewAt
         };
       });
+    }
+
+    // Daily Training Quests (auto-resets whenever dateStr !== new Date().toDateString())
+    const todayDateStr = new Date().toDateString();
+    const rdt = raw.dailyTraining && typeof raw.dailyTraining === 'object' ? raw.dailyTraining : null;
+    if (rdt && rdt.dateStr === todayDateStr) {
+      out.dailyTraining = {
+        dateStr: todayDateStr,
+        correctCount: Math.max(0, Math.floor(Number(rdt.correctCount) || 0)),
+        reviewCount: Math.max(0, Math.floor(Number(rdt.reviewCount) || 0)),
+        claimedIds: Array.isArray(rdt.claimedIds) ? Array.from(new Set(rdt.claimedIds.map(String))) : []
+      };
+    } else {
+      out.dailyTraining = {
+        dateStr: todayDateStr,
+        correctCount: 0,
+        reviewCount: 0,
+        claimedIds: []
+      };
     }
 
     // Achievements
     out.achievements = Array.isArray(raw.achievements) ? Array.from(new Set(raw.achievements.map(String))) : [];
 
-    // Settings
+    // Settings (3-tier Immersion Mode backwards compatible with legacy furigana boolean)
     const rset = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
-    out.settings.furigana = rset.furigana !== undefined ? Boolean(rset.furigana) : true;
+    if (typeof rset.immersionMode === 'string' && IMMERSION_MODES.includes(rset.immersionMode)) {
+      out.settings.immersionMode = rset.immersionMode;
+    } else if (rset.furigana !== undefined) {
+      out.settings.immersionMode = Boolean(rset.furigana) ? 'standard' : 'advanced';
+    } else {
+      out.settings.immersionMode = 'standard';
+    }
+    out.settings.furigana = out.settings.immersionMode === 'standard';
     const validModes = new Set(DIFFICULTY_MODES.map((m) => m.id));
     out.settings.difficultyMode = typeof rset.difficultyMode === 'string' && validModes.has(rset.difficultyMode)
       ? rset.difficultyMode
@@ -991,6 +1072,7 @@
   let currentView = 'title';
 
   // UI sub-states
+  let hudCollapsedMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
   let createSelectedJobId = null;
   let createPreviewPose = 'idle';
   let createSelectedDifficultyMode = 'adaptive';
@@ -1442,10 +1524,16 @@
     return state.wrongNotes;
   }
 
+  function isWrongNoteDue(entry, nowMs = Date.now()) {
+    if (!entry || entry.mastered) return false;
+    return !entry.nextReviewAt || nowMs >= Number(entry.nextReviewAt);
+  }
+
   function recordWrongNote(questionId, playerLastChoice = null) {
     if (!questionId) return;
     const notes = ensureWrongNotesMap();
-    const nowIso = new Date().toISOString();
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
     const prev = notes[questionId];
     if (prev) {
       prev.wrongCount = Math.max(1, Number(prev.wrongCount) || 1) + 1;
@@ -1453,6 +1541,8 @@
       if (playerLastChoice !== undefined && playerLastChoice !== null) {
         prev.playerLastChoice = playerLastChoice;
       }
+      prev.srsLevel = 0;
+      prev.nextReviewAt = nowMs;
       prev.mastered = false;
     } else {
       notes[questionId] = {
@@ -1460,6 +1550,8 @@
         wrongCount: 1,
         lastWrongAt: nowIso,
         playerLastChoice: playerLastChoice !== undefined ? playerLastChoice : null,
+        srsLevel: 0,
+        nextReviewAt: nowMs,
         mastered: false
       };
     }
@@ -1469,13 +1561,162 @@
     updateNavMistakeBadge();
   }
 
+  function advanceWrongNoteSRS(questionId, isCorrect = true) {
+    if (!questionId) {
+      return { advanced: false, mastered: false, srsLevel: 0, daysAdded: 0, label: '' };
+    }
+    if (isCorrect === false) {
+      recordWrongNote(questionId);
+      return {
+        advanced: false,
+        mastered: false,
+        srsLevel: 0,
+        daysAdded: 0,
+        label: 'SRS Lv.0（已重置，今日到期）'
+      };
+    }
+    if (!state.wrongNotes || !state.wrongNotes[questionId]) {
+      return { advanced: false, mastered: false, srsLevel: 0, daysAdded: 0, label: '' };
+    }
+    const entry = state.wrongNotes[questionId];
+    if (entry.mastered) {
+      return { advanced: false, mastered: true, srsLevel: 4, daysAdded: 0, label: '已完全掌握' };
+    }
+    const curLv = clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 3);
+    const nextLv = curLv + 1;
+    entry.srsLevel = nextLv;
+
+    let daysAdded = 0;
+    let label = '';
+    if (nextLv >= 4) {
+      entry.mastered = true;
+      entry.nextReviewAt = null;
+      label = '✅ 已完全掌握 (SRS Lv.4)';
+    } else {
+      daysAdded = SRS_INTERVAL_DAYS[curLv] || 1;
+      entry.mastered = false;
+      entry.nextReviewAt = Date.now() + daysAdded * DAY_MS;
+      label = `SRS Lv.${nextLv}（${daysAdded}天後複習）`;
+    }
+
+    recordDailyTrainingProgress('review', 1);
+    updateNavMistakeBadge();
+    return { advanced: true, mastered: entry.mastered, srsLevel: nextLv, daysAdded, label };
+  }
+
   function markWrongNoteMastered(questionId) {
     if (!questionId || !state.wrongNotes || !state.wrongNotes[questionId]) return false;
     const entry = state.wrongNotes[questionId];
     const wasUnmastered = !entry.mastered;
+    entry.srsLevel = 4;
+    entry.nextReviewAt = null;
     entry.mastered = true;
     updateNavMistakeBadge();
     return wasUnmastered;
+  }
+
+  // ---- Daily Training Quests (Date-keyed auto-reset) ----
+  function ensureDailyTrainingFresh(st = state) {
+    const todayKey = new Date().toDateString();
+    if (!st.dailyTraining || typeof st.dailyTraining !== 'object' || st.dailyTraining.dateStr !== todayKey) {
+      st.dailyTraining = {
+        dateStr: todayKey,
+        correctCount: 0,
+        reviewCount: 0,
+        claimedIds: []
+      };
+    } else {
+      st.dailyTraining.correctCount = Math.max(0, Math.floor(Number(st.dailyTraining.correctCount) || 0));
+      st.dailyTraining.reviewCount = Math.max(0, Math.floor(Number(st.dailyTraining.reviewCount) || 0));
+      st.dailyTraining.claimedIds = Array.isArray(st.dailyTraining.claimedIds)
+        ? Array.from(new Set(st.dailyTraining.claimedIds.map(String)))
+        : [];
+    }
+    return st.dailyTraining;
+  }
+
+  function recordDailyTrainingProgress(type, amount = 1) {
+    const dt = ensureDailyTrainingFresh(state);
+    const inc = Math.max(0, Math.floor(Number(amount) || 0));
+    if (inc <= 0) return;
+    if (type === 'correct') dt.correctCount += inc;
+    else if (type === 'review') dt.reviewCount += inc;
+  }
+
+  function claimDailyTrainingTask(taskId) {
+    const dt = ensureDailyTrainingFresh(state);
+    const task = DAILY_TRAINING_DEFS.find((t) => t.id === taskId);
+    if (!task) return false;
+    if (dt.claimedIds.includes(task.id)) return false;
+    const curVal = Number(dt[task.metric] || 0);
+    if (curVal < task.target) return false;
+
+    dt.claimedIds.push(task.id);
+    gainExp(task.reward.exp);
+    gainGold(task.reward.gold);
+    Audio.playSFX('levelup');
+    showToast(`☀️ 完成每日特訓【${task.title}】！獲得 ⭐ +${task.reward.exp} EXP、🪙 +${task.reward.gold} 金幣`, 'gold');
+    checkAchievements();
+    autoSave();
+    updateHUD();
+    renderDailyTrainingPanel();
+    return true;
+  }
+
+  function renderDailyTrainingPanel() {
+    const dt = ensureDailyTrainingFresh(state);
+    const targets = [$('town-daily-training'), $('quests-daily-training')].filter(Boolean);
+    if (targets.length === 0) return;
+
+    const html = `
+      <div class="daily-training-header">
+        <div>
+          <h3 class="daily-training-title">☀️ 每日言霊特訓</h3>
+          <span class="daily-training-sub">每日跨日自動刷新・完成可立即領取 EXP 與金幣獎勵</span>
+        </div>
+        <span class="badge badge-gold">${escapeHtml(dt.dateStr)}</span>
+      </div>
+      <div class="daily-training-grid">
+        ${DAILY_TRAINING_DEFS.map((task) => {
+          const cur = Math.min(task.target, Number(dt[task.metric] || 0));
+          const pct = Math.round((cur / task.target) * 100);
+          const claimed = dt.claimedIds.includes(task.id);
+          const ready = !claimed && cur >= task.target;
+          return `
+            <div class="daily-training-item ${claimed ? 'is-claimed' : ready ? 'is-ready' : ''}">
+              <div class="daily-training-item-top">
+                <div>
+                  <div class="daily-training-item-name">${escapeHtml(task.title)}</div>
+                  <div class="daily-training-item-desc">${escapeHtml(task.desc)}</div>
+                </div>
+                <div class="daily-training-item-action">
+                  ${claimed
+                    ? '<span class="badge badge-emerald">✅ 已領取</span>'
+                    : ready
+                      ? `<button type="button" class="btn btn-gold btn-sm" data-claim-daily-training="${escapeHtml(task.id)}">🎁 領取獎勵</button>`
+                      : `<span class="badge">${cur} / ${task.target}</span>`
+                  }
+                </div>
+              </div>
+              <div class="progress-track daily-training-bar">
+                <div class="progress-fill" style="width: ${pct}%;"></div>
+              </div>
+              <div class="daily-training-reward">獎勵：⭐ ${task.reward.exp} EXP・🪙 ${task.reward.gold} 金幣</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    targets.forEach((container) => {
+      container.innerHTML = html;
+      container.querySelectorAll('[data-claim-daily-training]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tid = btn.getAttribute('data-claim-daily-training');
+          if (tid) claimDailyTrainingTask(tid);
+        });
+      });
+    });
   }
 
   function resolveWrongNoteQuestion(noteId) {
@@ -1534,18 +1775,20 @@
 
   function getWrongNotesSummary() {
     const notes = ensureWrongNotesMap();
+    const nowMs = Date.now();
     const list = Object.values(notes).filter((entry) => entry && resolveWrongNoteQuestion(entry.id));
     const unmastered = list.filter((e) => !e.mastered).length;
+    const dueCount = list.filter((e) => isWrongNoteDue(e, nowMs)).length;
     const mastered = list.length - unmastered;
-    return { total: list.length, unmastered, mastered, entries: list };
+    return { total: list.length, unmastered, dueCount, mastered, entries: list };
   }
 
   function updateNavMistakeBadge() {
     const badge = $('nav-notes-badge');
     if (!badge) return;
-    const { unmastered } = getWrongNotesSummary();
-    if (unmastered > 0) {
-      badge.textContent = `(${unmastered})`;
+    const { dueCount } = getWrongNotesSummary();
+    if (dueCount > 0) {
+      badge.textContent = `(${dueCount})`;
       badge.classList.remove('hidden');
     } else {
       badge.textContent = '(0)';
@@ -1624,19 +1867,87 @@
   }
 
   // ============================================================================
-  // 9. HUD, Furigana & View Router
+  // 9. HUD, Three-Tier Immersion Mode, Mobile Collapsible HUD & View Router
   // ============================================================================
+  function resetZhPeekWrap(wrapEl) {
+    if (!wrapEl) return;
+    wrapEl.classList.remove('zh-revealed');
+    const btn = wrapEl.querySelector('.btn-peek-zh');
+    if (btn) btn.textContent = '👁 點擊偷看中文提示';
+  }
+
   function applyFuriganaSetting() {
     const app = $('app');
     const btn = $('btn-toggle-furigana');
-    const on = Boolean(state.settings.furigana);
+    let mode = state && state.settings && state.settings.immersionMode;
+    if (!IMMERSION_MODES.includes(mode)) {
+      mode = (state && state.settings && state.settings.furigana === false) ? 'advanced' : 'standard';
+    }
+    if (state && state.settings) {
+      state.settings.immersionMode = mode;
+      state.settings.furigana = mode === 'standard';
+    }
+
     if (app) {
-      app.classList.toggle('furigana-on', on);
-      app.classList.toggle('furigana-off', !on);
+      app.classList.remove('furigana-on', 'furigana-off', 'immersion-standard', 'immersion-advanced', 'immersion-full');
+      if (mode === 'standard') {
+        app.classList.add('furigana-on', 'immersion-standard');
+      } else if (mode === 'advanced') {
+        app.classList.add('furigana-off', 'immersion-advanced');
+      } else {
+        app.classList.add('furigana-off', 'immersion-full');
+      }
     }
     if (btn) {
-      btn.textContent = on ? '假名: 開' : '假名: 關';
-      btn.classList.toggle('active', on);
+      if (mode === 'standard') {
+        btn.textContent = '標準: 假名+中';
+        btn.classList.add('active');
+        btn.classList.remove('immersion-active');
+      } else if (mode === 'advanced') {
+        btn.textContent = '進階: 無假名';
+        btn.classList.remove('active');
+        btn.classList.remove('immersion-active');
+      } else {
+        btn.textContent = '沉浸: 全日文';
+        btn.classList.add('active');
+        btn.classList.add('immersion-active');
+      }
+      btn.setAttribute('data-immersion-mode', mode);
+    }
+  }
+
+  function cycleImmersionMode(silent = false) {
+    const cur = (state && state.settings && IMMERSION_MODES.includes(state.settings.immersionMode))
+      ? state.settings.immersionMode
+      : (state && state.settings && state.settings.furigana === false ? 'advanced' : 'standard');
+    const nextIdx = (IMMERSION_MODES.indexOf(cur) + 1) % IMMERSION_MODES.length;
+    const nextMode = IMMERSION_MODES[nextIdx];
+    state.settings.immersionMode = nextMode;
+    state.settings.furigana = nextMode === 'standard';
+    applyFuriganaSetting();
+    if (hasActiveSession) autoSave();
+    if (!silent) {
+      const labels = {
+        standard: '標準模式（顯示振假名＋中文翻譯）',
+        advanced: '進階模式（隱藏振假名，保留中文翻譯）',
+        immersion: '沉浸模式（全日文介面，可點擊偷看中文提示）'
+      };
+      showToast(`🌸 已切換為【${labels[nextMode]}】`, 'info');
+    }
+    return nextMode;
+  }
+
+  function applyMobileHudCollapseState() {
+    const hud = $('top-hud');
+    const toggleBtn = $('btn-hud-collapse-toggle');
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    const shouldCollapse = isMobile && Boolean(hudCollapsedMobile);
+    if (hud) {
+      hud.classList.toggle('hud-collapsed', shouldCollapse);
+    }
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-expanded', shouldCollapse ? 'false' : 'true');
+      toggleBtn.textContent = shouldCollapse ? '▼ 角色狀態' : '▲ 收合狀態';
     }
   }
 
@@ -1744,6 +2055,11 @@
     if ($('hud-gold')) $('hud-gold').textContent = String(p.gold);
     if ($('hud-sp')) $('hud-sp').textContent = String(p.sp);
 
+    if ($('hud-mini-name')) $('hud-mini-name').textContent = `${p.name} Lv.${p.level}`;
+    if ($('hud-mini-hp')) $('hud-mini-hp').textContent = `HP ${p.hp}/${stats.maxHp}`;
+    if ($('hud-mini-mp')) $('hud-mini-mp').textContent = `MP ${p.mp}/${stats.maxMp}`;
+
+    applyMobileHudCollapseState();
     applyFuriganaSetting();
     syncAudioButtons();
     syncDifficultyControls();
@@ -1761,6 +2077,7 @@
 
     if (hud) hud.classList.toggle('hidden', hideHud);
     if (nav) nav.classList.toggle('hidden', hideNav);
+    applyMobileHudCollapseState();
 
     document.querySelectorAll('#nav-bar .nav-btn').forEach((btn) => {
       const target = btn.getAttribute('data-view');
@@ -1786,6 +2103,10 @@
         stopShrineTimer();
         shrine.active = false;
       }
+    }
+
+    if (viewName === 'battle' && typeof window !== 'undefined' && window.innerWidth <= 768) {
+      hudCollapsedMobile = true;
     }
 
     currentView = viewName;
@@ -2008,7 +2329,7 @@
   }
 
   // ============================================================================
-  // 11. Town Hub, Typewriter NPC Dialogue, Affection & Shop/Enhance Modal
+  // 11. Town Hub, Anti-Garble AVG Typewriter Dialogue, Affection & Shop Modal
   // ============================================================================
   function tokenizeHtmlForTypewriter(html) {
     const tokens = [];
@@ -2016,26 +2337,112 @@
     let i = 0;
     while (i < str.length) {
       if (str[i] === '<') {
-        // Keep entire <ruby>...</ruby> block atomic so furigana never breaks mid-type
+        // Keep entire <ruby>...</ruby> block (including <rt>...</rt>) indivisible
         if (/^<ruby\b/i.test(str.slice(i))) {
           const endRuby = str.toLowerCase().indexOf('</ruby>', i);
           if (endRuby !== -1) {
-            tokens.push(str.slice(i, endRuby + 7));
+            tokens.push({ html: str.slice(i, endRuby + 7), visible: true });
             i = endRuby + 7;
             continue;
           }
         }
         const close = str.indexOf('>', i);
         if (close !== -1) {
-          tokens.push(str.slice(i, close + 1));
+          tokens.push({ html: str.slice(i, close + 1), visible: false });
           i = close + 1;
           continue;
         }
       }
-      tokens.push(str[i]);
-      i += 1;
+      if (str[i] === '&') {
+        const semi = str.indexOf(';', i);
+        if (semi !== -1 && semi - i <= 10 && /^&[a-zA-Z0-9#]+;$/.test(str.slice(i, semi + 1))) {
+          tokens.push({ html: str.slice(i, semi + 1), visible: true });
+          i = semi + 1;
+          continue;
+        }
+      }
+      const cp = str.codePointAt(i);
+      const ch = String.fromCodePoint(cp);
+      tokens.push({ html: ch, visible: !/\s/.test(ch) });
+      i += ch.length;
     }
     return tokens;
+  }
+
+  function typewriterSpeak(element, htmlText, speed = 30, onComplete = null) {
+    if (element && element._typewriterTimer) {
+      clearInterval(element._typewriterTimer);
+      element._typewriterTimer = null;
+    }
+    if (!element) {
+      if (typeof onComplete === 'function') onComplete();
+      return null;
+    }
+
+    const fullHtml = String(htmlText || '');
+    const tokens = tokenizeHtmlForTypewriter(fullHtml);
+    if (tokens.length === 0) {
+      element.innerHTML = '';
+      if (typeof onComplete === 'function') onComplete();
+      return null;
+    }
+
+    element.innerHTML = '';
+    let acc = '';
+    let idx = 0;
+    let visibleStep = 0;
+    const intervalMs = Math.max(8, Number(speed) || 30);
+
+    const timerId = setInterval(() => {
+      let emittedVisible = false;
+      while (idx < tokens.length) {
+        const tok = tokens[idx++];
+        acc += tok.html;
+        if (tok.visible) {
+          emittedVisible = true;
+          break;
+        }
+      }
+      element.innerHTML = acc;
+
+      if (emittedVisible) {
+        if (visibleStep % 2 === 0) {
+          Audio.playTypeTick();
+        }
+        visibleStep += 1;
+      }
+
+      if (idx >= tokens.length) {
+        clearInterval(timerId);
+        if (element._typewriterTimer === timerId) {
+          element._typewriterTimer = null;
+        }
+        element.innerHTML = fullHtml;
+        if (typeof onComplete === 'function') onComplete();
+      }
+    }, intervalMs);
+
+    element._typewriterTimer = timerId;
+    return timerId;
+  }
+
+  function setDialogueInteractiveLock(locked) {
+    const isLocked = Boolean(locked);
+    const portraitEl = $('dialogue-portrait');
+    const speechBox = document.querySelector('#town-dialogue-panel .dialogue-speech-box');
+    const choicesEl = $('dialogue-choices');
+    const actionsEl = $('dialogue-actions');
+
+    if (portraitEl) portraitEl.classList.toggle('is-talking', isLocked);
+    if (speechBox) speechBox.classList.toggle('is-typing', isLocked);
+
+    [choicesEl, actionsEl].forEach((container) => {
+      if (!container) return;
+      container.classList.toggle('is-locked', isLocked);
+      container.querySelectorAll('button').forEach((btn) => {
+        btn.disabled = isLocked;
+      });
+    });
   }
 
   function stopTypewriter() {
@@ -2043,7 +2450,26 @@
       clearInterval(townState.typingTimerId);
       townState.typingTimerId = null;
     }
+    const jpEl = $('dialogue-text-jp');
+    const zhEl = $('dialogue-text-zh');
+    if (jpEl && jpEl._typewriterTimer) {
+      clearInterval(jpEl._typewriterTimer);
+      jpEl._typewriterTimer = null;
+    }
+    if (zhEl && zhEl._typewriterTimer) {
+      clearInterval(zhEl._typewriterTimer);
+      zhEl._typewriterTimer = null;
+    }
     townState.typingActive = false;
+    setDialogueInteractiveLock(false);
+  }
+
+  function finishTownTypewriter() {
+    stopTypewriter();
+    const zhEl = $('dialogue-text-zh');
+    if (zhEl) zhEl.innerHTML = townState.typingFullZh;
+    const cursorEl = $('dialogue-next-cursor');
+    if (cursorEl) cursorEl.classList.remove('hidden');
   }
 
   function completeTypewriterImmediately() {
@@ -2053,46 +2479,46 @@
     const zhEl = $('dialogue-text-zh');
     if (jpEl) jpEl.innerHTML = townState.typingFullJp;
     if (zhEl) zhEl.innerHTML = townState.typingFullZh;
+    const cursorEl = $('dialogue-next-cursor');
+    if (cursorEl) cursorEl.classList.remove('hidden');
   }
 
   function runTypewriter(jpHtml, zhText) {
     stopTypewriter();
+    resetZhPeekWrap($('dialogue-zh-peek-wrap'));
+
     const jpEl = $('dialogue-text-jp');
     const zhEl = $('dialogue-text-zh');
+    const cursorEl = $('dialogue-next-cursor');
+
     townState.typingFullJp = jpHtml || '';
     townState.typingFullZh = zhText || '';
-
-    const jpTokens = tokenizeHtmlForTypewriter(townState.typingFullJp);
-    const zhChars = Array.from(townState.typingFullZh);
+    townState.typingActive = true;
 
     if (jpEl) jpEl.innerHTML = '';
-    if (zhEl) zhEl.textContent = '';
+    if (zhEl) zhEl.innerHTML = '';
+    if (cursorEl) cursorEl.classList.add('hidden');
+    setDialogueInteractiveLock(true);
 
-    townState.typingActive = true;
-    let jpIdx = 0;
-    let zhIdx = 0;
-
-    townState.typingTimerId = setInterval(() => {
-      if (jpIdx < jpTokens.length) {
-        // Emit non-tag visible token + any contiguous tags in one tick
-        let chunk = '';
-        while (jpIdx < jpTokens.length) {
-          const t = jpTokens[jpIdx++];
-          chunk += t;
-          if (!/^<(?!ruby\b)/i.test(t)) break;
-        }
-        if (jpEl) jpEl.innerHTML += chunk;
-      } else if (zhIdx < zhChars.length) {
-        const step = zhChars.slice(zhIdx, zhIdx + 2).join('');
-        zhIdx += 2;
-        if (zhEl) zhEl.textContent += step;
-      } else {
-        stopTypewriter();
-      }
-    }, 24);
+    if (townState.typingFullJp) {
+      townState.typingTimerId = typewriterSpeak(jpEl, townState.typingFullJp, 30, () => {
+        townState.typingTimerId = null;
+        if (!townState.typingActive) return;
+        finishTownTypewriter();
+      });
+    } else if (townState.typingFullZh) {
+      townState.typingTimerId = typewriterSpeak(zhEl, townState.typingFullZh, 22, () => {
+        townState.typingTimerId = null;
+        if (!townState.typingActive) return;
+        finishTownTypewriter();
+      });
+    } else {
+      finishTownTypewriter();
+    }
   }
 
   function renderTown() {
+    renderDailyTrainingPanel();
     const npcs = getNPCs();
     const grid = $('town-npc-grid');
     if (!grid) return;
@@ -2202,6 +2628,9 @@
     }
     if ($('dialogue-speaker')) $('dialogue-speaker').textContent = npc.name;
     if ($('dialogue-role-tag')) $('dialogue-role-tag').textContent = npc.title || npc.role || '城鎮居民';
+    if ($('dialogue-register-tag')) {
+      $('dialogue-register-tag').textContent = NPC_REGISTER_LABELS[npc.id] || NPC_REGISTER_LABELS.default;
+    }
     if ($('dialogue-affection-bar')) $('dialogue-affection-bar').style.width = `${clamp(nState.affection, 0, 100)}%`;
     if ($('dialogue-affection-text')) $('dialogue-affection-text').textContent = `好感度 ${nState.affection}/100`;
 
@@ -2222,14 +2651,6 @@
       }).join('')}</div>`;
     }
 
-    if (animateText && dlg) {
-      const lineJp = dlg.npcLineJp || dlg.jp || dlg.text || npc.greetingJp || '';
-      const lineZh = dlg.npcLineZh || dlg.zh || dlg.translation || npc.greeting || '';
-      townState.currentTts = dlg.tts || stripRubyHtml(lineJp);
-      runTypewriter(lineJp, lineZh);
-      if ($('dialogue-feedback')) $('dialogue-feedback').innerHTML = '';
-    }
-
     const choicesEl = $('dialogue-choices');
     const actionsEl = $('dialogue-actions');
 
@@ -2238,11 +2659,12 @@
         choicesEl.innerHTML = dlg.choices.map((ch, idx) => `
           <button type="button" class="dialogue-choice-btn" data-choice-idx="${idx}">
             <div class="jp-text">${ch.jp || ch.text || ''}</div>
-            ${ch.zh ? `<div class="text-muted" style="font-size:0.84rem;margin-top:3px;">${escapeHtml(ch.zh)}</div>` : ''}
+            ${ch.zh ? `<div class="text-muted zh-collapsible dialogue-choice-zh" style="font-size:0.84rem;margin-top:3px;">${escapeHtml(ch.zh)}</div>` : ''}
           </button>
         `).join('');
         choicesEl.querySelectorAll('.dialogue-choice-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
+            if (townState.typingActive) return;
             const idx = Number(btn.getAttribute('data-choice-idx'));
             handleDialogueChoice(npc, dlg, idx);
           });
@@ -2260,6 +2682,7 @@
       const nextBtn = $('btn-dialogue-next');
       if (nextBtn) {
         nextBtn.onclick = () => {
+          if (townState.typingActive) return;
           Audio.playSFX('click');
           const dialogues = Array.isArray(npc.dialogues) ? npc.dialogues : [];
           townState.dialogueIndex = (townState.dialogueIndex + 1) % Math.max(1, dialogues.length);
@@ -2269,6 +2692,16 @@
         };
       }
       bindNpcFacilityButton(npc.id);
+    }
+
+    if (animateText && dlg) {
+      const lineJp = dlg.npcLineJp || dlg.jp || dlg.text || npc.greetingJp || '';
+      const lineZh = dlg.npcLineZh || dlg.zh || dlg.translation || npc.greeting || '';
+      townState.currentTts = dlg.tts || stripRubyHtml(lineJp);
+      if ($('dialogue-feedback')) $('dialogue-feedback').innerHTML = '';
+      runTypewriter(lineJp, lineZh);
+    } else {
+      setDialogueInteractiveLock(townState.typingActive);
     }
   }
 
@@ -3303,6 +3736,58 @@
     }
   }
 
+  function getBossPhaseInfo(hp, maxHp) {
+    const ratio = maxHp > 0 ? Number(hp) / Number(maxHp) : 1;
+    if (ratio > 0.65) {
+      return { phase: 1, label: '【第一階段】詞彙識讀試煉', css: 'boss-phase-1' };
+    }
+    if (ratio > 0.30) {
+      return { phase: 2, label: '【第二階段】文法構築試煉', css: 'boss-phase-2' };
+    }
+    return { phase: 3, label: '【最終階段】語序重組決戰', css: 'boss-phase-3' };
+  }
+
+  function matchesBossPhaseQuestion(q, phase) {
+    if (!q) return false;
+    const typeLabel = q.typeLabel ? String(q.typeLabel) : '';
+    if (phase === 1) {
+      return q.type === 'reading' || typeLabel.includes('文字語彙');
+    }
+    if (phase === 2) {
+      return q.type === 'particle' || (q.type === 'conjugation' && !typeLabel.includes('句子重組'));
+    }
+    if (phase === 3) {
+      return q.type === 'reorder' || typeLabel.includes('句子重組');
+    }
+    return true;
+  }
+
+  function checkBossPhaseTransition() {
+    if (!battle.active || !battle.enemy || !battle.enemy.isBoss || battle.isWrongNoteTraining || battle.enemyHp <= 0) {
+      return false;
+    }
+    const info = getBossPhaseInfo(battle.enemyHp, battle.enemyMaxHp);
+    if (info.phase > (battle.bossPhase || 1)) {
+      battle.bossPhase = info.phase;
+      Audio.playSFX('boss_enter');
+      triggerCombatAnim('#view-battle .combatant-card.enemy-side', 'anim-break-flash');
+      if (info.phase === 2) {
+        showEnemySpeech(
+          'ふっ……<ruby>語彙<rt>ごい</rt></ruby>だけでは<ruby>足<rt>た</rt></ruby>りぬ。<ruby>文法<rt>ぶんぽう</rt></ruby>の<ruby>嵐<rt>あらし</rt></ruby>を<ruby>越<rt>こ</rt></ruby>えてみせよ！',
+          '哼……單憑詞彙還不夠，試著突破文法的風暴吧！'
+        );
+      } else if (info.phase === 3) {
+        showEnemySpeech(
+          'これが<ruby>最終試煉<rt>さいしゅうしれん</rt></ruby>だ！<ruby>砕<rt>くだ</rt></ruby>け<ruby>散<rt>ち</rt></ruby>った<ruby>語順<rt>ごじゅん</rt></ruby>を<ruby>繋<rt>つな</rt></ruby>ぎ<ruby>止<rt>と</rt></ruby>めてみろ！',
+          '這就是最終試煉！將碎裂的語序重新構築起來吧！'
+        );
+      }
+      showToast(`🔥 ${battle.enemy.name} 進入 ${info.label}！`, 'warning');
+      return true;
+    }
+    return false;
+  }
+
   function startBattle(enemyOrId, options = {}) {
     const enemy = typeof enemyOrId === 'string' ? getEnemyById(enemyOrId) : enemyOrId;
     if (!enemy) {
@@ -3330,10 +3815,13 @@
       active: true,
       enemy,
       regionId: battleRegionId,
+      bossPhase: enemy.isBoss && !isTraining ? 1 : 0,
       isWrongNoteTraining: isTraining,
+      trainingMode: options.trainingMode || 'due',
       trainingQueue,
       trainingTotal: trainingQueue.length,
       masteredIdsInRun: [],
+      trainingFullyMasteredCount: 0,
       trainingExpEarned: 0,
       trainingGoldEarned: 0,
       enemyHp: enemyMaxHp,
@@ -3441,6 +3929,17 @@
       $('battle-region-label').textContent = battle.isWrongNoteTraining
         ? `📓 錯題特訓・記憶試煉（進度 ${battle.masteredIdsInRun.length}/${battle.trainingTotal}）`
         : `${region ? region.name : '戰場'}｜${enemy.isBoss ? '💀 BOSS 戰' : '⚔️ 遭遇戰'}`;
+    }
+    const bossPhaseBadge = $('battle-boss-phase-badge');
+    if (bossPhaseBadge) {
+      if (enemy.isBoss && !battle.isWrongNoteTraining) {
+        const phaseInfo = getBossPhaseInfo(battle.enemyHp, battle.enemyMaxHp);
+        battle.bossPhase = Math.max(battle.bossPhase || 1, phaseInfo.phase);
+        bossPhaseBadge.textContent = phaseInfo.label;
+        bossPhaseBadge.className = `battle-badge boss-phase-badge ${phaseInfo.css}`;
+      } else {
+        bossPhaseBadge.classList.add('hidden');
+      }
     }
     if ($('battle-combo-badge')) {
       $('battle-combo-badge').textContent = `🔥 Combo x${battle.combo}`;
@@ -3640,17 +4139,13 @@
     if (battle.isWrongNoteTraining) {
       const notes = ensureWrongNotesMap();
       const lastId = battle.currentQ ? battle.currentQ.id : null;
-      // Only pick unmastered wrong notes from trainingQueue
-      let pendingIds = (battle.trainingQueue || []).filter((id) => {
+      const doneInRun = new Set(battle.masteredIdsInRun || []);
+      // Draw strictly from trainingQueue (never leak non-due items during due-only training)
+      const pendingIds = (battle.trainingQueue || []).filter((id) => {
+        if (doneInRun.has(id)) return false;
         const e = notes[id];
         return e && !e.mastered && resolveWrongNoteQuestion(id);
       });
-      if (pendingIds.length === 0) {
-        // Double-check live wrongNotes map in case queue exhausted cleanly
-        pendingIds = Object.values(notes)
-          .filter((e) => e && !e.mastered && resolveWrongNoteQuestion(e.id))
-          .map((e) => e.id);
-      }
       if (pendingIds.length === 0) return null;
       let nextId = pendingIds.find((id) => id !== lastId);
       if (!nextId) nextId = pendingIds[0];
@@ -3694,6 +4189,18 @@
       }
     }
 
+    // Region Boss 3-Phase Subject Evolution filter (with seamless fallback so Boss fights never stall)
+    if (battle.enemy && battle.enemy.isBoss && !battle.isWrongNoteTraining) {
+      const phaseInfo = getBossPhaseInfo(battle.enemyHp, battle.enemyMaxHp);
+      let phaseMatches = activeTier.filter((q) => matchesBossPhaseQuestion(q, phaseInfo.phase));
+      if (phaseMatches.length === 0) {
+        phaseMatches = candidates.filter((q) => matchesBossPhaseQuestion(q, phaseInfo.phase));
+      }
+      if (phaseMatches.length > 0) {
+        activeTier = phaseMatches;
+      }
+    }
+
     // Draw deterministically from shuffled bag order, lightly favoring enemy weakness within top shuffled window
     let chosen = activeTier[0];
     if (activeTier.length > 1 && battle.enemy && battle.enemy.weakness && Math.random() < 0.42) {
@@ -3724,6 +4231,7 @@
 
     const qCard = $('battle-question-card');
     if (qCard) qCard.classList.remove('force-furigana');
+    resetZhPeekWrap($('battle-zh-peek-wrap'));
 
     const isWeak = q.type === battle.enemy.weakness;
     const typeLabel = q.typeLabel || QUESTION_TYPE_LABELS[q.type] || q.type;
@@ -3897,7 +4405,8 @@
 
     if (isCorrect) {
       recordQuestionOutcomeInShuffleBag(q, true);
-      const newlyMastered = markWrongNoteMastered(q.id);
+      const srsRes = advanceWrongNoteSRS(q.id);
+      recordDailyTrainingProgress('correct', 1);
       battle.consecutiveCorrect += 1;
       battle.consecutiveWrong = 0;
       battle.combo += 1;
@@ -3909,6 +4418,9 @@
         if (!battle.masteredIdsInRun.includes(q.id)) {
           battle.masteredIdsInRun.push(q.id);
         }
+        if (srsRes.mastered) {
+          battle.trainingFullyMasteredCount = (battle.trainingFullyMasteredCount || 0) + 1;
+        }
         battle.trainingQueue = (battle.trainingQueue || []).filter((id) => id !== q.id);
         const bonusExp = 15;
         const bonusGold = 12;
@@ -3917,13 +4429,13 @@
         battle.trainingExpEarned += bonusExp;
         battle.trainingGoldEarned += bonusGold;
         showToast(
-          newlyMastered
-            ? `✔ 已攻克錯題！獲得 +${bonusExp} EXP、+${bonusGold} 金幣`
-            : `✔ 複習答對！+15 EXP、+12 金幣`,
+          srsRes.advanced
+            ? `✔ 錯題推進至 ${srsRes.label}！獲得 +${bonusExp} EXP、+${bonusGold} 金幣`
+            : `✔ 複習答對！+${bonusExp} EXP、+${bonusGold} 金幣`,
           'success'
         );
-      } else if (newlyMastered) {
-        showToast('📓 錯題筆記中的題目已標記為【已攻克】！', 'success');
+      } else if (srsRes.advanced) {
+        showToast(`📓 錯題筆記記憶曲線提升：${srsRes.label}！`, 'success');
       }
 
       if (battle.consecutiveCorrect >= 3 && !battle.feverActive) {
@@ -4026,6 +4538,7 @@
       }
 
       battle.insightActive = false;
+      checkBossPhaseTransition();
       updateBattleUI();
       updateHUD();
 
@@ -4184,6 +4697,7 @@
 
       const trainingLines = [
         `<div class="panel-card" style="padding:10px 14px;border-left:3px solid var(--emerald);background:rgba(6,78,59,0.22);font-size:1.05rem;font-weight:700;color:#a7f3d0;">🎉 本次成功攻克 ${masteredCount} 題錯題！</div>`,
+        `🧠 SRS 記憶曲線已自動排程下次複習${battle.trainingFullyMasteredCount > 0 ? `（其中 <strong>${battle.trainingFullyMasteredCount} 題</strong> 已達 Lv.4 完全掌握！）` : '（答對 1/3/7 天後再次複習，連破 4 階即完全掌握）'}`,
         `⭐ 特訓累計獲得經驗：<strong>+${totalExpShown} EXP</strong>（含通關獎勵 +${bonusExp}）`,
         `🪙 特訓累計獲得金幣：<strong>+${totalGoldShown} 金幣</strong>（含通關獎勵 +${bonusGold}）`
       ];
@@ -4461,6 +4975,7 @@
         setTimeout(() => spawnFloatingNumber('enemy', `-${bonusDmg}`, 'num-dmg'), 120);
       }
       showToast(`📜 使用【${item.name}】，造成 ${bVal} 點破防與 ${bonusDmg} 點傷害！`, 'gold');
+      checkBossPhaseTransition();
       if (battle.enemyHp <= 0) {
         autoSave();
         updateBattleUI();
@@ -4664,8 +5179,9 @@
             reading.correctCount += 1;
             state.stats.totalCorrect += 1;
             state.quests.dailyProgress.correct_answers += 1;
-            const rdMastered = markWrongNoteMastered(noteId);
-            if (rdMastered) showToast('📓 閱讀錯題已標記為【已攻克】！', 'success');
+            recordDailyTrainingProgress('correct', 1);
+            const rdSrs = advanceWrongNoteSRS(noteId);
+            if (rdSrs.advanced) showToast(`📓 閱讀錯題記憶曲線提升：${rdSrs.label}！`, 'success');
             Audio.playSFX('correct');
           } else {
             state.stats.totalWrong += 1;
@@ -5005,6 +5521,7 @@
     if (isCorrect) {
       state.stats.totalCorrect += 1;
       state.quests.dailyProgress.correct_answers += 1;
+      recordDailyTrainingProgress('correct', 1);
     } else {
       state.stats.totalWrong += 1;
       logMistake(q.id);
@@ -5649,6 +6166,7 @@
   }
 
   function renderQuests() {
+    renderDailyTrainingPanel();
     document.querySelectorAll('#quest-tabs .tab-btn').forEach((b) => {
       b.classList.toggle('active', b.getAttribute('data-tab') === uiTabs.quests);
     });
@@ -5952,26 +6470,35 @@
     showToast(`🧹 已清除 ${masteredIds.length} 題已攻克的錯題紀錄！`, 'success');
   }
 
-  function startWrongNoteBattle() {
+  function startWrongNoteBattle(mode = 'due') {
+    const trainMode = mode === 'all' ? 'all' : 'due';
     const notes = ensureWrongNotesMap();
-    const unmasteredIds = Object.values(notes)
-      .filter((entry) => entry && !entry.mastered && resolveWrongNoteQuestion(entry.id))
+    const nowMs = Date.now();
+    const targetIds = Object.values(notes)
+      .filter((entry) => {
+        if (!entry || entry.mastered || !resolveWrongNoteQuestion(entry.id)) return false;
+        return trainMode === 'all' ? true : isWrongNoteDue(entry, nowMs);
+      })
       .map((entry) => entry.id);
 
-    if (unmasteredIds.length === 0) {
-      showToast('🎉 目前沒有待複習的未攻克錯題！', 'info');
+    if (targetIds.length === 0) {
+      if (trainMode === 'due') {
+        showToast('🎉 今日到期錯題已全數複習完畢！若想提前預習，可點擊「🔁 提前全量特訓」。', 'info');
+      } else {
+        showToast('🎉 目前沒有待複習的未攻克錯題！', 'info');
+      }
       return;
     }
 
-    const queue = shuffleArray(unmasteredIds);
+    const queue = shuffleArray(targetIds);
     const totalHp = Math.max(80, queue.length * 100);
     const phantomEnemy = {
       id: 'memory_phantom',
-      name: '記憶の幻影・復習の試練',
+      name: trainMode === 'due' ? '記憶の幻影・今日到期復習試煉' : '記憶の幻影・全量特訓試煉',
       regionId: state.progress.currentRegionId || 'r1',
       isBoss: false,
       weakness: 'vocab',
-      weaknessLabel: '未攻克錯題專攻',
+      weaknessLabel: trainMode === 'due' ? '今日到期錯題專攻' : '未掌握錯題全量特訓',
       hp: totalHp,
       maxHp: totalHp,
       breakMax: 2,
@@ -5996,6 +6523,7 @@
     startBattle(phantomEnemy, {
       returnView: 'notes',
       isWrongNoteTraining: true,
+      trainingMode: trainMode,
       trainingQueue: queue
     });
   }
@@ -6006,10 +6534,15 @@
 
     const trainBtn = $('btn-start-wrong-training');
     if (trainBtn) {
-      trainBtn.disabled = summary.unmastered < 1;
-      trainBtn.textContent = summary.unmastered > 0
-        ? `⚔️ 啟動錯題特訓（專攻 ${summary.unmastered} 題未攻克）`
-        : '⚔️ 啟動錯題特訓（專攻未攻克題庫）';
+      trainBtn.disabled = summary.dueCount < 1;
+      trainBtn.textContent = `⚔️ 特訓今日到期錯題 (${summary.dueCount})`;
+    }
+    const trainAllBtn = $('btn-start-wrong-training-all');
+    if (trainAllBtn) {
+      trainAllBtn.disabled = summary.unmastered < 1;
+      trainAllBtn.textContent = summary.unmastered > 0
+        ? `🔁 提前全量特訓 (${summary.unmastered})`
+        : '🔁 提前全量特訓';
     }
     const clearBtn = $('btn-clear-mastered-notes');
     if (clearBtn) {
@@ -6024,10 +6557,11 @@
       summaryEl.innerHTML = `
         <div class="notes-stats-row">
           <span class="notes-stat-pill">📚 累計錯題數：<b>${summary.total}</b></span>
-          <span class="notes-stat-pill pending">🔴 待複習未攻克：<b>${summary.unmastered}</b></span>
-          <span class="notes-stat-pill mastered">✅ 已攻克：<b>${summary.mastered}</b></span>
+          <span class="notes-stat-pill pending">🔥 今日到期：<b>${summary.dueCount}</b></span>
+          <span class="notes-stat-pill">📅 排程待掌握：<b>${summary.unmastered}</b></span>
+          <span class="notes-stat-pill mastered">✅ 已完全掌握：<b>${summary.mastered}</b></span>
         </div>
-        <div class="text-muted" style="font-size:0.82rem;">在一般戰鬥、Boss 戰或閱讀副本答錯即自動收錄；再次答對將標記為【已攻克】。</div>
+        <div class="text-muted" style="font-size:0.82rem;">內建 SRS 遺忘曲線（Lv.0 → +1天 → +3天 → +7天 → Lv.4 完全掌握）；答錯將重置為 Lv.0 並立即到期。</div>
       `;
     }
 
@@ -6116,6 +6650,9 @@
         if (Boolean(a.entry.mastered) !== Boolean(b.entry.mastered)) {
           return a.entry.mastered ? 1 : -1;
         }
+        const aDue = isWrongNoteDue(a.entry) ? 0 : 1;
+        const bDue = isWrongNoteDue(b.entry) ? 0 : 1;
+        if (aDue !== bDue) return aDue - bDue;
         return String(b.entry.lastWrongAt || '').localeCompare(String(a.entry.lastWrongAt || ''));
       });
 
@@ -6170,6 +6707,16 @@
         : `<span class="jp-text">${q.correctDisplay || ''}</span>`;
 
       const timeStr = entry.lastWrongAt ? formatTimestamp(entry.lastWrongAt) : '';
+      const nowMs = Date.now();
+      let srsBadgeHtml = '';
+      if (entry.mastered) {
+        srsBadgeHtml = '<span class="badge badge-emerald">✅ 已完全掌握</span>';
+      } else if (isWrongNoteDue(entry, nowMs)) {
+        srsBadgeHtml = `<span class="badge badge-srs-due">🔥 今日到期｜SRS Lv.${entry.srsLevel || 0}</span>`;
+      } else {
+        const daysLeft = Math.max(1, Math.ceil((Number(entry.nextReviewAt) - nowMs) / DAY_MS));
+        srsBadgeHtml = `<span class="badge badge-srs-scheduled">📅 SRS Lv.${entry.srsLevel || 1}｜${daysLeft}天後複習</span>`;
+      }
 
       return `
         <article class="mistake-note-card ${entry.mastered ? 'is-mastered' : ''}" data-note-id="${escapeHtml(entry.id)}">
@@ -6178,9 +6725,7 @@
               <span class="jlpt-badge">${escapeHtml(q.jlpt)}</span>
               <span class="badge">${escapeHtml(catBadge)}</span>
               <span class="badge badge-crimson">錯 ${entry.wrongCount} 次</span>
-              ${entry.mastered
-                ? '<span class="badge badge-emerald">✅ 已攻克</span>'
-                : '<span class="badge badge-gold">🔴 待複習</span>'}
+              ${srsBadgeHtml}
               ${timeStr ? `<span class="text-muted" style="font-size:0.74rem;">最近：${escapeHtml(timeStr)}</span>` : ''}
             </div>
             <div class="mistake-note-actions">
@@ -6193,7 +6738,10 @@
           </div>
 
           <div class="mistake-note-stem">
-            <div class="text-muted" style="font-size:0.84rem;margin-bottom:6px;">${q.promptZh || ''}</div>
+            <div class="zh-peek-wrap">
+              <button type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
+              <div class="text-muted zh-collapsible" style="font-size:0.84rem;margin-bottom:6px;">${q.promptZh || ''}</div>
+            </div>
             <div class="jp-text" style="font-size:1.12rem;line-height:1.8;">${q.promptJp || q.fullRubyJp || ''}</div>
           </div>
 
@@ -6208,9 +6756,12 @@
             </div>
           </div>
 
-          <div class="mistake-note-explain">
-            ${q.wrongReason ? `<div style="margin-bottom:4px;"><strong class="text-gold">誤區提醒：</strong>${q.wrongReason}</div>` : ''}
-            <div><strong class="text-cyan">文法解析：</strong>${q.explanation || ''}</div>
+          <div class="zh-peek-wrap">
+            <button type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
+            <div class="mistake-note-explain zh-collapsible">
+              ${q.wrongReason ? `<div style="margin-bottom:4px;"><strong class="text-gold">誤區提醒：</strong>${q.wrongReason}</div>` : ''}
+              <div><strong class="text-cyan">文法解析：</strong>${q.explanation || ''}</div>
+            </div>
           </div>
         </article>
       `;
@@ -6300,6 +6851,107 @@
     });
   }
 
+  function exportSaveJsonCode() {
+    let payload = null;
+    if (hasActiveSession) {
+      payload = JSON.parse(JSON.stringify(state));
+      payload.version = SAVE_VERSION;
+      payload.savedAt = new Date().toISOString();
+    } else {
+      const latestKey = findLatestSaveKey();
+      if (latestKey) {
+        payload = readRawSlot(latestKey);
+      }
+    }
+    if (!payload || !payload.player) {
+      showToast('尚未開始冒險且本機無可匯出的存檔。', 'warning');
+      return '';
+    }
+
+    const jsonStr = JSON.stringify(payload);
+    const ta = $('save-json-textarea');
+    if (ta) {
+      ta.value = jsonStr;
+    }
+
+    let copied = false;
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(jsonStr).catch(() => {});
+        copied = true;
+      }
+    } catch (_) {}
+
+    if (!copied && ta) {
+      try {
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        copied = true;
+      } catch (_) {}
+    }
+
+    Audio.playSFX('confirm');
+    showToast(
+      copied ? '📤 已產生 JSON 存檔碼並複製到剪貼簿！' : '📤 已產生 JSON 存檔碼，請手動複製下方文字！',
+      'success'
+    );
+    return jsonStr;
+  }
+
+  function importSaveJsonCode(rawJsonOverride = null) {
+    const ta = $('save-json-textarea');
+    const rawText = typeof rawJsonOverride === 'string'
+      ? rawJsonOverride
+      : (ta ? ta.value : '');
+    const trimmed = String(rawText || '').trim();
+    if (!trimmed) {
+      showToast('❌ 請先貼上 JSON 存檔碼後再點擊匯入。', 'error');
+      return false;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch (_) {
+      Audio.playSFX('wrong');
+      showToast('❌ 存檔碼格式錯誤（無效的 JSON），未覆蓋現有存檔。', 'error');
+      return false;
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !parsed.player || typeof parsed.player !== 'object') {
+      Audio.playSFX('wrong');
+      showToast('❌ 存檔碼缺少必要角色資料（player），未覆蓋現有存檔。', 'error');
+      return false;
+    }
+
+    stopBattleTimers();
+    stopShrineTimer();
+    stopTypewriter();
+    Audio.stopSpeak();
+
+    state = sanitizeSaveData(parsed);
+    hasActiveSession = true;
+    battle.active = false;
+    shrine.active = false;
+    reading.active = false;
+    crossRegionNotifiedKeys = new Set();
+
+    applyFuriganaSetting();
+    autoSave();
+    updateHUD();
+    closeModal('modal-save');
+    Audio.playSFX('levelup');
+    showToast(`📥 存檔匯入成功！歡迎回來，${state.player.name}（Lv.${state.player.level}）！`, 'gold');
+
+    if (currentView === 'title' || currentView === 'create' || currentView === 'battle') {
+      switchView('town');
+    } else {
+      refreshActiveView();
+    }
+    return true;
+  }
+
   // ============================================================================
   // 18. Discreet Corner Dev / Test Tool
   // ============================================================================
@@ -6359,13 +7011,37 @@
   // 19. Global Event Binding & Bootstrap
   // ============================================================================
   function bindStaticEvents() {
+    // Mobile Collapsible HUD toggle & resize handler
+    if ($('btn-hud-collapse-toggle')) {
+      $('btn-hud-collapse-toggle').addEventListener('click', () => {
+        hudCollapsedMobile = !hudCollapsedMobile;
+        Audio.playSFX('click');
+        applyMobileHudCollapseState();
+      });
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
+        applyMobileHudCollapseState();
+      });
+    }
+
+    // Delegated handler for Immersion Mode Chinese hint peek buttons (.btn-peek-zh)
+    document.addEventListener('click', (e) => {
+      const peekBtn = e.target && e.target.closest ? e.target.closest('.btn-peek-zh') : null;
+      if (!peekBtn) return;
+      e.stopPropagation();
+      const wrap = peekBtn.closest('.zh-peek-wrap');
+      if (!wrap) return;
+      const revealed = wrap.classList.toggle('zh-revealed');
+      peekBtn.textContent = revealed ? '🙈 隱藏中文提示' : '👁 點擊偷看中文提示';
+      Audio.playSFX('click');
+    });
+
     // Top HUD controls
     if ($('btn-toggle-furigana')) {
       $('btn-toggle-furigana').addEventListener('click', () => {
-        state.settings.furigana = !state.settings.furigana;
         Audio.playSFX('click');
-        applyFuriganaSetting();
-        autoSave();
+        cycleImmersionMode(false);
       });
     }
     if ($('btn-toggle-bgm')) {
@@ -6461,20 +7137,27 @@
     if ($('btn-town-reading')) $('btn-town-reading').addEventListener('click', () => { Audio.playSFX('click'); reading.active = false; switchView('reading'); });
     if ($('btn-town-shrine')) $('btn-town-shrine').addEventListener('click', () => { Audio.playSFX('click'); shrine.results = []; shrine.tier = null; switchView('shrine'); });
 
-    const speechBox = document.querySelector('#town-dialogue-panel .dialogue-speech-box');
-    if (speechBox) {
-      speechBox.addEventListener('click', (e) => {
-        if (e.target.closest('button')) return;
-        completeTypewriterImmediately();
-      });
-    }
+    // Anti-misclick AVG skip: bind click ONLY on #dialogue-text-jp and #dialogue-text-zh
+    ['dialogue-text-jp', 'dialogue-text-zh'].forEach((id) => {
+      const textEl = $(id);
+      if (textEl) {
+        textEl.addEventListener('click', (e) => {
+          if (townState.typingActive) {
+            e.stopPropagation();
+            completeTypewriterImmediately();
+          }
+        });
+      }
+    });
     if ($('btn-dialogue-tts')) {
-      $('btn-dialogue-tts').addEventListener('click', () => {
+      $('btn-dialogue-tts').addEventListener('click', (e) => {
+        e.stopPropagation();
         if (townState.currentTts) Audio.speak(townState.currentTts, 1.0);
       });
     }
     if ($('btn-dialogue-tts-slow')) {
-      $('btn-dialogue-tts-slow').addEventListener('click', () => {
+      $('btn-dialogue-tts-slow').addEventListener('click', (e) => {
+        e.stopPropagation();
         if (townState.currentTts) Audio.speak(townState.currentTts, 0.65);
       });
     }
@@ -6577,10 +7260,19 @@
       });
     });
     if ($('btn-start-wrong-training')) {
-      $('btn-start-wrong-training').addEventListener('click', startWrongNoteBattle);
+      $('btn-start-wrong-training').addEventListener('click', () => startWrongNoteBattle('due'));
+    }
+    if ($('btn-start-wrong-training-all')) {
+      $('btn-start-wrong-training-all').addEventListener('click', () => startWrongNoteBattle('all'));
     }
     if ($('btn-clear-mastered-notes')) {
       $('btn-clear-mastered-notes').addEventListener('click', clearMasteredWrongNotes);
+    }
+    if ($('btn-export-save-json')) {
+      $('btn-export-save-json').addEventListener('click', () => exportSaveJsonCode());
+    }
+    if ($('btn-import-save-json')) {
+      $('btn-import-save-json').addEventListener('click', () => importSaveJsonCode());
     }
 
     // Modals
@@ -6726,6 +7418,7 @@
       debugBtn.classList.toggle('hidden', !isDebug);
       if (!isDebug && $('dev-drawer')) $('dev-drawer').classList.add('hidden');
     }
+    applyMobileHudCollapseState();
     applyFuriganaSetting();
     syncAudioButtons();
     syncDifficultyControls();
@@ -6767,10 +7460,21 @@
     showToast,
     recordWrongNote,
     markWrongNoteMastered,
+    advanceWrongNoteSRS,
+    isWrongNoteDue,
     getWrongNotesSummary,
     startWrongNoteBattle,
     clearMasteredWrongNotes,
-    renderNotes
+    renderNotes,
+    typewriterSpeak,
+    cycleImmersionMode,
+    exportSaveJsonCode,
+    importSaveJsonCode,
+    ensureDailyTrainingFresh,
+    claimDailyTrainingTask,
+    renderDailyTrainingPanel,
+    getBossPhaseInfo,
+    applyMobileHudCollapseState
   };
 
   global.Game = Game;
