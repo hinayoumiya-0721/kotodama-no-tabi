@@ -2456,11 +2456,21 @@ select:focus {
   max-width: 320px;
 }
 
+/* The bar keeps a usable width; the label shrinks (ellipsis) instead of squeezing the bar
+   into a hairline on 320px phones. */
+.battle-speed-wrap .speed-bar {
+  flex: 1 1 60px;
+  min-width: 60px;
+}
+
 .speed-text {
   font-size: 0.76rem;
   font-weight: 700;
   color: var(--cyan-bright);
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .question-audio-btns {
@@ -5394,10 +5404,12 @@ select:focus {
   #view-battle .hero-speech-bubble,
   #view-battle .enemy-speech-bubble {
     min-height: 26px;
-    max-height: 44px;
-    padding: 3px 6px;
+    /* 44px clipped two ruby lines + the Chinese line (content is ~52px); leave room for it */
+    max-height: 60px;
+    padding: 3px 6px 4px;
     font-size: 0.68rem;
     line-height: 1.32;
+    overflow: hidden;
   }
 
   #view-battle .combatant-info {
@@ -5497,6 +5509,30 @@ select:focus {
     padding: 4px 8px;
     font-size: 0.76rem;
   }
+}
+
+/* --------------------------------------------------------------------------
+ * 27. QA v1.4 follow-up layout fixes (all widths)
+ * -------------------------------------------------------------------------- */
+/* Battle hides the dock, so the 76px bottom reserve only caused an outer page
+   scroll on desktop (55 HUD + ~707 battle + 76 = 838px > 800px viewport). */
+#app.view-battle-active .main-stage {
+  padding-bottom: 0;
+}
+
+/* Desktop sub-tab strip is sticky: stick right under the live HUD height instead
+   of a hard-coded 52px (the HUD is 55px+ and grows when its controls wrap). */
+@media (min-width: 769px) {
+  #app #nav-bar {
+    top: var(--hud-h, 56px);
+  }
+}
+
+/* While a modal is open, toasts move to the top so they never cover modal buttons
+   (e.g. 「匯入」 in the save modal sits right where bottom toasts appear). */
+#app:has(.modal-overlay.open) #toast-container {
+  top: 16px !important;
+  bottom: auto !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

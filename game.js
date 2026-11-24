@@ -245,11 +245,19 @@
     return document.getElementById(id);
   }
 
-  // Integer coercion for untrusted save data: rejects NaN / ±Infinity (falls back), then clamps.
+  // Integer coercion for untrusted save data. Only real numbers / numeric strings count:
+  // null, '', booleans, objects and arrays fall back (Number(null) === 0 would otherwise
+  // silently turn a missing value into the minimum). NaN / ±Infinity fall back too.
   function toSafeInt(v, fallback, min = 0, max = 1e9) {
+    if (typeof v !== 'number' && !(typeof v === 'string' && v.trim() !== '')) return fallback;
     const n = Math.floor(Number(v));
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
   }
+
+  // Upper bounds for imported counters / item stacks (keeps numbers sane, never Infinity)
+  const COUNTER_MAX = 1e7;
+  const INVENTORY_QTY_MAX = 9999;
+  const SHRINE_RANKS = ['S', 'A', 'B', 'C'];
 
   // Keys that must never be copied from untrusted JSON into plain objects.
   const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
@@ -917,9 +925,11 @@
     out.savedAt = typeof raw.savedAt === 'string' ? raw.savedAt : def.savedAt;
 
     // Player
-    const rp = raw.player && typeof raw.player === 'object' ? raw.player : {};
+    const rp = raw.player && typeof raw.player === 'object' && !Array.isArray(raw.player) ? raw.player : {};
     out.player.name = typeof rp.name === 'string' && rp.name.trim() ? rp.name.trim().slice(0, 12) : def.player.name;
-    out.player.jobId = typeof rp.jobId === 'string' && getJobById(rp.jobId) ? rp.jobId : def.player.jobId;
+    // getJobById() falls back to jobs[0] (always truthy), so validate against the real id list
+    const validJobIds = new Set(getJobs().map((j) => j.id));
+    out.player.jobId = typeof rp.jobId === 'string' && validJobIds.has(rp.jobId) ? rp.jobId : def.player.jobId;
     // toSafeInt rejects NaN/Infinity from malformed imports (e.g. "gold":"abc", "level":1e400)
     out.player.level = toSafeInt(rp.level, 1, 1, 999);
     out.player.exp = toSafeInt(rp.exp, 0, 0);
@@ -957,9 +967,9 @@
     if (Array.isArray(raw.inventory)) {
       const merged = new Map();
       raw.inventory.forEach((entry) => {
-        if (entry && typeof entry.id === 'string') {
-          const qty = Math.floor(Number(entry.qty) || 0);
-          if (qty > 0) merged.set(entry.id, (merged.get(entry.id) || 0) + qty);
+        if (entry && typeof entry.id === 'string' && entry.id && !UNSAFE_OBJECT_KEYS.has(entry.id)) {
+          const qty = toSafeInt(entry.qty, 0, 0, INVENTORY_QTY_MAX);
+          if (qty > 0) merged.set(entry.id, Math.min(INVENTORY_QTY_MAX, (merged.get(entry.id) || 0) + qty));
         }
       });
       out.inventory = Array.from(merged.entries()).map(([id, qty]) => ({ id, qty }));
@@ -981,7 +991,22 @@
     out.progress.defeatedBosses = Array.isArray(rpr.defeatedBosses) ? Array.from(new Set(rpr.defeatedBosses.map(String))) : [];
     out.progress.unlockedAllOverride = Boolean(rpr.unlockedAllOverride);
     out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(rpr.clearedReadings.map(String))) : [];
-    out.progress.shrineBest = rpr.shrineBest && typeof rpr.shrineBest === 'object' ? safeOwnKeys(rpr.shrineBest).reduce((acc, k) => { acc[k] = rpr.shrineBest[k]; return acc; }, {}) : {};
+    // shrineBest is rendered into innerHTML: rebuild each entry from whitelisted fields only
+    // (rank ∈ S/A/B/C, integer score/total/timeLeft) — never copy untrusted objects through.
+    out.progress.shrineBest = {};
+    if (rpr.shrineBest && typeof rpr.shrineBest === 'object' && !Array.isArray(rpr.shrineBest)) {
+      safeOwnKeys(rpr.shrineBest).forEach((tierId) => {
+        const b = rpr.shrineBest[tierId];
+        if (!b || typeof b !== 'object' || !SHRINE_RANKS.includes(b.rank)) return;
+        const total = toSafeInt(b.total, 0, 0, 1000);
+        out.progress.shrineBest[tierId] = {
+          rank: b.rank,
+          score: toSafeInt(b.score, 0, 0, total),
+          total,
+          timeLeft: toSafeInt(b.timeLeft, 0, 0, 86400)
+        };
+      });
+    }
 
     const rsj = rpr.solvedByJlpt && typeof rpr.solvedByJlpt === 'object' ? rpr.solvedByJlpt : {};
     const rbg = rpr.bagByJlpt && typeof rpr.bagByJlpt === 'object' ? rpr.bagByJlpt : {};
@@ -989,7 +1014,7 @@
     JLPT_LEVELS.forEach((lvl) => {
       out.progress.solvedByJlpt[lvl] = Array.isArray(rsj[lvl]) ? Array.from(new Set(rsj[lvl].map(String))) : [];
       out.progress.bagByJlpt[lvl] = Array.isArray(rbg[lvl]) ? Array.from(new Set(rbg[lvl].map(String))) : [];
-      out.progress.cycleCountsByJlpt[lvl] = Math.max(0, Math.floor(Number(rcc[lvl]) || 0));
+      out.progress.cycleCountsByJlpt[lvl] = toSafeInt(rcc[lvl], 0, 0, 100000);
     });
 
     // NPCs
@@ -999,7 +1024,9 @@
       out.npc[nid] = {
         affection: clamp(Math.floor(Number(n.affection) || 0), 0, 100),
         talkedIds: Array.isArray(n.talkedIds) ? Array.from(new Set(n.talkedIds.map(String))) : [],
-        claimedMilestones: Array.isArray(n.claimedMilestones) ? Array.from(new Set(n.claimedMilestones.map(Number))) : []
+        claimedMilestones: Array.isArray(n.claimedMilestones)
+          ? Array.from(new Set(n.claimedMilestones.map((m) => toSafeInt(m, 0, 0, 100)).filter((m) => m > 0)))
+          : []
       };
     });
 
@@ -1012,11 +1039,11 @@
       const dp = rq.dailyProgress && typeof rq.dailyProgress === 'object' ? rq.dailyProgress : {};
       out.quests.dailyDate = today;
       out.quests.dailyProgress = {
-        win_battles: Math.max(0, Math.floor(Number(dp.win_battles) || 0)),
-        correct_answers: Math.max(0, Math.floor(Number(dp.correct_answers) || 0)),
-        npc_talk: Math.max(0, Math.floor(Number(dp.npc_talk) || 0)),
-        complete_shrine: Math.max(0, Math.floor(Number(dp.complete_shrine) || 0)),
-        reach_fever: Math.max(0, Math.floor(Number(dp.reach_fever) || 0))
+        win_battles: toSafeInt(dp.win_battles, 0, 0, COUNTER_MAX),
+        correct_answers: toSafeInt(dp.correct_answers, 0, 0, COUNTER_MAX),
+        npc_talk: toSafeInt(dp.npc_talk, 0, 0, COUNTER_MAX),
+        complete_shrine: toSafeInt(dp.complete_shrine, 0, 0, COUNTER_MAX),
+        reach_fever: toSafeInt(dp.reach_fever, 0, 0, COUNTER_MAX)
       };
     } else {
       out.quests.dailyDate = today;
@@ -1032,7 +1059,7 @@
       'feverCount', 'breaksTriggered', 'goldEarned', 'enhanceCount',
       'npcTalks', 'shrineCompleted', 'shrineRankS'
     ].forEach((k) => {
-      out.stats[k] = Math.max(0, Math.floor(Number(rst[k]) || 0));
+      out.stats[k] = toSafeInt(rst[k], 0, 0, COUNTER_MAX);
     });
     out.stats.encounteredEnemies = Array.isArray(rst.encounteredEnemies) ? Array.from(new Set(rst.encounteredEnemies.map(String))) : [];
     out.stats.defeatedEnemies = Array.isArray(rst.defeatedEnemies) ? Array.from(new Set(rst.defeatedEnemies.map(String))) : [];
@@ -1043,7 +1070,7 @@
         .filter((m) => m && typeof m.questionId === 'string')
         .map((m) => ({
           questionId: m.questionId,
-          count: Math.max(1, Math.floor(Number(m.count) || 1)),
+          count: toSafeInt(m.count, 1, 1, COUNTER_MAX),
           lastWrongAt: typeof m.lastWrongAt === 'string' ? m.lastWrongAt : new Date().toISOString()
         }));
     }
@@ -1070,7 +1097,7 @@
               : nowMs);
         out.wrongNotes[id] = {
           id,
-          wrongCount: Math.max(1, Math.floor(Number(entry.wrongCount) || 1)),
+          wrongCount: toSafeInt(entry.wrongCount, 1, 1, COUNTER_MAX),
           lastWrongAt: typeof entry.lastWrongAt === 'string' ? entry.lastWrongAt : new Date().toISOString(),
           playerLastChoice: typeof entry.playerLastChoice === 'number' && Number.isFinite(entry.playerLastChoice)
             ? Math.floor(entry.playerLastChoice)
@@ -1089,8 +1116,8 @@
     if (rdt && rdt.dateStr === todayDateStr) {
       out.dailyTraining = {
         dateStr: todayDateStr,
-        correctCount: Math.max(0, Math.floor(Number(rdt.correctCount) || 0)),
-        reviewCount: Math.max(0, Math.floor(Number(rdt.reviewCount) || 0)),
+        correctCount: toSafeInt(rdt.correctCount, 0, 0, COUNTER_MAX),
+        reviewCount: toSafeInt(rdt.reviewCount, 0, 0, COUNTER_MAX),
         claimedIds: Array.isArray(rdt.claimedIds) ? Array.from(new Set(rdt.claimedIds.map(String))) : []
       };
     } else {
@@ -2079,11 +2106,22 @@
     const hud = $('top-hud');
     const app = $('app');
     if (!hud || !app || hudResizeObserver) return;
+    let lastValue = '';
+    let rafId = 0;
     const sync = () => {
-      app.style.setProperty('--hud-h', `${Math.ceil(hud.getBoundingClientRect().height)}px`);
+      rafId = 0;
+      const value = `${Math.ceil(hud.getBoundingClientRect().height)}px`;
+      if (value === lastValue) return; // no-op writes would re-trigger layout for nothing
+      lastValue = value;
+      app.style.setProperty('--hud-h', value);
     };
     if (typeof ResizeObserver === 'function') {
-      hudResizeObserver = new ResizeObserver(sync);
+      // Defer the write to the next frame: changing --hud-h inside the RO callback resizes
+      // #view-battle in the same frame, which Chrome reports as
+      // "ResizeObserver loop completed with undelivered notifications".
+      hudResizeObserver = new ResizeObserver(() => {
+        if (!rafId) rafId = requestAnimationFrame(sync);
+      });
       hudResizeObserver.observe(hud);
     }
     sync();
@@ -4473,7 +4511,7 @@
       const left = Math.max(0, 10 - elapsed);
       if (bar) bar.style.width = `${(left / 10) * 100}%`;
       if (left <= 0) {
-        if (txt) txt.textContent = '🧘 沉著思考中（無速答破防加成）';
+        if (txt) txt.textContent = '🧘 無速答加成';
         stopBattleTimers();
       } else {
         if (txt) txt.textContent = `⚡ 速答破防加成 ${left.toFixed(1)}s`;
@@ -4598,9 +4636,9 @@
 
     if (isCorrect) {
       recordQuestionOutcomeInShuffleBag(q, true);
-      const srsRes = advanceWrongNoteSRS(q.id, true, {
-        requireDue: battle.isWrongNoteTraining && battle.trainingMode === 'all'
-      });
+      // Early (not-yet-due) correct answers never raise SRS level — in any mode, so the
+      // forgetting curve cannot be skipped from normal battles either (QA v1.4 BUG-5).
+      const srsRes = advanceWrongNoteSRS(q.id, true, { requireDue: true });
       recordDailyTrainingProgress('correct', 1);
       battle.consecutiveCorrect += 1;
       battle.consecutiveWrong = 0;
@@ -5370,7 +5408,7 @@
             state.stats.totalCorrect += 1;
             state.quests.dailyProgress.correct_answers += 1;
             recordDailyTrainingProgress('correct', 1);
-            const rdSrs = advanceWrongNoteSRS(noteId);
+            const rdSrs = advanceWrongNoteSRS(noteId, true, { requireDue: true });
             if (rdSrs.advanced) showToast(`📓 閱讀錯題記憶曲線提升：${rdSrs.label}！`, 'success');
             Audio.playSFX('correct');
           } else {
@@ -5549,7 +5587,10 @@
 
     grid.innerHTML = tiers.map((tier) => {
       const best = state.progress.shrineBest[tier.id];
-      const bestText = best ? `最佳成績：<b class="rank-${best.rank}">${best.rank}</b>（${best.score}/${best.total}）` : '尚未挑戰';
+      // Escape even though sanitizeSaveData whitelists these — defense in depth for innerHTML
+      const bestText = best
+        ? `最佳成績：<b class="rank-${escapeHtml(best.rank)}">${escapeHtml(best.rank)}</b>（${toSafeInt(best.score, 0, 0)}/${toSafeInt(best.total, 0, 0)}）`
+        : '尚未挑戰';
       const qCount = Number(tier.questionCount || 10);
       const timeSec = Number(tier.timeLimitSec || 180);
       const badgeMatch = String(tier.name || tier.title || '').match(/N\d[–-]N\d|N\d/);
@@ -7109,7 +7150,7 @@
       return false;
     }
 
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !parsed.player || typeof parsed.player !== 'object') {
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !parsed.player || typeof parsed.player !== 'object' || Array.isArray(parsed.player)) {
       Audio.playSFX('wrong');
       showToast('❌ 存檔碼缺少必要角色資料（player），未覆蓋現有存檔。', 'error');
       return false;
