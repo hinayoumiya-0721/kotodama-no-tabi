@@ -41,12 +41,154 @@
   const SRS_INTERVAL_DAYS = [1, 3, 7];
 
   const NPC_REGISTER_LABELS = {
-    mayor: '【村長・長輩敬語】',
-    merchant: '【商人・丁寧語】',
-    scholar: '【學者・丁寧解説】',
-    priest: '【祭司・書面語】',
-    default: '【宿屋・日常會話】'
+    mayor: '【村長・長老敬語】',
+    merchant: '【商人・圓滑丁寧語】',
+    scholar: '【學者・考據解説調】',
+    priest: '【祭司・莊嚴書面語】',
+    default: '【宿屋・親切日常調】'
   };
+
+  const TITLE_FLAVOR_TEXTS = {
+    '初醒的旅人': '「在晨霧中睜開雙眼之人，唇齒間仍殘留著失落言靈的微溫。」',
+    '古文書解讀者': '「能從殘破羊皮紙的字裡行間，聽見百年前先人低語的智者。」',
+    'N4試煉突破者': '「跨越基礎言靈之檻，手中之刃已能斬斷荒野的迷惘。」',
+    'N3試煉突破者': '「熟稔日常與書信之理，言靈化為堅不可摧的護身結界。」',
+    'N2試煉突破者': '「洞悉敬語與世事脈絡，一言一行皆具破邪之威。」',
+    'N1試煉突破者': '「登臨言靈之巔，連古神晦澀的祝詞亦為之俯首。」'
+  };
+
+  function getTitleFlavorText(titleStr) {
+    if (!titleStr) return TITLE_FLAVOR_TEXTS['初醒的旅人'];
+    if (TITLE_FLAVOR_TEXTS[titleStr]) return TITLE_FLAVOR_TEXTS[titleStr];
+    if (titleStr.includes('N1')) return TITLE_FLAVOR_TEXTS['N1試煉突破者'];
+    if (titleStr.includes('N2')) return TITLE_FLAVOR_TEXTS['N2試煉突破者'];
+    if (titleStr.includes('N3')) return TITLE_FLAVOR_TEXTS['N3試煉突破者'];
+    if (titleStr.includes('N4')) return TITLE_FLAVOR_TEXTS['N4試煉突破者'];
+    return `「銘刻於言靈大陸的榮耀之名——【${titleStr}】。」`;
+  }
+
+  const NPC_EXTRA_DIALOGUES = {
+    mayor: [
+      {
+        id: 'mayor_v130_lore',
+        emotion: 'serious',
+        npcLineJp: 'おお、<ruby>旅<rt>たび</rt></ruby>の<ruby>方<rt>かた</rt></ruby>よ。<ruby>夜霧<rt>よぎり</rt></ruby>が<ruby>深<rt>ふか</rt></ruby>まるにつれ、<ruby>村<rt>むら</rt></ruby>を<ruby>守<rt>まも</rt></ruby>る<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>灯<rt>ともしび</rt></ruby>も<ruby>揺<rt>ゆ</rt></ruby>らいでおりますじゃ。どうかお<ruby>気<rt>き</rt></ruby>をつけてな。',
+        npcLineZh: '喔喔，遠道而來的旅人啊。隨著夜霧漸深，守護村莊的言靈燈火也開始搖曳了。出村請務必多加小心吶。',
+        choices: [
+          {
+            jp: 'ご<ruby>心配<rt>しんぱい</rt></ruby>なく。<ruby>私<rt>わたし</rt></ruby>が<ruby>結界<rt>けっかい</rt></ruby>を<ruby>守<rt>まも</rt></ruby>り<ruby>抜<rt>ぬ</rt></ruby>きます。',
+            zh: '請村長放心，我一定會守護好結界的。',
+            affectionDelta: 15,
+            replyEmotion: 'happy',
+            replyJp: 'ほっほっほ、なんと<ruby>頼<rt>たの</rt></ruby>もしいお<ruby>言葉<rt>ことば</rt></ruby>！<ruby>礼儀<rt>れいぎ</rt></ruby>と<ruby>覚悟<rt>かくご</rt></ruby>を<ruby>備<rt>そな</rt></ruby>えたお<ruby>方<rt>かた</rt></ruby>じゃ。',
+            replyZh: '呵呵呵，多麼可靠的一番話！真是位兼具禮節與覺悟的旅人吶。',
+            culturalNote: '💡 對長輩使用「ご心配なく（請別擔心）」搭配丁寧語「〜ます」，既能表達敬意又顯得沉穩可靠。'
+          },
+          {
+            jp: '<ruby>結界<rt>けっかい</rt></ruby>の<ruby>歴史<rt>れきし</rt></ruby>について、もっとお<ruby>聞<rt>き</rt></ruby>かせいただけますか。',
+            zh: '能否請您多告訴我一些關於結界的歷史呢？',
+            affectionDelta: 12,
+            replyEmotion: 'neutral',
+            replyJp: 'うむ、<ruby>謙虚<rt>けんきょ</rt></ruby>に<ruby>学<rt>まな</rt></ruby>ぼうとするその<ruby>姿勢<rt>しせい</rt></ruby>こそ、<ruby>強<rt>つよ</rt></ruby>き<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>源<rt>みなもと</rt></ruby>ですぞ。',
+            replyZh: '嗯，這份謙虛求教的姿態，正是強大言靈的根源啊。',
+            culturalNote: '💡 「お聞かせいただけますか」為「聞かせる（讓我聽）」的謙讓請求句型，向長者請益時非常道地。'
+          }
+        ]
+      }
+    ],
+    merchant: [
+      {
+        id: 'merchant_v130_abacus',
+        emotion: 'happy',
+        npcLineJp: 'まいどご<ruby>贔屓<rt>ひいき</rt></ruby>に！お<ruby>客<rt>きゃく</rt></ruby><ruby>様<rt>さま</rt></ruby>の<ruby>言霊<rt>ことだま</rt></ruby>が<ruby>冴<rt>さ</rt></ruby>えるほど、<ruby>手前<rt>てまえ</rt></ruby>どもの<ruby>鍛冶炉<rt>かじろ</rt></ruby>も<ruby>威勢<rt>いせい</rt></ruby>よく<ruby>燃<rt>も</rt></ruby>え<ruby>上<rt>あ</rt></ruby>がるのでございますよ！',
+        npcLineZh: '多謝惠顧！客官您的言靈越是精湛，咱們商會的鍛造爐火就燒得越旺呀！',
+        choices: [
+          {
+            jp: 'いつも<ruby>良質<rt>りょうしつ</rt></ruby>な<ruby>武具<rt>ぶぐ</rt></ruby>を<ruby>揃<rt>そろ</rt></ruby>えてくださり、<ruby>助<rt>たす</rt></ruby>かっています。',
+            zh: '總是為我準備這麼精良的武具，真是幫了大忙。',
+            affectionDelta: 15,
+            replyEmotion: 'happy',
+            replyJp: 'いやぁ、そう<ruby>言<rt>い</rt></ruby>っていただけると<ruby>商人冥利<rt>しょうにんみょうり</rt></ruby>に<ruby>尽<rt>つ</rt></ruby>きますなぁ！<ruby>次<rt>つぎ</rt></ruby>も<ruby>特別価格<rt>とくべつかかく</rt></ruby>で<ruby>勉強<rt>べんきょう</rt></ruby>させていただきますよ！',
+            replyZh: '哎呀，能聽您這麼說真是做商人的最大福氣！下次也一定給您算個特別優惠價！',
+            culturalNote: '💡 日文商業會話中，「勉強させていただきます（我來勉強算便宜一點）」是商人表示「給您打折」的經典慣用語。'
+          },
+          {
+            jp: '<ruby>掘<rt>ほ</rt></ruby>り<ruby>出<rt>だ</rt></ruby>し<ruby>物<rt>もの</rt></ruby>があれば、<ruby>見<rt>み</rt></ruby>せていただけますか。',
+            zh: '如果有什麼划算的好貨，可以讓我看看嗎？',
+            affectionDelta: 12,
+            replyEmotion: 'happy',
+            replyJp: 'お<ruby>目<rt>め</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い！とっておきの<ruby>逸品<rt>いっぴん</rt></ruby>を<ruby>奥<rt>おく</rt></ruby>から<ruby>出<rt>だ</rt></ruby>してまいりますね！',
+            replyZh: '您真有眼光！我這就從裡頭把壓箱寶給您端出來！',
+            culturalNote: '💡 「掘り出し物（ほりだしもの）」指意外淘到的珍品或划算好貨；「お目が高い」則是稱讚對方識貨的常用丁寧表現。'
+          }
+        ]
+      }
+    ],
+    scholar: [
+      {
+        id: 'scholar_v130_codex',
+        emotion: 'neutral',
+        npcLineJp: '<ruby>興味深<rt>きょうみぶか</rt></ruby>いですね……<ruby>遺跡<rt>いせき</rt></ruby>の<ruby>文献<rt>ぶんけん</rt></ruby>を<ruby>紐解<rt>ひもと</rt></ruby>くと、<ruby>助詞<rt>じょし</rt></ruby>ひとつで<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>属性<rt>ぞくせい</rt></ruby>が<ruby>反転<rt>はんてん</rt></ruby>すると<ruby>記<rt>しる</rt></ruby>されているのです。',
+        npcLineZh: '真是耐人尋味呢……翻閱遺跡文獻後發現，古籍記載僅僅一個助詞的差異，就會讓言靈的屬性完全反轉。',
+        choices: [
+          {
+            jp: 'なるほど、<ruby>文脈<rt>ぶんみゃく</rt></ruby>の<ruby>構造<rt>こうぞう</rt></ruby>を<ruby>正確<rt>せいかく</rt></ruby>に<ruby>掴<rt>つか</rt></ruby>むことが<ruby>重要<rt>じゅうよう</rt></ruby>なのですね。',
+            zh: '原來如此，精準掌握文脈的結構才是最關鍵的呢。',
+            affectionDelta: 15,
+            replyEmotion: 'happy',
+            replyJp: 'まさにその<ruby>通<rt>とお</rt></ruby>りです！あなたとなら、<ruby>夜<rt>よ</rt></ruby>が<ruby>明<rt>あ</rt></ruby>けるまで<ruby>語法<rt>ごほう</rt></ruby>の<ruby>議論<rt>ぎろん</rt></ruby>ができそうですね。',
+            replyZh: '正是如此！和您聊起來，感覺就算討論語法到天亮也不會膩呢。',
+            culturalNote: '💡 「〜というわけです／〜なのですね」常於知性對話中用來歸納並確認對方的論點，語氣自然且富邏輯感。'
+          },
+          {
+            jp: '<ruby>未解読<rt>みかいどく</rt></ruby>の<ruby>巻物<rt>まきもの</rt></ruby>があれば、<ruby>調査<rt>ちょうさ</rt></ruby>を<ruby>手伝<rt>てつだ</rt></ruby>わせてください。',
+            zh: '如果還有未解讀的卷軸，請務必讓我協助調查。',
+            affectionDelta: 12,
+            replyEmotion: 'happy',
+            replyJp: 'なんと<ruby>心強<rt>こころづよ</rt></ruby>いご<ruby>提案<rt>ていあん</rt></ruby>でしょう！<ruby>読書<rt>どくしょ</rt></ruby>ダンジョンの<ruby>史料<rt>しりょう</rt></ruby>をすぐにご<ruby>案内<rt>あんない</rt></ruby>します。',
+            replyZh: '真是令人安心的提議！我馬上為您指引閱讀副本裡的珍貴史料。',
+            culturalNote: '💡 「手伝わせてください（請讓我幫忙）」使用使役形＋てください，是主動請纓協助時的禮貌句型。'
+          }
+        ]
+      }
+    ],
+    priest: [
+      {
+        id: 'priest_v130_oracle',
+        emotion: 'serious',
+        npcLineJp: '<ruby>静寂<rt>せいじゃく</rt></ruby>の<ruby>神殿<rt>しんでん</rt></ruby>に<ruby>響<rt>ひび</rt></ruby>くは、<ruby>汝<rt>なんじ</rt></ruby>が<ruby>紡<rt>つむ</rt></ruby>ぎし<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>調<rt>しら</rt></ruby>べ。<ruby>迷<rt>まよ</rt></ruby>いを<ruby>祓<rt>はら</rt></ruby>い、<ruby>真<rt>まこと</rt></ruby>の<ruby>語義<rt>ごぎ</rt></ruby>を<ruby>見極<rt>みきわ</rt></ruby>めるがよい。',
+        npcLineZh: '迴盪於靜寂神殿之中的，正是汝所編織的言靈之音。拂去心頭迷惘，看清詞句真正的意涵吧。',
+        choices: [
+          {
+            jp: '<ruby>心<rt>こころ</rt></ruby>を<ruby>澄<rt>す</rt></ruby>ませ、<ruby>神殿<rt>しんでん</rt></ruby>の<ruby>試練<rt>しれん</rt></ruby>に<ruby>臨<rt>のぞ</rt></ruby>みます。',
+            zh: '我會澄澈心神，謹慎迎接神殿的試煉。',
+            affectionDelta: 15,
+            replyEmotion: 'happy',
+            replyJp: 'うむ、その<ruby>澄<rt>す</rt></ruby>み<ruby>切<rt>き</rt></ruby>った<ruby>瞳<rt>ひとみ</rt></ruby>ならば、<ruby>古<rt>いにしえ</rt></ruby>の<ruby>祝詞<rt>のりと</rt></ruby>も<ruby>汝<rt>なんじ</rt></ruby>に<ruby>味方<rt>みかた</rt></ruby>するであろう。',
+            replyZh: '嗯，憑汝那雙澄澈的眼眸，古老的祝詞亦會庇佑於你吧。',
+            culturalNote: '💡 祭司台詞中常見古雅書面語：「汝（なんじ＝你）」、「紡ぎし（過去連體形＝所編織的）」、「〜であろう（莊重推量）」。'
+          },
+          {
+            jp: 'お<ruby>導<rt>みちび</rt></ruby>きに<ruby>感謝<rt>かんしゃ</rt></ruby>いたします。さらなる<ruby>高<rt>たか</rt></ruby>みを<ruby>目指<rt>めざ</rt></ruby>します。',
+            zh: '感謝您的指引，我會向更高的境界邁進。',
+            affectionDelta: 12,
+            replyEmotion: 'neutral',
+            replyJp: 'よきかな。<ruby>研鑽<rt>けんさん</rt></ruby>を<ruby>積<rt>つ</rt></ruby>みし<ruby>者<rt>もの</rt></ruby>に、<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>加護<rt>かご</rt></ruby>があらんことを。',
+            replyZh: '善哉。願言靈的加護常伴勤於磨練之人。',
+            culturalNote: '💡 「〜あらんことを」為古典祈願句型（相當於「〜ありますように」），常見於神殿祝禱與奇幻文學。'
+          }
+        ]
+      }
+    ]
+  };
+
+  function getNpcDialoguesWithExpansion(npc) {
+    const base = (npc && Array.isArray(npc.dialogues)) ? npc.dialogues : [];
+    const extras = (npc && NPC_EXTRA_DIALOGUES[npc.id]) || [];
+    if (extras.length === 0) return base;
+    const existingIds = new Set(base.map((d) => d && d.id));
+    return base.concat(extras.filter((d) => !existingIds.has(d.id)));
+  }
 
   const IMMERSION_MODES = ['standard', 'advanced', 'immersion'];
 
@@ -54,7 +196,7 @@
     {
       id: 'dt_correct_10',
       title: '今日答對 10 題',
-      desc: '於戰鬥、閱讀副本或錯題特訓中累計答對 10 題日文試題。',
+      desc: '於戰鬥、古籍閱讀或錯題試煉中累計詠唱 10 次正解。',
       target: 10,
       metric: 'correctCount',
       reward: { exp: 80, gold: 100 }
@@ -62,7 +204,7 @@
     {
       id: 'dt_review_3',
       title: '完成 3 題錯題複習',
-      desc: '於錯題特訓、戰鬥或閱讀中答對並推進 3 題錯題複習進度。',
+      desc: '推進 3 道到期錯題的記憶刻印階級。',
       target: 3,
       metric: 'reviewCount',
       reward: { exp: 90, gold: 120 }
@@ -1313,13 +1455,13 @@
 
   function saveToSlot(slotKey) {
     if (!hasActiveSession) {
-      showToast('尚未開始冒險，無法存檔。', 'warning');
+      showToast('尚未啟程，無可銘刻的旅途記憶。', 'warning');
       return false;
     }
     const ok = writeSlot(slotKey, state);
     if (ok) {
       Audio.playSFX('confirm');
-      showToast('💾 進度已儲存！', 'success');
+      showToast('💾 旅途記憶已銘刻於書卷！', 'success');
       renderSaveModal();
     }
     return ok;
@@ -1328,7 +1470,7 @@
   function loadFromSlot(slotKey) {
     const raw = readRawSlot(slotKey);
     if (!raw) {
-      showToast('此存檔欄位為空。', 'warning');
+      showToast('此書卷尚無銘刻紀錄。', 'warning');
       return false;
     }
     state = sanitizeSaveData(raw);
@@ -1341,7 +1483,7 @@
     applyFuriganaSetting();
     closeModal('modal-save');
     Audio.playSFX('confirm');
-    showToast(`歡迎回來，${state.player.name}（Lv.${state.player.level}）！`, 'success');
+    showToast(`✨ 記憶書卷展開——歡迎歸來，${state.player.name}（Lv.${state.player.level}）！`, 'success');
     switchView('town');
     return true;
   }
@@ -1670,7 +1812,7 @@
         mastered: false,
         srsLevel: 0,
         daysAdded: 0,
-        label: 'SRS Lv.0（已重置，今日到期）'
+        label: 'SRS Lv.0（記憶重置・今日到期）'
       };
     }
     if (!state.wrongNotes || !state.wrongNotes[questionId]) {
@@ -1678,7 +1820,7 @@
     }
     const entry = state.wrongNotes[questionId];
     if (entry.mastered) {
-      return { advanced: false, mastered: true, srsLevel: 4, daysAdded: 0, label: '已完全掌握' };
+      return { advanced: false, mastered: true, srsLevel: 4, daysAdded: 0, label: '已完全刻印' };
     }
     entry.correctCount = toSafeInt(entry.correctCount, 0, 0) + 1;
     if (opts && opts.requireDue && !isWrongNoteDue(entry)) {
@@ -1689,7 +1831,7 @@
         early: true,
         srsLevel: lv,
         daysAdded: 0,
-        label: `SRS Lv.${lv}（未到期，提前複習不推進等級）`
+        label: `Lv.${lv}（未到期預習）`
       };
     }
     const curLv = clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 3);
@@ -1701,12 +1843,12 @@
     if (nextLv >= 4) {
       entry.mastered = true;
       entry.nextReviewAt = null;
-      label = '✅ 已完全掌握 (SRS Lv.4)';
+      label = '✅ 已完全刻印 (Lv.4)';
     } else {
       daysAdded = SRS_INTERVAL_DAYS[curLv] || 1;
       entry.mastered = false;
       entry.nextReviewAt = Date.now() + daysAdded * DAY_MS;
-      label = `SRS Lv.${nextLv}（${daysAdded}天後複習）`;
+      label = `Lv.${nextLv}（${daysAdded}天後）`;
     }
 
     recordDailyTrainingProgress('review', 1);
@@ -1765,7 +1907,7 @@
     gainExp(task.reward.exp);
     gainGold(task.reward.gold);
     Audio.playSFX('levelup');
-    showToast(`☀️ 完成每日特訓【${task.title}】！獲得 ⭐ +${task.reward.exp} EXP、🪙 +${task.reward.gold} 金幣`, 'gold');
+    showToast(`☀️ 達成每日修練【${task.title}】！獲賜 ⭐ +${task.reward.exp} EXP、🪙 +${task.reward.gold} 金幣`, 'gold');
     checkAchievements();
     autoSave();
     updateHUD();
@@ -1782,7 +1924,7 @@
       <div class="daily-training-header">
         <div>
           <h3 class="daily-training-title">☀️ 每日言霊特訓</h3>
-          <span class="daily-training-sub">每日跨日自動刷新・完成可立即領取 EXP 與金幣獎勵</span>
+          <span class="daily-training-sub">跨日刷新・達成即領言靈賞賜</span>
         </div>
         <span class="badge badge-gold">${escapeHtml(dt.dateStr)}</span>
       </div>
@@ -1801,9 +1943,9 @@
                 </div>
                 <div class="daily-training-item-action">
                   ${claimed
-                    ? '<span class="badge badge-emerald">✅ 已領取</span>'
+                    ? '<span class="badge badge-emerald">✅ 已領賞</span>'
                     : ready
-                      ? `<button type="button" class="btn btn-gold btn-sm" data-claim-daily-training="${escapeHtml(task.id)}">🎁 領取獎勵</button>`
+                      ? `<button type="button" class="btn btn-gold btn-sm" data-claim-daily-training="${escapeHtml(task.id)}">🎁 領取賞賜</button>`
                       : `<span class="badge">${cur} / ${task.target}</span>`
                   }
                 </div>
@@ -2005,7 +2147,7 @@
     if (!wrapEl) return;
     wrapEl.classList.toggle('zh-revealed', revealed);
     const btn = wrapEl.querySelector('.btn-peek-zh');
-    if (btn) btn.textContent = revealed ? '🙈 隱藏中文提示' : '👁 點擊偷看中文提示';
+    if (btn) btn.textContent = revealed ? '🙈 隱藏中譯' : '👁 偷看中譯';
     const targets = (wrapEl.getAttribute('data-peek-targets') || '').split(/\s+/).filter(Boolean);
     targets.forEach((id) => {
       const el = $(id);
@@ -2075,11 +2217,11 @@
     if (hasActiveSession) autoSave();
     if (!silent) {
       const labels = {
-        standard: '標準模式（顯示振假名＋中文翻譯）',
-        advanced: '進階模式（隱藏振假名，保留中文翻譯）',
-        immersion: '沉浸模式（全日文介面，可點擊偷看中文提示）'
+        standard: '標準模式（振假名＋中譯）',
+        advanced: '進階模式（無振假名・保留中譯）',
+        immersion: '沉浸模式（全日文・可偷看中譯）'
       };
-      showToast(`🌸 已切換為【${labels[nextMode]}】`, 'info');
+      showToast(`🌸 視界切換：【${labels[nextMode]}】`, 'info');
     }
     return nextMode;
   }
@@ -2793,7 +2935,7 @@
     townState.selectedNpcId = npcId;
     townState.awaitingNext = false;
 
-    const dialogues = Array.isArray(npc.dialogues) ? npc.dialogues : [];
+    const dialogues = getNpcDialoguesWithExpansion(npc);
     const talked = (state.npc[npcId] && state.npc[npcId].talkedIds) || [];
     // Pick first untalked dialogue or cycle
     let nextIdx = dialogues.findIndex((d) => !talked.includes(d.id));
@@ -2812,16 +2954,16 @@
 
   function renderNpcFacilityButton(npcId) {
     if (npcId === 'merchant') {
-      return '<button type="button" class="btn btn-gold" id="btn-npc-facility">🏪 開啟商會與鍛造爐</button>';
+      return '<button type="button" class="btn btn-gold" id="btn-npc-facility">🏪 商會與鍛造爐</button>';
     }
     if (npcId === 'scholar') {
-      return '<button type="button" class="btn btn-primary" id="btn-npc-facility">📚 前往閱讀副本</button>';
+      return '<button type="button" class="btn btn-primary" id="btn-npc-facility">📚 閱讀副本</button>';
     }
     if (npcId === 'priest') {
-      return '<button type="button" class="btn btn-gold" id="btn-npc-facility">⛩️ 前往試煉神殿</button>';
+      return '<button type="button" class="btn btn-gold" id="btn-npc-facility">⛩️ 試煉神殿</button>';
     }
     if (npcId === 'mayor') {
-      return '<button type="button" class="btn btn-primary" id="btn-npc-facility">📜 查看冒險任務</button>';
+      return '<button type="button" class="btn btn-primary" id="btn-npc-facility">📜 冒險任務</button>';
     }
     return '';
   }
@@ -2907,7 +3049,7 @@
 
     if (actionsEl) {
       const nextBtnHtml = townState.awaitingNext
-        ? '<button type="button" class="btn btn-secondary" id="btn-dialogue-next">💬 繼續交談</button>'
+        ? '<button type="button" class="btn btn-secondary" id="btn-dialogue-next">💬 繼續寒暄</button>'
         : '';
       actionsEl.innerHTML = `${nextBtnHtml}${renderNpcFacilityButton(npc.id)}`;
       const nextBtn = $('btn-dialogue-next');
@@ -2915,7 +3057,7 @@
         nextBtn.onclick = () => {
           if (townState.typingActive) return;
           Audio.playSFX('click');
-          const dialogues = Array.isArray(npc.dialogues) ? npc.dialogues : [];
+          const dialogues = getNpcDialoguesWithExpansion(npc);
           townState.dialogueIndex = (townState.dialogueIndex + 1) % Math.max(1, dialogues.length);
           townState.currentDialogue = dialogues[townState.dialogueIndex] || null;
           townState.awaitingNext = false;
@@ -3139,7 +3281,7 @@
           if (!item) return;
           const cost = getShopBuyPrice(item);
           if (state.player.gold < cost) {
-            showToast('金幣不足！', 'error');
+            showToast('🪙 盤纏不足，無法結算！', 'error');
             return;
           }
           state.player.gold -= cost;
@@ -3148,7 +3290,7 @@
             lastPurchasedGearId = item.id;
           }
           Audio.playSFX('chest');
-          showToast(`🛒 購買了【${item.name}】（-${cost} 金幣）`, 'success');
+          showToast(`🛒 購得武具【${item.name}】（-${cost} 金幣）`, 'success');
           autoSave();
           updateHUD();
           renderShopModal();
@@ -3230,14 +3372,14 @@
           if (lv >= 5) return;
           const cost = getEnhanceCost(item, lv);
           if (state.player.gold < cost) {
-            showToast('金幣不足，無法強化！', 'error');
+            showToast('🪙 金幣不足，鍛造爐無法開火！', 'error');
             return;
           }
           state.player.gold -= cost;
           state.player.enhancements[id] = lv + 1;
           state.stats.enhanceCount += 1;
           Audio.playSFX('levelup');
-          showToast(`⚒️ 鍛造成功！【${item.name}】提升至 +${lv + 1}！`, 'gold');
+          showToast(`⚒️ 言靈淬鍊成功！【${item.name}】提升至 +${lv + 1}！`, 'gold');
           checkAchievements();
           autoSave();
           updateHUD();
@@ -3562,18 +3704,18 @@
       bossBtn.classList.toggle('aura-pulse', bossReady && !bossDefeated);
       bossBtn.classList.toggle('btn-boss-defeated', bossReady && bossDefeated);
       if (!bossReady) {
-        bossBtn.textContent = '🔒 區域 Boss（探索達 100% 解鎖）';
+        bossBtn.textContent = '🔒 探索 100% 解鎖首領';
       } else if (bossDefeated) {
-        bossBtn.textContent = '🔄 再次挑戰 Boss（已討伐）';
+        bossBtn.textContent = '🔄 再戰首領（已討伐）';
       } else {
-        bossBtn.textContent = `⚔️ 挑戰區域 Boss：${boss ? boss.name : '區域首領'}`;
+        bossBtn.textContent = `⚔️ 挑戰首領：${boss ? boss.name : '區域首領'}`;
       }
     }
 
     const stepBtn = $('btn-explore-step');
     if (stepBtn) {
       stepBtn.disabled = Boolean(explorePendingEvent);
-      stepBtn.textContent = pct >= 100 ? '🧭 繼續巡邏探索（遇怪・事件）' : '🧭 前進探索 (+25%)';
+      stepBtn.textContent = pct >= 100 ? '🧭 深入巡邏（遇怪・奇遇）' : '🧭 前進探索 (+25%)';
     }
 
     if (!explorePendingEvent) {
@@ -3581,16 +3723,16 @@
       if ($('explore-event-title')) {
         $('explore-event-title').textContent = pct >= 100
           ? (bossDefeated
-              ? `🏆 ${boss ? boss.name : '區域 Boss'} 已被討伐`
-              : `⚠️ ${boss ? boss.name : '區域 Boss'} 正在深處等待`)
-          : `${region.name}・荒野行進`;
+              ? `🏆 ${boss ? boss.name : '區域首領'} 已臣服`
+              : `⚠️ ${boss ? boss.name : '區域首領'} 盤踞深處`)
+          : `${region.name}・荒野行軍`;
       }
       if ($('explore-event-desc')) {
         $('explore-event-desc').textContent = pct >= 100
           ? (bossDefeated
-              ? '此區域首領已被你擊敗！可點擊下方「🔄 再次挑戰 Boss（已討伐）」重溫對決，或繼續巡邏探索本區魔物與題庫。'
-              : '區域探索已達 100%！請點擊下方紅色「⚔️ 挑戰區域 Boss」按鈕迎戰守護首領，或先整備道具與技能。')
-          : (region.desc || '點擊「前進探索」深入探索領域，可能遭遇魔物、古代寶箱、路邊事件或營火休憩。');
+              ? '此地首領已被你擊退！可點擊「🔄 再戰首領」重溫決戰，或繼續巡邏蕩平殘餘魔物。'
+              : '領域踏破率已達 100%，深處傳來震耳欲聾的咆哮！整備妥當後，點擊紅色按鈕迎戰區域首領。')
+          : (region.desc || '點擊「前進探索」深入荒野，途中將遭遇徘徊魔物、古老寶箱、石碑奇遇或營火歇息。');
       }
       if ($('explore-event-choices')) $('explore-event-choices').innerHTML = '';
     }
@@ -3970,12 +4112,12 @@
   function getBossPhaseInfo(hp, maxHp) {
     const ratio = maxHp > 0 ? Number(hp) / Number(maxHp) : 1;
     if (ratio > 0.65) {
-      return { phase: 1, label: '【第一階段】詞彙識讀試煉', css: 'boss-phase-1' };
+      return { phase: 1, label: '【第一幕】詞彙識讀', css: 'boss-phase-1' };
     }
     if (ratio > 0.30) {
-      return { phase: 2, label: '【第二階段】文法構築試煉', css: 'boss-phase-2' };
+      return { phase: 2, label: '【第二幕】文法奔流', css: 'boss-phase-2' };
     }
-    return { phase: 3, label: '【最終階段】語序重組決戰', css: 'boss-phase-3' };
+    return { phase: 3, label: '【終幕】語序重組決戰', css: 'boss-phase-3' };
   }
 
   function matchesBossPhaseQuestion(q, phase) {
@@ -4004,16 +4146,26 @@
       triggerCombatAnim('#view-battle .combatant-card.enemy-side', 'anim-break-flash');
       if (info.phase === 2) {
         showEnemySpeech(
-          'ふっ……<ruby>語彙<rt>ごい</rt></ruby>だけでは<ruby>足<rt>た</rt></ruby>りぬ。<ruby>文法<rt>ぶんぽう</rt></ruby>の<ruby>嵐<rt>あらし</rt></ruby>を<ruby>越<rt>こ</rt></ruby>えてみせよ！',
-          '哼……單憑詞彙還不夠，試著突破文法的風暴吧！'
+          'ふっ……<ruby>断片<rt>だんぺん</rt></ruby>の<ruby>語彙<rt>ごい</rt></ruby>など<ruby>無力<rt>むりょく</rt></ruby>！<ruby>荒<rt>あ</rt></ruby>れ<ruby>狂<rt>くる</rt></ruby>う<ruby>文法<rt>ぶんぽう</rt></ruby>の<ruby>奔流<rt>ほんりゅう</rt></ruby>に<ruby>呑<rt>の</rt></ruby>まれるがいい！',
+          '哼……零碎的詞彙毫無意義！在狂暴的文法奔流中沉沒吧！'
+        );
+        showHeroSpeech(
+          '<ruby>魔気<rt>まき</rt></ruby>が<ruby>変質<rt>へんしつ</rt></ruby>した……！<ruby>助詞<rt>じょし</rt></ruby>と<ruby>活用<rt>かつよう</rt></ruby>の<ruby>型<rt>かた</rt></ruby>を<ruby>見極<rt>みきわ</rt></ruby>める！',
+          '魔氣變質了……！看清助詞與活用的脈絡！',
+          'speech-skill'
         );
       } else if (info.phase === 3) {
         showEnemySpeech(
-          'これが<ruby>最終試煉<rt>さいしゅうしれん</rt></ruby>だ！<ruby>砕<rt>くだ</rt></ruby>け<ruby>散<rt>ち</rt></ruby>った<ruby>語順<rt>ごじゅん</rt></ruby>を<ruby>繋<rt>つな</rt></ruby>ぎ<ruby>止<rt>と</rt></ruby>めてみろ！',
-          '這就是最終試煉！將碎裂的語序重新構築起來吧！'
+          'おのれ……ならば<ruby>言葉<rt>ことば</rt></ruby>そのものを<ruby>砕<rt>くだ</rt></ruby>く！<ruby>散<rt>ち</rt></ruby>りゆく<ruby>語順<rt>ごじゅん</rt></ruby>の<ruby>深淵<rt>しんえん</rt></ruby>で<ruby>果<rt>は</rt></ruby>てよ！',
+          '可惡……那就把語言本身徹底碾碎！在崩解的語序深淵中化為虛無吧！'
+        );
+        showHeroSpeech(
+          'どれほど<ruby>砕<rt>くだ</rt></ruby>かれようと、<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>絆<rt>きずな</rt></ruby>は<ruby>必<rt>かなら</rt></ruby>ず<ruby>繋<rt>つな</rt></ruby>ぎ<ruby>直<rt>なお</rt></ruby>す！',
+          '無論被擊碎多少次，言靈的羈絆都由我重新串連！',
+          'speech-victory'
         );
       }
-      showToast(`🔥 ${battle.enemy.name} 進入 ${info.label}！`, 'warning');
+      showToast(`🔥 【${battle.enemy.name}】解放魔力——進入${info.label}！`, 'warning');
       return true;
     }
     return false;
@@ -4270,7 +4422,7 @@
 
     const stunEl = $('battle-enemy-stun-badge');
     if (stunEl) {
-      stunEl.textContent = battle.enemyStunned ? '💫 BREAK! 暈眩（承受 1.6x 傷害）' : `護盾 ${battle.enemyBreak}/${battle.enemyBreakMax}`;
+      stunEl.textContent = battle.enemyStunned ? '💫 BREAK! 暈眩（受傷 ×1.6）' : `護盾 ${battle.enemyBreak}/${battle.enemyBreakMax}`;
     }
 
     // Skill buttons
@@ -4278,12 +4430,12 @@
     const listenLv = state.skills.clairaudience || 0;
     const btnVocab = $('btn-skill-vocab');
     if (btnVocab) {
-      btnVocab.textContent = vocabLv > 0 ? `👁️ 單字洞察 Lv.${vocabLv} (10 MP)` : '🔒 單字洞察（未學習）';
+      btnVocab.textContent = vocabLv > 0 ? `👁️ 單字洞察 Lv.${vocabLv} (10 MP)` : '🔒 單字洞察';
       btnVocab.disabled = vocabLv <= 0 || p.mp < 10 || battle.insightActive || battle.locked;
     }
     const btnListen = $('btn-skill-listen');
     if (btnListen) {
-      btnListen.textContent = listenLv > 0 ? `🎐 順風耳 Lv.${listenLv} (10 MP)` : '🔒 順風耳（未學習）';
+      btnListen.textContent = listenLv > 0 ? `🎐 順風耳 Lv.${listenLv} (10 MP)` : '🔒 順風耳';
       btnListen.disabled = listenLv <= 0 || p.mp < 10 || battle.locked;
     }
 
@@ -4347,7 +4499,7 @@
       unsolvedIds = allForJlpt.map((q) => q.id);
       const freshBag = shuffleArray(unsolvedIds);
       state.progress.bagByJlpt[targetJlpt] = freshBag;
-      showToast(`🎉 已刷完【${targetJlpt}】全部 ${allForJlpt.length} 題一輪！題庫已重新洗牌！`, 'gold');
+      showToast(`🎉 【${targetJlpt}】全境 ${allForJlpt.length} 道言靈已悉數破除一輪！記憶星盤重新洗牌！`, 'gold');
       return freshBag.map((id) => qMap.get(id)).filter(Boolean);
     }
 
@@ -4435,7 +4587,7 @@
       const notifyKey = `${battle.regionId}_${targetJlpt}`;
       if (!crossRegionNotifiedKeys.has(notifyKey)) {
         crossRegionNotifiedKeys.add(notifyKey);
-        showToast(`🌐 已解鎖跨區進階題庫！自動從其他區域 ${targetJlpt} 未答題庫無縫補題`, 'info');
+        showToast(`🌐 本區 ${targetJlpt} 題目已答完，改從其他區域出題`, 'info');
       }
     }
 
@@ -4523,7 +4675,7 @@
     const bar = $('battle-speed-bar');
     const txt = $('battle-speed-text');
     if (bar) bar.style.width = '100%';
-    if (txt) txt.textContent = '⚡ 速答破防加成 10.0s';
+    if (txt) txt.textContent = '⚡ 速答破防 10.0s';
 
     battle.speedTimerId = setInterval(() => {
       const elapsed = (performance.now() - battle.qStartTime) / 1000;
@@ -4533,7 +4685,7 @@
         if (txt) txt.textContent = '🧘 無速答加成';
         stopBattleTimers();
       } else {
-        if (txt) txt.textContent = `⚡ 速答破防加成 ${left.toFixed(1)}s`;
+        if (txt) txt.textContent = `⚡ 速答破防 ${left.toFixed(1)}s`;
       }
     }, 100);
   }
@@ -4785,7 +4937,10 @@
         spawnFloatingNumber('enemy', 'BREAK! 破防暈眩!', 'num-break');
         setTimeout(() => spawnFloatingNumber('enemy', `-${dmg}${isCrit ? ' CRIT!' : ''}`, isCrit ? 'num-crit' : 'num-dmg'), 140);
         const brkLine = formatSpeechLine(enemy.breakLine);
-        showEnemySpeech(brkLine.jp || 'ぐわっ……！護盾被徹底擊碎了！', brkLine.zh);
+        showEnemySpeech(
+          brkLine.jp || 'ぐわぁっ……！<ruby>言霊<rt>ことだま</rt></ruby>の<ruby>障壁<rt>しょうへき</rt></ruby>が……！',
+          brkLine.zh || '言靈障壁被徹底擊碎了！'
+        );
       } else {
         Audio.playSFX(isCrit ? 'crit' : 'correct');
         triggerCombatAnim('#view-battle .combatant-card.enemy-side', 'anim-shake');
@@ -4815,7 +4970,7 @@
             // Enemy spent its stunned turn taking 1.6x damage; now recover shield
             battle.enemyStunned = false;
             battle.enemyBreak = battle.enemyBreakMax;
-            showEnemySpeech(`${enemy.name} 從破防暈眩中恢復了護盾！`);
+            showEnemySpeech(`${enemy.name} 重聚魔氣，修復了言靈障壁！`);
           }
           battle.stunJustTriggered = false;
           nextBattleQuestion();
@@ -4832,7 +4987,7 @@
         battle.difficultyOffset = -1;
         if (state.settings.difficultyMode === 'adaptive' && battle.adaptiveLevelIdx > 0) {
           battle.adaptiveLevelIdx = Math.max(0, battle.adaptiveLevelIdx - 1);
-          showToast(`🌿 自適應難度調整為 ${JLPT_LEVELS[battle.adaptiveLevelIdx]}（最低鎖定 N4）`, 'info');
+          showToast(`🌿 言靈共鳴調降為 ${JLPT_LEVELS[battle.adaptiveLevelIdx]}（保底 N4）`, 'info');
         }
       }
 
@@ -4849,7 +5004,7 @@
 
       if (battle.enemyStunned) {
         dmg = 0;
-        damageNotice = '💫 敵人暈眩中，沒有反擊';
+        damageNotice = '💫 魔物破防失衡，未能反擊';
         battle.enemyStunned = false;
         battle.enemyBreak = battle.enemyBreakMax;
         spawnFloatingNumber('player', 'STUNNED 0', 'num-shield');
@@ -4869,7 +5024,7 @@
         }
 
         // Short line only — the WIS / shield breakdown lives in the character screen
-        damageNotice = `💥 受到反擊 <strong>-${dmg} HP</strong>${shieldLv >= 3 ? "　+5 MP" : ""}`;
+        damageNotice = `💥 承受魔氣反噬 <strong>-${dmg} HP</strong>${shieldLv >= 3 ? "（護盾回流 +5 MP）" : ""}`;
         spawnFloatingNumber('player', `-${dmg}`, 'num-enemy-dmg');
       }
 
@@ -5075,11 +5230,11 @@
     if (!battle.active || battle.locked || !battle.currentQ) return;
     const lv = state.skills.vocab_insight || 0;
     if (lv <= 0) {
-      showToast('尚未解鎖【單字洞察】，請至技能樹消耗 1 SP 學習！', 'warning');
+      showToast('尚未習得【單字洞察】，可至技能樹以 1 SP 解鎖！', 'warning');
       return;
     }
     if (state.player.mp < 10) {
-      showToast('MP 不足（需要 10 MP）！', 'warning');
+      showToast('💧 言靈魔力不足（需 10 MP）！', 'warning');
       return;
     }
     if (battle.insightActive) return;
@@ -5148,11 +5303,11 @@
     if (!battle.active || battle.locked || !battle.currentQ) return;
     const lv = state.skills.clairaudience || 0;
     if (lv <= 0) {
-      showToast('尚未解鎖【順風耳】，請至技能樹消耗 1 SP 學習！', 'warning');
+      showToast('尚未習得【順風耳】，可至技能樹以 1 SP 解鎖！', 'warning');
       return;
     }
     if (state.player.mp < 10) {
-      showToast('MP 不足（需要 10 MP）！', 'warning');
+      showToast('💧 言靈魔力不足（需 10 MP）！', 'warning');
       return;
     }
 
@@ -5453,7 +5608,7 @@
           if (fb) {
             fb.innerHTML = `
               <div class="explain-section ${isCorrect ? 'explain-answer' : 'explain-diagnosis'}" style="margin-top:12px;">
-                <div class="explain-label">${isCorrect ? '✔ 回答正確！' : '✘ 回答錯誤'}</div>
+                <div class="explain-label">${isCorrect ? '✔ 文意洞悉・解讀精準！' : '✘ 解讀偏離・再審文脈'}</div>
                 <div class="explain-content">${q.explanation || '請回頭對照文章關鍵句。'}</div>
               </div>
             `;
@@ -5929,10 +6084,12 @@
       };
     }
     if ($('char-identity')) {
+      const titleFlavor = getTitleFlavorText(p.activeTitle);
       $('char-identity').innerHTML = `
         <h3 style="margin:0;color:var(--gold-bright);">${escapeHtml(p.name)}</h3>
         <div class="text-cyan" style="font-size:0.9rem;margin:4px 0;">${escapeHtml(job.name)}・Lv.${p.level}</div>
         <div class="text-muted" style="font-size:0.82rem;">EXP ${p.exp} / ${p.nextExp}</div>
+        <div class="text-gold" style="font-size:0.78rem;margin-top:6px;line-height:1.45;font-style:italic;">${escapeHtml(titleFlavor)}</div>
       `;
     }
 
@@ -5946,6 +6103,7 @@
         Audio.playSFX('click');
         autoSave();
         updateHUD();
+        renderCharacter();
         showToast(`👑 已佩戴稱號【${state.player.activeTitle}】`, 'gold');
       };
     }
@@ -6791,33 +6949,33 @@
     const trainBtn = $('btn-start-wrong-training');
     if (trainBtn) {
       trainBtn.disabled = summary.dueCount < 1;
-      trainBtn.textContent = `⚔️ 特訓今日到期錯題 (${summary.dueCount})`;
+      trainBtn.textContent = `⚔️ 今日到期特訓 (${summary.dueCount})`;
     }
     const trainAllBtn = $('btn-start-wrong-training-all');
     if (trainAllBtn) {
       trainAllBtn.disabled = summary.unmastered < 1;
       trainAllBtn.textContent = summary.unmastered > 0
-        ? `🔁 提前全量特訓 (${summary.unmastered})`
-        : '🔁 提前全量特訓';
+        ? `🔁 全量特訓 (${summary.unmastered})`
+        : '🔁 全量特訓';
     }
     const clearBtn = $('btn-clear-mastered-notes');
     if (clearBtn) {
       clearBtn.disabled = summary.mastered < 1;
       clearBtn.textContent = summary.mastered > 0
-        ? `🧹 一鍵清除已攻克 (${summary.mastered})`
-        : '🧹 一鍵清除已攻克';
+        ? `🧹 清除已掌握 (${summary.mastered})`
+        : '🧹 清除已掌握';
     }
 
     const summaryEl = $('notes-summary-bar');
     if (summaryEl) {
       summaryEl.innerHTML = `
         <div class="notes-stats-row">
-          <span class="notes-stat-pill">📚 累計錯題數：<b>${summary.total}</b></span>
+          <span class="notes-stat-pill">📚 累計收錄：<b>${summary.total}</b></span>
           <span class="notes-stat-pill pending">🔥 今日到期：<b>${summary.dueCount}</b></span>
-          <span class="notes-stat-pill">📅 排程待掌握：<b>${summary.unmastered}</b></span>
-          <span class="notes-stat-pill mastered">✅ 已完全掌握：<b>${summary.mastered}</b></span>
+          <span class="notes-stat-pill">📅 排程中：<b>${summary.unmastered}</b></span>
+          <span class="notes-stat-pill mastered">✅ 已刻印：<b>${summary.mastered}</b></span>
         </div>
-        <div class="text-muted" style="font-size:0.82rem;">內建 SRS 遺忘曲線（Lv.0 → +1天 → +3天 → +7天 → Lv.4 完全掌握）；答錯將重置為 Lv.0 並立即到期。</div>
+        <div class="text-muted" style="font-size:0.82rem;">依艾賓浩斯曲線排程（+1 → +3 → +7 天 → Lv.4 刻印完成）；答錯即重置回 Lv.0。</div>
       `;
     }
 
@@ -6966,12 +7124,12 @@
       const nowMs = Date.now();
       let srsBadgeHtml = '';
       if (entry.mastered) {
-        srsBadgeHtml = '<span class="badge badge-emerald">✅ 已完全掌握</span>';
+        srsBadgeHtml = '<span class="badge badge-emerald">✅ 已完全刻印</span>';
       } else if (isWrongNoteDue(entry, nowMs)) {
-        srsBadgeHtml = `<span class="badge badge-srs-due">🔥 今日到期｜SRS Lv.${entry.srsLevel || 0}</span>`;
+        srsBadgeHtml = `<span class="badge badge-srs-due">🔥 今日到期・Lv.${entry.srsLevel || 0}</span>`;
       } else {
         const daysLeft = Math.max(1, Math.ceil((Number(entry.nextReviewAt) - nowMs) / DAY_MS));
-        srsBadgeHtml = `<span class="badge badge-srs-scheduled">📅 SRS Lv.${entry.srsLevel || 1}｜${daysLeft}天後複習</span>`;
+        srsBadgeHtml = `<span class="badge badge-srs-scheduled">📅 Lv.${entry.srsLevel || 1}・${daysLeft}天後</span>`;
       }
 
       return `
@@ -6986,16 +7144,16 @@
             </div>
             <div class="mistake-note-actions">
               ${hasTts ? `
-                <button type="button" class="btn btn-sm btn-audio" data-note-tts="${escapeHtml(entry.id)}" data-rate="1.0">🔊 朗讀 1.0x</button>
-                <button type="button" class="btn btn-sm btn-audio" data-note-tts="${escapeHtml(entry.id)}" data-rate="0.65">🐢 慢速 0.65x</button>
+                <button type="button" class="btn btn-sm btn-audio" data-note-tts="${escapeHtml(entry.id)}" data-rate="1.0">🔊 朗讀</button>
+                <button type="button" class="btn btn-sm btn-audio" data-note-tts="${escapeHtml(entry.id)}" data-rate="0.65">🐢 慢速</button>
               ` : ''}
-              <button type="button" class="btn btn-sm btn-secondary" data-note-remove="${escapeHtml(entry.id)}">🗑️ 移出筆記</button>
+              <button type="button" class="btn btn-sm btn-secondary" data-note-remove="${escapeHtml(entry.id)}">🗑️ 移出</button>
             </div>
           </div>
 
           <div class="mistake-note-stem">
             <div class="zh-peek-wrap">
-              <button type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
+              <button type="button" class="btn-peek-zh">👁 偷看中譯</button>
               <div class="text-muted zh-collapsible" style="font-size:0.84rem;margin-bottom:6px;">${q.promptZh || ''}</div>
             </div>
             <div class="jp-text" style="font-size:1.12rem;line-height:1.8;">${q.promptJp || q.fullRubyJp || ''}</div>
@@ -7007,16 +7165,16 @@
               <div>${wrongChoiceHtml}</div>
             </div>
             <div class="mistake-choice-box mistake-choice-correct">
-              <div style="font-size:0.76rem;font-weight:700;margin-bottom:2px;">✔ 正確答案</div>
+              <div style="font-size:0.76rem;font-weight:700;margin-bottom:2px;">✔ 正確言靈</div>
               <div>${rightOptionHtml}${q.kanaReading ? ` <span style="opacity:0.88;">（${escapeHtml(q.kanaReading)}）</span>` : ''}</div>
             </div>
           </div>
 
           <div class="zh-peek-wrap">
-            <button type="button" class="btn-peek-zh">👁 點擊偷看中文提示</button>
+            <button type="button" class="btn-peek-zh">👁 偷看中譯</button>
             <div class="mistake-note-explain zh-collapsible">
-              ${q.wrongReason ? `<div style="margin-bottom:4px;"><strong class="text-gold">誤區提醒：</strong>${q.wrongReason}</div>` : ''}
-              <div><strong class="text-cyan">文法解析：</strong>${q.explanation || ''}</div>
+              ${q.wrongReason ? `<div style="margin-bottom:4px;"><strong class="text-gold">為什麼錯：</strong>${q.wrongReason}</div>` : ''}
+              <div><strong class="text-cyan">重點解說：</strong>${q.explanation || ''}</div>
             </div>
           </div>
         </article>
@@ -7443,7 +7601,7 @@
         Audio.playSFX('heal');
         autoSave();
         updateHUD();
-        showToast('🛏️ 在黎明之村充分休憩，HP 與 MP 已完全回復！', 'success');
+        showToast('🛏️ 於宿屋安穩歇息，體力與言靈魔力已完全充盈！', 'success');
       });
     }
     if ($('btn-town-map')) $('btn-town-map').addEventListener('click', () => { Audio.playSFX('click'); switchView('map'); });
@@ -7500,7 +7658,7 @@
         stopBattleTimers();
         battle.active = false;
         Audio.playSFX('cancel');
-        showToast('🏃 已安全撤退回營地。', 'info');
+        showToast('🏃 已收劍脫離戰線，退回安全據點。', 'info');
         switchView(battle.returnView || 'explore');
       });
     }
