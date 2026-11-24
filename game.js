@@ -245,6 +245,18 @@
     return document.getElementById(id);
   }
 
+  // Integer coercion for untrusted save data: rejects NaN / ±Infinity (falls back), then clamps.
+  function toSafeInt(v, fallback, min = 0, max = 1e9) {
+    const n = Math.floor(Number(v));
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  }
+
+  // Keys that must never be copied from untrusted JSON into plain objects.
+  const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+  function safeOwnKeys(obj) {
+    return Object.keys(obj).filter((k) => !UNSAFE_OBJECT_KEYS.has(k));
+  }
+
   function clamp(val, min, max) {
     const n = Number(val);
     if (!Number.isFinite(n)) return min;
@@ -634,6 +646,53 @@
   };
 
   // Safe SVGArt wrapper
+  // Wraps a character SVG's contents in <g class="px-g">. pixel-theme.css (P17) then applies a
+  // pixelate filter (index.html #px-lg / #px-md) only inside containers of known size.
+  // Filtering the inner group — not the <svg> — keeps the existing CSS pose / emotion
+  // animations (which set transform/filter on the <svg>) working unchanged. Without the theme
+  // or filter support, the original art renders as before.
+  function pixelArt(svgStr) {
+    const s = String(svgStr || '');
+    const open = s.match(/<svg\b[^>]*>/);
+    const closeIdx = s.lastIndexOf('</svg>');
+    if (!open || closeIdx < 0) return s;
+    const start = open.index + open[0].length;
+    return `${s.slice(0, start)}<g class="px-g">${s.slice(start, closeIdx)}</g>${s.slice(closeIdx)}`;
+  }
+
+  // Hand-drawn pixel portraits (512x512 WebP, transparent bg) — one image per character.
+  // They replace the generated SVG art for heroes and town NPCs; enemies keep SVG art.
+  const PORTRAIT_IMAGES = {
+    hero: {
+      swordsman: 'assets/portraits/hero_swordsman.webp',
+      scholar: 'assets/portraits/hero_scholar.webp',
+      bard: 'assets/portraits/hero_bard.webp'
+    },
+    npc: {
+      mayor: 'assets/portraits/npc_mayor.webp',
+      merchant: 'assets/portraits/npc_merchant.webp',
+      scholar: 'assets/portraits/npc_scholar.webp',
+      priest: 'assets/portraits/npc_priest.webp'
+    }
+  };
+
+  // Wraps a portrait image in an <svg> carrying the SAME root classes / data attributes as
+  // SVGArt output (svg-hero hero-<job> hero-pose-<pose> / svg-npc npc-<id> emo-<mood>), so all
+  // existing pose, emotion and sizing CSS keeps targeting it. No .px-g → no pixelate filter.
+  function portraitImageSvg(kind, id, variant) {
+    const src = PORTRAIT_IMAGES[kind] && Object.prototype.hasOwnProperty.call(PORTRAIT_IMAGES[kind], id)
+      ? PORTRAIT_IMAGES[kind][id]
+      : null;
+    if (!src) return null;
+    const v = String(variant || (kind === 'hero' ? 'idle' : 'neutral')).replace(/[^a-z0-9_-]/gi, '');
+    const rootAttrs = kind === 'hero'
+      ? `class="svg-art svg-hero hero-${id} hero-pose-${v} has-portrait-img" data-job="${id}" data-pose="${v}"`
+      : `class="svg-art svg-npc npc-${id} emo-${v} has-portrait-img" data-npc="${id}" data-mood="${v}"`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" ${rootAttrs}>`
+      + `<image href="${src}" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>`
+      + '</svg>';
+  }
+
   const Art = {
     logo() {
       try {
@@ -644,17 +703,22 @@
       return '<svg viewBox="0 0 120 120" width="96" height="96"><circle cx="60" cy="60" r="52" fill="#182038" stroke="#d4af37" stroke-width="4"/><text x="60" y="72" text-anchor="middle" fill="#f3d57a" font-size="44" font-family="serif">言</text></svg>';
     },
     hero(jobId, poseOrOpts) {
+      const pose = poseOrOpts && typeof poseOrOpts === 'object' ? poseOrOpts.pose : poseOrOpts;
+      const img = portraitImageSvg('hero', jobId, pose);
+      if (img) return img;
       try {
         if (global.SVGArt && typeof global.SVGArt.hero === 'function') {
-          return global.SVGArt.hero(jobId, poseOrOpts);
+          return pixelArt(global.SVGArt.hero(jobId, poseOrOpts));
         }
       } catch (_) {}
       return '<svg viewBox="0 0 120 120"><circle cx="60" cy="48" r="24" fill="#38bdf8"/><path d="M24 108 C24 78 96 78 96 108 Z" fill="#1e293b" stroke="#d4af37" stroke-width="3"/></svg>';
     },
     npc(npcId, emotion) {
+      const img = portraitImageSvg('npc', npcId, emotion);
+      if (img) return img;
       try {
         if (global.SVGArt && typeof global.SVGArt.npc === 'function') {
-          return global.SVGArt.npc(npcId, emotion || 'neutral');
+          return pixelArt(global.SVGArt.npc(npcId, emotion || 'neutral'));
         }
       } catch (_) {}
       return '<svg viewBox="0 0 120 120"><circle cx="60" cy="50" r="24" fill="#d4af37"/><rect x="30" y="80" width="60" height="32" rx="14" fill="#334155"/></svg>';
@@ -662,7 +726,7 @@
     enemy(enemyId, isBoss, pose) {
       try {
         if (global.SVGArt && typeof global.SVGArt.enemy === 'function') {
-          return global.SVGArt.enemy(enemyId, Boolean(isBoss), pose || 'idle');
+          return pixelArt(global.SVGArt.enemy(enemyId, Boolean(isBoss), pose || 'idle'));
         }
       } catch (_) {}
       return '<svg viewBox="0 0 140 140"><polygon points="70,14 124,116 16,116" fill="#7f1d1d" stroke="#ef4444" stroke-width="4"/><circle cx="56" cy="70" r="7" fill="#fef08a"/><circle cx="84" cy="70" r="7" fill="#fef08a"/></svg>';
@@ -856,18 +920,19 @@
     const rp = raw.player && typeof raw.player === 'object' ? raw.player : {};
     out.player.name = typeof rp.name === 'string' && rp.name.trim() ? rp.name.trim().slice(0, 12) : def.player.name;
     out.player.jobId = typeof rp.jobId === 'string' && getJobById(rp.jobId) ? rp.jobId : def.player.jobId;
-    out.player.level = Math.max(1, Math.floor(Number(rp.level) || 1));
-    out.player.exp = Math.max(0, Math.floor(Number(rp.exp) || 0));
-    out.player.nextExp = Math.max(50, Math.floor(Number(rp.nextExp) || calcNextExp(out.player.level)));
-    out.player.maxHp = Math.max(30, Math.floor(Number(rp.maxHp) || def.player.maxHp));
+    // toSafeInt rejects NaN/Infinity from malformed imports (e.g. "gold":"abc", "level":1e400)
+    out.player.level = toSafeInt(rp.level, 1, 1, 999);
+    out.player.exp = toSafeInt(rp.exp, 0, 0);
+    out.player.nextExp = toSafeInt(rp.nextExp, Math.max(50, calcNextExp(out.player.level)), 50);
+    out.player.maxHp = toSafeInt(rp.maxHp, def.player.maxHp, 30, 99999);
     out.player.hp = clamp(Math.floor(Number(rp.hp ?? out.player.maxHp)), 1, out.player.maxHp * 3);
-    out.player.maxMp = Math.max(20, Math.floor(Number(rp.maxMp) || def.player.maxMp));
+    out.player.maxMp = toSafeInt(rp.maxMp, def.player.maxMp, 20, 99999);
     out.player.mp = clamp(Math.floor(Number(rp.mp ?? out.player.maxMp)), 0, out.player.maxMp * 3);
-    out.player.baseINT = Math.max(1, Math.floor(Number(rp.baseINT) || def.player.baseINT));
-    out.player.baseWIS = Math.max(1, Math.floor(Number(rp.baseWIS) || def.player.baseWIS));
-    out.player.baseCHA = Math.max(1, Math.floor(Number(rp.baseCHA) || def.player.baseCHA));
-    out.player.gold = Math.max(0, Math.floor(Number(rp.gold ?? def.player.gold)));
-    out.player.sp = Math.max(0, Math.floor(Number(rp.sp ?? def.player.sp)));
+    out.player.baseINT = toSafeInt(rp.baseINT, def.player.baseINT, 1, 9999);
+    out.player.baseWIS = toSafeInt(rp.baseWIS, def.player.baseWIS, 1, 9999);
+    out.player.baseCHA = toSafeInt(rp.baseCHA, def.player.baseCHA, 1, 9999);
+    out.player.gold = toSafeInt(rp.gold, def.player.gold, 0);
+    out.player.sp = toSafeInt(rp.sp, def.player.sp, 0);
     out.player.unlockedTitles = Array.isArray(rp.unlockedTitles) && rp.unlockedTitles.length > 0
       ? Array.from(new Set(rp.unlockedTitles.map(String)))
       : ['初醒的旅人'];
@@ -884,7 +949,7 @@
 
     const renh = rp.enhancements && typeof rp.enhancements === 'object' ? rp.enhancements : {};
     out.player.enhancements = {};
-    Object.keys(renh).forEach((k) => {
+    safeOwnKeys(renh).forEach((k) => {
       out.player.enhancements[k] = clamp(Math.floor(Number(renh[k]) || 0), 0, 5);
     });
 
@@ -916,7 +981,7 @@
     out.progress.defeatedBosses = Array.isArray(rpr.defeatedBosses) ? Array.from(new Set(rpr.defeatedBosses.map(String))) : [];
     out.progress.unlockedAllOverride = Boolean(rpr.unlockedAllOverride);
     out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(rpr.clearedReadings.map(String))) : [];
-    out.progress.shrineBest = rpr.shrineBest && typeof rpr.shrineBest === 'object' ? Object.assign({}, rpr.shrineBest) : {};
+    out.progress.shrineBest = rpr.shrineBest && typeof rpr.shrineBest === 'object' ? safeOwnKeys(rpr.shrineBest).reduce((acc, k) => { acc[k] = rpr.shrineBest[k]; return acc; }, {}) : {};
 
     const rsj = rpr.solvedByJlpt && typeof rpr.solvedByJlpt === 'object' ? rpr.solvedByJlpt : {};
     const rbg = rpr.bagByJlpt && typeof rpr.bagByJlpt === 'object' ? rpr.bagByJlpt : {};
@@ -987,10 +1052,11 @@
     out.wrongNotes = {};
     if (raw.wrongNotes && typeof raw.wrongNotes === 'object' && !Array.isArray(raw.wrongNotes)) {
       const nowMs = Date.now();
-      Object.keys(raw.wrongNotes).forEach((qid) => {
+      safeOwnKeys(raw.wrongNotes).forEach((qid) => {
         const entry = raw.wrongNotes[qid];
         if (!entry || typeof entry !== 'object') return;
         const id = typeof entry.id === 'string' && entry.id ? entry.id : String(qid);
+        if (UNSAFE_OBJECT_KEYS.has(id)) return;
         const rawMastered = Boolean(entry.mastered);
         const rawSrs = entry.srsLevel !== undefined && entry.srsLevel !== null
           ? clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 4)
@@ -1006,7 +1072,10 @@
           id,
           wrongCount: Math.max(1, Math.floor(Number(entry.wrongCount) || 1)),
           lastWrongAt: typeof entry.lastWrongAt === 'string' ? entry.lastWrongAt : new Date().toISOString(),
-          playerLastChoice: entry.playerLastChoice !== undefined ? entry.playerLastChoice : null,
+          playerLastChoice: typeof entry.playerLastChoice === 'number' && Number.isFinite(entry.playerLastChoice)
+            ? Math.floor(entry.playerLastChoice)
+            : (typeof entry.playerLastChoice === 'string' ? entry.playerLastChoice.slice(0, 200) : null),
+          correctCount: toSafeInt(entry.correctCount, 0, 0),
           mastered: isMastered,
           srsLevel,
           nextReviewAt
@@ -1561,7 +1630,9 @@
     updateNavMistakeBadge();
   }
 
-  function advanceWrongNoteSRS(questionId, isCorrect = true) {
+  // opts.requireDue: when true, a correct answer on a not-yet-due note only bumps correctCount
+  // and does NOT raise srsLevel (prevents "all"-mode grinding from skipping the forgetting curve).
+  function advanceWrongNoteSRS(questionId, isCorrect = true, opts = {}) {
     if (!questionId) {
       return { advanced: false, mastered: false, srsLevel: 0, daysAdded: 0, label: '' };
     }
@@ -1581,6 +1652,18 @@
     const entry = state.wrongNotes[questionId];
     if (entry.mastered) {
       return { advanced: false, mastered: true, srsLevel: 4, daysAdded: 0, label: '已完全掌握' };
+    }
+    entry.correctCount = toSafeInt(entry.correctCount, 0, 0) + 1;
+    if (opts && opts.requireDue && !isWrongNoteDue(entry)) {
+      const lv = clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 3);
+      return {
+        advanced: false,
+        mastered: false,
+        early: true,
+        srsLevel: lv,
+        daysAdded: 0,
+        label: `SRS Lv.${lv}（未到期，提前複習不推進等級）`
+      };
     }
     const curLv = clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 3);
     const nextLv = curLv + 1;
@@ -1701,7 +1784,7 @@
               <div class="progress-track daily-training-bar">
                 <div class="progress-fill" style="width: ${pct}%;"></div>
               </div>
-              <div class="daily-training-reward">獎勵：⭐ ${task.reward.exp} EXP・🪙 ${task.reward.gold} 金幣</div>
+              <div class="daily-training-reward">⭐ ${task.reward.exp}　🪙 ${task.reward.gold}</div>
             </div>
           `;
         }).join('')}
@@ -1785,14 +1868,17 @@
 
   function updateNavMistakeBadge() {
     const badge = $('nav-notes-badge');
-    if (!badge) return;
+    const dockBadge = $('dock-notes-badge');
+    if (!badge && !dockBadge) return;
     const { dueCount } = getWrongNotesSummary();
-    if (dueCount > 0) {
-      badge.textContent = `(${dueCount})`;
-      badge.classList.remove('hidden');
-    } else {
-      badge.textContent = '(0)';
-      badge.classList.add('hidden');
+    if (badge) {
+      badge.textContent = dueCount > 0 ? `(${dueCount})` : '(0)';
+      badge.classList.toggle('hidden', dueCount <= 0);
+    }
+    // Mirror the due count on the 修練 dock slot so it is visible from any screen
+    if (dockBadge) {
+      dockBadge.textContent = dueCount > 99 ? '99+' : String(dueCount);
+      dockBadge.classList.toggle('hidden', dueCount <= 0);
     }
   }
 
@@ -1835,6 +1921,16 @@
     openModal('modal-generic');
   }
 
+  // First sentence of the explanation (HTML-safe: data HTML is trusted ruby markup and
+  // "。" never appears inside a tag). Falls back to the short hint.
+  function getExplainKeyPoint(q) {
+    const src = String((q && (q.explanation || q.hint)) || '');
+    if (!src) return '';
+    const cut = src.indexOf('。');
+    const first = cut >= 0 ? src.slice(0, cut + 1) : src;
+    return `💡 ${first}`;
+  }
+
   function openExplainModal(q, damageNotice, onConfirm) {
     const dmgEl = $('explain-damage-notice');
     const ansEl = $('explain-correct-answer');
@@ -1851,10 +1947,17 @@
       `;
     }
     if (readEl) {
-      readEl.textContent = `假名讀音：${q.kanaReading || stripRubyHtml(q.correctDisplay)}`;
+      readEl.textContent = q.kanaReading || stripRubyHtml(q.correctDisplay);
     }
     if (wrongEl) wrongEl.innerHTML = q.wrongReason || '';
     if (detailEl) detailEl.innerHTML = q.explanation || '';
+
+    // Players reported the old modal as "too much text": show ONE key line by default,
+    // keep the full analysis folded (and re-folded on every open).
+    const keyEl = $('explain-keypoint');
+    if (keyEl) keyEl.innerHTML = getExplainKeyPoint(q);
+    const moreEl = $('explain-more');
+    if (moreEl) moreEl.open = false;
 
     const ttsBtn = $('btn-explain-tts');
     const ttsSlowBtn = $('btn-explain-tts-slow');
@@ -1869,11 +1972,22 @@
   // ============================================================================
   // 9. HUD, Three-Tier Immersion Mode, Mobile Collapsible HUD & View Router
   // ============================================================================
-  function resetZhPeekWrap(wrapEl) {
+  // A peek wrap may mirror its revealed state onto elements outside it, listed by id in
+  // data-peek-targets (e.g. the NPC dialogue peek also reveals #dialogue-choices translations).
+  function setZhPeekState(wrapEl, revealed) {
     if (!wrapEl) return;
-    wrapEl.classList.remove('zh-revealed');
+    wrapEl.classList.toggle('zh-revealed', revealed);
     const btn = wrapEl.querySelector('.btn-peek-zh');
-    if (btn) btn.textContent = '👁 點擊偷看中文提示';
+    if (btn) btn.textContent = revealed ? '🙈 隱藏中文提示' : '👁 點擊偷看中文提示';
+    const targets = (wrapEl.getAttribute('data-peek-targets') || '').split(/\s+/).filter(Boolean);
+    targets.forEach((id) => {
+      const el = $(id);
+      if (el) el.classList.toggle('zh-revealed', revealed);
+    });
+  }
+
+  function resetZhPeekWrap(wrapEl) {
+    setZhPeekState(wrapEl, false);
   }
 
   function applyFuriganaSetting() {
@@ -1889,6 +2003,12 @@
     }
 
     if (app) {
+      // Leaving/entering a mode must not carry over a previously revealed peek state.
+      const prevMode = app.classList.contains('immersion-full') ? 'immersion'
+        : (app.classList.contains('immersion-advanced') ? 'advanced' : 'standard');
+      if (prevMode !== mode) {
+        document.querySelectorAll('.zh-peek-wrap').forEach(resetZhPeekWrap);
+      }
       app.classList.remove('furigana-on', 'furigana-off', 'immersion-standard', 'immersion-advanced', 'immersion-full');
       if (mode === 'standard') {
         app.classList.add('furigana-on', 'immersion-standard');
@@ -1949,6 +2069,24 @@
       toggleBtn.setAttribute('aria-expanded', shouldCollapse ? 'false' : 'true');
       toggleBtn.textContent = shouldCollapse ? '▼ 角色狀態' : '▲ 收合狀態';
     }
+  }
+
+  // Publishes the live #top-hud height as --hud-h on #app so the mobile battle view can size
+  // itself to the remaining viewport (no page scroll + inner scroll = no double scrollbar).
+  // Single observer for the app lifetime; guarded against double init.
+  let hudResizeObserver = null;
+  function initHudHeightSync() {
+    const hud = $('top-hud');
+    const app = $('app');
+    if (!hud || !app || hudResizeObserver) return;
+    const sync = () => {
+      app.style.setProperty('--hud-h', `${Math.ceil(hud.getBoundingClientRect().height)}px`);
+    };
+    if (typeof ResizeObserver === 'function') {
+      hudResizeObserver = new ResizeObserver(sync);
+      hudResizeObserver.observe(hud);
+    }
+    sync();
   }
 
   function syncAudioButtons() {
@@ -2076,7 +2214,7 @@
       (viewName === 'shrine' && shrine.active);
 
     if (hud) hud.classList.toggle('hidden', hideHud);
-    if (nav) nav.classList.toggle('hidden', hideNav);
+    if (hud && hideHud) setHudSettingsOpen(false);
     applyMobileHudCollapseState();
 
     document.querySelectorAll('#nav-bar .nav-btn').forEach((btn) => {
@@ -2086,6 +2224,56 @@
         (viewName === 'explore' && target === 'map');
       btn.classList.toggle('active', active);
     });
+
+    // Bottom dock + group sub-tabs
+    const group = getNavGroupForView(viewName);
+    if (group) navLastViewByGroup[group] = viewName === 'explore' ? 'map' : viewName;
+    const groupSize = group ? document.querySelectorAll(`#nav-bar .nav-btn[data-group="${group}"]`).length : 0;
+    if (nav) {
+      nav.setAttribute('data-active-group', group || '');
+      // A single-view group (城鎮) needs no sub-tab strip
+      nav.classList.toggle('hidden', hideNav || groupSize <= 1);
+    }
+    const dock = $('nav-dock');
+    if (dock) dock.classList.toggle('hidden', hideNav);
+    document.querySelectorAll('#nav-dock .dock-btn').forEach((btn) => {
+      const isActive = btn.getAttribute('data-group') === group;
+      btn.classList.toggle('active', isActive);
+      if (isActive) btn.setAttribute('aria-current', 'page');
+      else btn.removeAttribute('aria-current');
+    });
+    if ($('app')) $('app').classList.toggle('has-dock', !hideNav);
+  }
+
+  // ---- Bottom dock: 5 groups over the existing 10 views ----
+  const NAV_GROUP_DEFAULT_VIEW = {
+    town: 'town',
+    adventure: 'map',
+    training: 'notes',
+    traveler: 'character',
+    journal: 'quests'
+  };
+  const navLastViewByGroup = {};
+
+  function getNavGroupForView(viewName) {
+    const key = viewName === 'explore' ? 'map' : viewName;
+    const btn = document.querySelector(`#nav-bar .nav-btn[data-view="${key}"]`);
+    return btn ? btn.getAttribute('data-group') : null;
+  }
+
+  function openNavGroup(group) {
+    const view = navLastViewByGroup[group] || NAV_GROUP_DEFAULT_VIEW[group];
+    // Route through the original nav button so its per-view setup (reading/shrine reset) still runs
+    const btn = view ? document.querySelector(`#nav-bar .nav-btn[data-view="${view}"]`) : null;
+    if (btn) btn.click();
+  }
+
+  // ---- HUD ⚙ settings menu (desktop popover; inline on mobile via CSS) ----
+  function setHudSettingsOpen(open) {
+    const hud = $('top-hud');
+    const btn = $('btn-hud-settings');
+    if (hud) hud.classList.toggle('settings-open', Boolean(open));
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   function switchView(viewName) {
@@ -2110,6 +2298,11 @@
     }
 
     currentView = viewName;
+    if ($('app')) {
+      $('app').classList.toggle('view-battle-active', viewName === 'battle');
+      // Lets the theme pick a scene backdrop per screen (night sky vs. village pattern)
+      $('app').setAttribute('data-view', viewName);
+    }
 
     document.querySelectorAll('.game-view').forEach((v) => {
       v.classList.toggle('active', v.id === `view-${viewName}`);
@@ -2529,12 +2722,12 @@
       return `
         <button type="button" class="npc-card ${selected ? 'selected' : ''}" data-npc-id="${escapeHtml(npc.id)}">
           <div class="npc-avatar">${Art.npc(npc.id, 'neutral')}</div>
-          <div style="flex:1;text-align:left;">
+          <div class="npc-card-info">
             <div class="npc-name">${escapeHtml(npc.name)}</div>
             <div class="npc-role">${escapeHtml(npc.title || npc.role || '')}</div>
-            <div class="stat-bar affection-bar" style="height:14px;margin-top:6px;">
+            <div class="stat-bar affection-bar npc-card-affection">
               <div class="stat-bar-fill" style="width:${clamp(nState.affection, 0, 100)}%;"></div>
-              <span class="stat-bar-text" style="font-size:0.68rem;">♥ ${nState.affection}/100</span>
+              <span class="stat-bar-text">♥ ${nState.affection}/100</span>
             </div>
           </div>
         </button>
@@ -4405,7 +4598,9 @@
 
     if (isCorrect) {
       recordQuestionOutcomeInShuffleBag(q, true);
-      const srsRes = advanceWrongNoteSRS(q.id);
+      const srsRes = advanceWrongNoteSRS(q.id, true, {
+        requireDue: battle.isWrongNoteTraining && battle.trainingMode === 'all'
+      });
       recordDailyTrainingProgress('correct', 1);
       battle.consecutiveCorrect += 1;
       battle.consecutiveWrong = 0;
@@ -4431,7 +4626,9 @@
         showToast(
           srsRes.advanced
             ? `✔ 錯題推進至 ${srsRes.label}！獲得 +${bonusExp} EXP、+${bonusGold} 金幣`
-            : `✔ 複習答對！+${bonusExp} EXP、+${bonusGold} 金幣`,
+            : (srsRes.early
+                ? `✔ 提前複習答對（${srsRes.label}）！+${bonusExp} EXP、+${bonusGold} 金幣`
+                : `✔ 複習答對！+${bonusExp} EXP、+${bonusGold} 金幣`),
           'success'
         );
       } else if (srsRes.advanced) {
@@ -4590,7 +4787,7 @@
 
       if (battle.enemyStunned) {
         dmg = 0;
-        damageNotice = '💫 敵人處於【破防暈眩】狀態，無法反擊！（受到 0 點傷害）';
+        damageNotice = '💫 敵人暈眩中，沒有反擊';
         battle.enemyStunned = false;
         battle.enemyBreak = battle.enemyBreakMax;
         spawnFloatingNumber('player', 'STUNNED 0', 'num-shield');
@@ -4601,23 +4798,16 @@
         const shieldRed = [0, 0.50, 0.58, 0.65][shieldLv];
         const reduced = Math.round(rawAtk * (1 - wisRed) * (1 - shieldRed));
         const cap = Math.max(1, Math.floor(stats.maxHp * 0.35));
-        const capped = reduced > cap;
         dmg = Math.max(1, Math.min(reduced, cap));
 
         state.player.hp = Math.max(0, state.player.hp - dmg);
 
-        let mpRestoreNote = '';
         if (shieldLv >= 3) {
           state.player.mp = Math.min(stats.maxMp, state.player.mp + 5);
-          mpRestoreNote = '，並回復 +5 MP';
         }
 
-        const tags = [];
-        if (wisRed > 0) tags.push(`智慧 WIS -${Math.round(wisRed * 100)}%`);
-        if (shieldLv > 0) tags.push(`【助詞護盾 Lv.${shieldLv}】-${Math.round(shieldRed * 100)}%${mpRestoreNote}`);
-        if (capped) tags.push('友善學習上限保護（單次最高 35% 最大 HP）');
-
-        damageNotice = `💥 答錯承受 ${enemy.name} 反擊：<strong>-${dmg} HP</strong>${tags.length ? `（${tags.join('；')}）` : ''}`;
+        // Short line only — the WIS / shield breakdown lives in the character screen
+        damageNotice = `💥 受到反擊 <strong>-${dmg} HP</strong>${shieldLv >= 3 ? "　+5 MP" : ""}`;
         spawnFloatingNumber('player', `-${dmg}`, 'num-enemy-dmg');
       }
 
@@ -6899,7 +7089,7 @@
     return jsonStr;
   }
 
-  function importSaveJsonCode(rawJsonOverride = null) {
+  function importSaveJsonCode(rawJsonOverride = null, { skipConfirm = false } = {}) {
     const ta = $('save-json-textarea');
     const rawText = typeof rawJsonOverride === 'string'
       ? rawJsonOverride
@@ -6925,12 +7115,41 @@
       return false;
     }
 
+    // Sanitize BEFORE touching any live timers/state, so a throw here leaves the session intact.
+    let nextState;
+    try {
+      nextState = sanitizeSaveData(parsed);
+    } catch (err) {
+      Audio.playSFX('wrong');
+      showToast('❌ 存檔碼內容損毀，無法解析，未覆蓋現有存檔。', 'error');
+      return false;
+    }
+
+    // Confirm before replacing the live session / auto slot (autoSave writes SAVE_KEYS.auto).
+    const existing = hasActiveSession ? state : readRawSlot(SAVE_KEYS.auto);
+    if (!skipConfirm && existing && existing.player && typeof global.confirm === 'function') {
+      const describe = (s) => {
+        const p = s.player || {};
+        const pr = s.progress || {};
+        const bosses = Array.isArray(pr.defeatedBosses) ? pr.defeatedBosses.length : 0;
+        const region = getRegionById(pr.currentRegionId);
+        return `${p.name || '旅人'}（Lv.${Number(p.level) || 1}｜已擊敗 Boss ${bosses}｜位於 ${region ? region.name : '未知區域'}）`;
+      };
+      const ok = global.confirm(
+        `匯入將覆蓋目前的冒險進度：\n現有：${describe(existing)}\n匯入：${describe(nextState)}\n\n確定要覆蓋嗎？`
+      );
+      if (!ok) {
+        showToast('已取消匯入，現有存檔未變更。', 'info');
+        return false;
+      }
+    }
+
     stopBattleTimers();
     stopShrineTimer();
     stopTypewriter();
     Audio.stopSpeak();
 
-    state = sanitizeSaveData(parsed);
+    state = nextState;
     hasActiveSession = true;
     battle.active = false;
     shrine.active = false;
@@ -7024,6 +7243,7 @@
         applyMobileHudCollapseState();
       });
     }
+    initHudHeightSync();
 
     // Delegated handler for Immersion Mode Chinese hint peek buttons (.btn-peek-zh)
     document.addEventListener('click', (e) => {
@@ -7032,8 +7252,7 @@
       e.stopPropagation();
       const wrap = peekBtn.closest('.zh-peek-wrap');
       if (!wrap) return;
-      const revealed = wrap.classList.toggle('zh-revealed');
-      peekBtn.textContent = revealed ? '🙈 隱藏中文提示' : '👁 點擊偷看中文提示';
+      setZhPeekState(wrap, !wrap.classList.contains('zh-revealed'));
       Audio.playSFX('click');
     });
 
@@ -7069,7 +7288,35 @@
       });
     }
 
-    // Main Navigation Bar
+    // Bottom dock (5 groups) → delegates to the matching #nav-bar button
+    document.querySelectorAll('#nav-dock .dock-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const group = btn.getAttribute('data-group');
+        if (group) openNavGroup(group);
+      });
+    });
+
+    // HUD ⚙ settings popover: toggle, close on outside click / Escape
+    if ($('btn-hud-settings')) {
+      $('btn-hud-settings').addEventListener('click', (e) => {
+        e.stopPropagation();
+        Audio.playSFX('click');
+        const hud = $('top-hud');
+        setHudSettingsOpen(!(hud && hud.classList.contains('settings-open')));
+      });
+      document.addEventListener('click', (e) => {
+        const menu = $('hud-settings-menu');
+        if (menu && !menu.contains(e.target)) setHudSettingsOpen(false);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && $('top-hud') && $('top-hud').classList.contains('settings-open')) {
+          setHudSettingsOpen(false);
+          $('btn-hud-settings').focus();
+        }
+      });
+    }
+
+    // Main Navigation Bar (now the group sub-tab strip)
     document.querySelectorAll('#nav-bar .nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const view = btn.getAttribute('data-view');
