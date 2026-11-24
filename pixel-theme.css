@@ -1,0 +1,1014 @@
+/* ============================================================================
+ * 《言霊の旅》 Pixel Theme — 16-bit Retro JRPG Skin
+ * ----------------------------------------------------------------------------
+ * Loaded AFTER style.css. Pure presentation layer: no layout sizes, no DOM
+ * contract changes. Everything here can be removed by deleting the <link>.
+ *
+ * Guardrails (see HANDOFF.md):
+ *  - Pixel fonts ONLY on short labels (headings, buttons, HUD, numbers).
+ *    Question text / options / dialogue / explanations stay on --font-sans.
+ *  - Does NOT touch heights/paddings of the mobile battle layout
+ *    (#view-battle height is driven by --hud-h in style.css §26).
+ *  - Frames use border-image (no outer box-shadow spread), and HUD/nav lines
+ *    use inset shadows, so element sizes stay predictable for --hud-h.
+ *  - Selectors prefixed with #app only to out-rank id-scoped rules in style.css.
+ * ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+ * P1. Palette & Tokens ("Kotodama Twilight" — indigo night, cream frames, gold)
+ * ---------------------------------------------------------------------------- */
+:root {
+  /* Raw pixel palette */
+  --px-ink: #0b0a18;
+  --px-night: #141230;
+  --px-win: #1d1a45;
+  --px-win-2: #262158;
+  --px-win-3: #332c70;
+  --px-cream: #f4ecd0;
+  --px-cream-dk: #c9bf9c;
+  --px-gold: #f6c445;
+  --px-gold-lt: #ffe08a;
+  --px-gold-dk: #a8741a;
+  --px-red: #e8543c;
+  --px-red-lt: #ff8a6b;
+  --px-red-dk: #8c2a20;
+  --px-blue: #3fa9f5;
+  --px-blue-lt: #8fd4ff;
+  --px-blue-dk: #1f5fa5;
+  --px-green: #5ec269;
+  --px-green-lt: #a6e88a;
+  --px-green-dk: #2c7a3a;
+  --px-violet: #9b6cff;
+  --px-violet-lt: #c9b2ff;
+  --px-sakura: #ff9ec7;
+
+  /* Re-map style.css design tokens so every existing component recolors */
+  --bg-obsidian: var(--px-night);
+  --bg-deep: var(--px-ink);
+  --bg-panel: var(--px-win);
+  --bg-card: #221e50;
+  --bg-elevated: var(--px-win-3);
+  --bg-glass: rgba(20, 18, 48, 0.96);
+  --bg-glass-heavy: var(--px-night);
+
+  --gold: var(--px-gold);
+  --gold-bright: var(--px-gold-lt);
+  --gold-deep: var(--px-gold-dk);
+  --gold-dim: rgba(246, 196, 69, 0.5);
+  --gold-faint: rgba(246, 196, 69, 0.14);
+  --gold-glow: rgba(246, 196, 69, 0.3);
+
+  --cyan: var(--px-blue);
+  --cyan-bright: var(--px-blue-lt);
+  --cyan-deep: var(--px-blue-dk);
+  --cyan-glow: rgba(63, 169, 245, 0.35);
+  --cyan-faint: rgba(63, 169, 245, 0.14);
+
+  --crimson: var(--px-red);
+  --crimson-bright: var(--px-red-lt);
+  --emerald: var(--px-green);
+  --emerald-bright: var(--px-green-lt);
+  --amber: #ffa63d;
+  --amber-bright: var(--px-gold-lt);
+  --violet: var(--px-violet);
+  --violet-bright: var(--px-violet-lt);
+
+  --text-main: var(--px-cream);
+  --text-sub: #ddd3b6;
+  --text-muted: #b3acd2;
+  --text-dim: #7a74a3;
+
+  --border-subtle: rgba(244, 236, 208, 0.22);
+  --border-strong: rgba(244, 236, 208, 0.42);
+  --border-gold: var(--px-gold);
+
+  /* Hard pixel shadows instead of blurred glows */
+  --shadow-sm: 0 3px 0 var(--px-ink);
+  --shadow-card: 4px 4px 0 rgba(11, 10, 24, 0.7);
+  --shadow-panel: 6px 6px 0 rgba(11, 10, 24, 0.6);
+
+  /* Square everything */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-pill: 0;
+
+  /* Fonts: pixel for labels, readable sans for content */
+  --font-pixel: "DotGothic16", "Yu Gothic UI", "Microsoft JhengHei", "Noto Sans CJK JP", sans-serif;
+  --font-num: "Press Start 2P", "DotGothic16", monospace;
+  --font-serif: var(--font-pixel);  /* headings / names / titles only (see style.css usage) */
+  --font-mono: var(--font-pixel);
+
+  /* Frame thickness: 2px per art-pixel on desktop, 1px per art-pixel on phones */
+  --frame-w: 6px;
+
+  /* 9-slice pixel frames (9x9 art, slice 3): ink outline w/ notched corners,
+     colored rim, inner bevel line. Colors baked in per variant. */
+  --frame-cream: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0a18' d='M1 0h7v9H1zM0 1h9v7H0z'/%3E%3Cpath fill='%23f4ecd0' d='M1 1h7v7H1z'/%3E%3Cpath fill='%234a3f8f' d='M2 2h5v5H2z'/%3E%3C/svg%3E");
+  --frame-gold: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0a18' d='M1 0h7v9H1zM0 1h9v7H0z'/%3E%3Cpath fill='%23f6c445' d='M1 1h7v7H1z'/%3E%3Cpath fill='%23a8741a' d='M2 2h5v5H2z'/%3E%3C/svg%3E");
+  --frame-blue: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0a18' d='M1 0h7v9H1zM0 1h9v7H0z'/%3E%3Cpath fill='%238fd4ff' d='M1 1h7v7H1z'/%3E%3Cpath fill='%231f5fa5' d='M2 2h5v5H2z'/%3E%3C/svg%3E");
+  --frame-red: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0a18' d='M1 0h7v9H1zM0 1h9v7H0z'/%3E%3Cpath fill='%23ff8a6b' d='M1 1h7v7H1z'/%3E%3Cpath fill='%238c2a20' d='M2 2h5v5H2z'/%3E%3C/svg%3E");
+  --frame-green: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0a18' d='M1 0h7v9H1zM0 1h9v7H0z'/%3E%3Cpath fill='%23a6e88a' d='M1 1h7v7H1z'/%3E%3Cpath fill='%232c7a3a' d='M2 2h5v5H2z'/%3E%3C/svg%3E");
+}
+
+@media (max-width: 768px) {
+  :root {
+    --frame-w: 3px;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * P2. Global pixel rules
+ * ---------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+::selection {
+  background: var(--px-gold);
+  color: var(--px-ink);
+}
+
+body {
+  background-color: var(--px-night);
+  /* Stepped (banded) twilight sky — no smooth gradients in 16-bit land */
+  background-image: linear-gradient(
+    180deg,
+    #0d0b24 0 16%,
+    #121030 16% 34%,
+    #17143b 34% 54%,
+    #1d1744 54% 72%,
+    #241a4c 72% 88%,
+    #2c1d52 88% 100%
+  );
+  background-attachment: fixed;
+}
+
+/* Square pixel scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--px-ink); }
+::-webkit-scrollbar-thumb {
+  background: var(--px-cream-dk);
+  border: 2px solid var(--px-ink);
+  box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.3), inset 2px 2px 0 rgba(255, 255, 255, 0.35);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--px-gold); }
+* { scrollbar-color: var(--px-cream-dk) var(--px-ink); }
+
+/* Background layer: pixel stars + faint scanlines + stepped mountain horizon.
+   Lives behind all content so it never reduces text legibility. */
+.bg-atmosphere {
+  /* z-index:-1 (inside #app's stacking context) keeps this fixed layer BELOW in-flow
+     content; at z-index:0 a positioned layer paints over non-positioned siblings. */
+  z-index: -1;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.16) 2px 3px);
+}
+
+.bg-atmosphere::before {
+  inset: 0;
+  width: 2px;
+  height: 2px;
+  background: var(--px-cream);
+  background-image: none;
+  opacity: 0.85;
+  box-shadow:
+    8vw 6vh 0 var(--px-cream), 17vw 22vh 0 var(--px-blue-lt), 26vw 9vh 0 var(--px-cream),
+    35vw 31vh 0 var(--px-gold-lt), 44vw 14vh 0 var(--px-cream), 53vw 4vh 0 var(--px-blue-lt),
+    61vw 26vh 0 var(--px-cream), 69vw 11vh 0 var(--px-sakura), 77vw 35vh 0 var(--px-cream),
+    86vw 7vh 0 var(--px-gold-lt), 93vw 19vh 0 var(--px-cream), 4vw 40vh 0 var(--px-blue-lt),
+    13vw 48vh 0 var(--px-cream), 31vw 44vh 0 var(--px-cream), 48vw 39vh 0 var(--px-violet-lt),
+    58vw 52vh 0 var(--px-cream), 73vw 47vh 0 var(--px-blue-lt), 89vw 42vh 0 var(--px-cream),
+    22vw 58vh 0 var(--px-gold-lt), 41vw 61vh 0 var(--px-cream), 66vw 63vh 0 var(--px-cream),
+    96vw 56vh 0 var(--px-sakura);
+  animation: px-twinkle 2.4s steps(2, end) infinite;
+}
+
+.bg-atmosphere::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 96px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='24' shape-rendering='crispEdges'%3E%3Cpath fill='%23231a4d' d='M0 24V14h4v-3h4V8h4v3h4v3h4V9h4V5h4V2h4v3h4v4h4v5h4v-2h4v-3h4v3h4v4h4v12z'/%3E%3Cpath fill='%2318123a' d='M0 24v-4h6v-2h6v-2h8v2h10v-3h8v3h8v2h10v-2h8v6z'/%3E%3C/svg%3E")
+    repeat-x left bottom / 256px 96px;
+  image-rendering: pixelated;
+  opacity: 0.9;
+}
+
+@keyframes px-twinkle {
+  0% { opacity: 0.85; }
+  50% { opacity: 0.45; }
+}
+
+/* Keyboard focus: chunky square gold ring (accessibility preserved) */
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--px-gold);
+  outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------------------------
+ * P3. Typography
+ * ---------------------------------------------------------------------------- */
+h1, h2, h3, h4,
+.jp-title,
+.section-heading,
+.game-title,
+.title-subtitle,
+.view-header h2,
+.modal-header h3,
+.combatant-name,
+.hud-name,
+.hud-mini-name {
+  font-family: var(--font-pixel);
+  font-weight: 400;          /* DotGothic16 has a single weight; faux-bold smears pixels */
+  letter-spacing: 0.06em;
+}
+
+h2,
+.view-header h2 {
+  color: var(--px-gold-lt);
+  text-shadow: 2px 2px 0 var(--px-ink);
+}
+
+.section-heading {
+  color: var(--px-gold-lt);
+  border-bottom: 0;
+  padding-bottom: 8px;
+  background: repeating-linear-gradient(90deg, var(--px-gold) 0 4px, transparent 4px 8px) left bottom / 100% 2px no-repeat;
+  text-shadow: 2px 2px 0 var(--px-ink);
+}
+
+.view-header {
+  border-bottom: 0;
+  background: repeating-linear-gradient(90deg, var(--px-cream-dk) 0 2px, transparent 2px 6px) left bottom / 100% 2px no-repeat;
+}
+
+/* Readability guardrail: long-form content never uses pixel fonts */
+.jp-text,
+.q-prompt-jp,
+.q-prompt-zh,
+.option-btn,
+.dialogue-choice-btn,
+.dialogue-text-jp,
+.dialogue-text-zh,
+.speech-zh,
+.enemy-speech-bubble,
+.hero-speech-bubble,
+.explain-section,
+.explain-detail,
+.mistake-note-explain,
+.mistake-note-stem,
+.reading-para,
+.reading-paragraphs,
+.reading-q-prompt,
+.title-synopsis,
+.empty-hint,
+.view-subtitle,
+.zh-collapsible,
+.battle-q-hint,
+p,
+li {
+  font-family: var(--font-sans);
+}
+
+rt {
+  color: var(--px-blue-lt);
+  -webkit-text-fill-color: var(--px-blue-lt);
+}
+
+/* ----------------------------------------------------------------------------
+ * P4. Pixel windows (9-slice frames)
+ * ---------------------------------------------------------------------------- */
+.panel,
+.panel-card,
+.title-screen-card,
+.modal-dialog,
+.combatant-card,
+#battle-question-card,
+.npc-card,
+#town-dialogue-panel {
+  border-style: solid;
+  border-width: var(--frame-w);
+  border-color: transparent;
+  border-image: var(--frame-cream) 3 stretch;
+  background: var(--px-win);
+  background-clip: padding-box;
+  box-shadow: var(--shadow-panel);
+}
+
+/* Nested windows read as "sub-menus": slightly lighter, no drop shadow */
+.panel-card .panel-card,
+.modal-dialog .panel-card {
+  background: var(--px-win-2);
+  box-shadow: none;
+}
+
+.title-screen-card {
+  border-image-source: var(--frame-gold);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 3px, rgba(255, 255, 255, 0.025) 3px 4px),
+    var(--px-win);
+  background-clip: padding-box;
+  box-shadow: 8px 8px 0 rgba(11, 10, 24, 0.7);
+}
+
+#title-logo-slot::before {
+  filter: none;
+  background: none;
+  animation: none;
+}
+
+.game-title {
+  color: var(--px-gold-lt);
+  text-shadow:
+    3px 0 0 var(--px-ink), -3px 0 0 var(--px-ink),
+    0 3px 0 var(--px-ink), 0 -3px 0 var(--px-ink),
+    6px 6px 0 var(--px-red-dk);
+}
+
+/* Battle windows: hero = blue, enemy = red, boss = gold */
+.combatant-card.player-side {
+  border-image-source: var(--frame-blue);
+  background: #18204a;
+  background-clip: padding-box;
+}
+
+.combatant-card.enemy-side {
+  border-image-source: var(--frame-red);
+  background: #2a1838;
+  background-clip: padding-box;
+}
+
+.combatant-card.enemy-side.boss-card,
+#battle-question-card {
+  border-image-source: var(--frame-gold);
+}
+
+#battle-question-card {
+  background: var(--px-win);
+  background-clip: padding-box;
+}
+
+#app .q-prompt-jp {
+  background: var(--px-ink);
+  border: 2px solid var(--px-win-3);
+  box-shadow: inset 0 0 0 1px rgba(244, 236, 208, 0.08);
+}
+
+/* NPC cards behave like selectable menu windows */
+.npc-card {
+  box-shadow: var(--shadow-card);
+}
+
+.npc-card:hover {
+  border-image-source: var(--frame-gold);
+  transform: translateY(-2px);
+  box-shadow: 4px 6px 0 rgba(11, 10, 24, 0.7);
+}
+
+.npc-card.selected {
+  border-image-source: var(--frame-gold);
+  background: var(--px-win-3);
+  background-clip: padding-box;
+}
+
+/* Modal: dithered dim overlay instead of blur */
+.modal-overlay {
+  background-color: rgba(11, 10, 24, 0.7);
+  background-image:
+    linear-gradient(45deg, rgba(11, 10, 24, 0.5) 25%, transparent 25%, transparent 75%, rgba(11, 10, 24, 0.5) 75%),
+    linear-gradient(45deg, rgba(11, 10, 24, 0.5) 25%, transparent 25%, transparent 75%, rgba(11, 10, 24, 0.5) 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 2px 2px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.modal-dialog {
+  border-image-source: var(--frame-gold);
+  box-shadow: 8px 8px 0 rgba(11, 10, 24, 0.75);
+}
+
+.modal-header {
+  border-bottom: 0;
+  background: repeating-linear-gradient(90deg, var(--px-gold) 0 4px, transparent 4px 8px) left bottom / 100% 2px no-repeat;
+}
+
+/* Small info tiles become inset "status boxes" */
+.stat-tile,
+.region-stat-box,
+.mistake-choice-box,
+.shrine-tier-card,
+.skill-branch-card {
+  border: 2px solid var(--px-ink);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.07), inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.stat-tile-value {
+  font-family: var(--font-pixel);
+  color: var(--px-gold-lt);
+  text-shadow: 2px 2px 0 var(--px-ink);
+}
+
+/* ----------------------------------------------------------------------------
+ * P5. Buttons — bevelled pixel keys with a real "press"
+ * ---------------------------------------------------------------------------- */
+.btn {
+  --btn-bg: var(--px-win-3);
+  --btn-fg: var(--px-cream);
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--btn-fg);
+  background: var(--btn-bg);
+  border: 2px solid var(--px-ink);
+  box-shadow:
+    inset -2px -3px 0 rgba(0, 0, 0, 0.32),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.22),
+    0 3px 0 var(--px-ink);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
+  transition: transform 60ms steps(1, end), filter 60ms steps(1, end);
+}
+
+.btn-primary   { --btn-bg: #2f5fd0; --btn-fg: #f0f7ff; }
+.btn-secondary { --btn-bg: var(--px-win-3); --btn-fg: var(--px-cream); }
+.btn-gold      { --btn-bg: var(--px-gold); --btn-fg: var(--px-ink); text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4); }
+.btn-danger    { --btn-bg: #c8372d; --btn-fg: #fff4ef; }
+.btn-heal      { --btn-bg: #3f9b4b; --btn-fg: #f2fff0; }
+.btn-ghost     { --btn-bg: rgba(29, 26, 69, 0.7); --btn-fg: var(--text-muted); }
+.btn-audio     { --btn-bg: #24406e; --btn-fg: var(--px-blue-lt); }
+.btn-skill     { --btn-bg: #4a2f78; --btn-fg: var(--px-violet-lt); }
+
+.btn:hover:not(:disabled) {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border-color: var(--px-ink);
+  filter: brightness(1.16);
+  transform: translateY(-1px);
+  box-shadow:
+    inset -2px -3px 0 rgba(0, 0, 0, 0.32),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.3),
+    0 4px 0 var(--px-ink);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(3px);
+  filter: brightness(0.95);
+  box-shadow:
+    inset 2px 3px 0 rgba(0, 0, 0, 0.35),
+    0 0 0 var(--px-ink);
+}
+
+.btn:disabled {
+  filter: grayscale(0.6);
+  background-image: linear-gradient(45deg, rgba(0, 0, 0, 0.25) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.25) 75%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.25) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.25) 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 2px 2px;
+}
+
+/* HUD toggle chips */
+.btn-hud {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  background: var(--px-win-2);
+  color: var(--text-muted);
+  border: 2px solid var(--px-ink);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.12), inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.btn-hud:hover {
+  color: var(--px-cream);
+  border-color: var(--px-ink);
+  background: var(--px-win-3);
+}
+
+.btn-hud.active {
+  background: #24406e;
+  color: var(--px-blue-lt);
+  border-color: var(--px-ink);
+  box-shadow: inset 0 -3px 0 var(--px-blue), inset 2px 2px 0 rgba(255, 255, 255, 0.14);
+}
+
+.btn-hud.active.immersion-active {
+  background: #4a2f78;
+  color: var(--px-violet-lt);
+  box-shadow: inset 0 -3px 0 var(--px-violet), inset 2px 2px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* Native form controls */
+input,
+select,
+textarea {
+  border-radius: 0;
+  border: 2px solid var(--px-ink);
+  background-color: var(--px-ink);
+  color: var(--px-cream);
+  box-shadow: inset 0 0 0 1px var(--px-win-3);
+}
+
+/* ----------------------------------------------------------------------------
+ * P6. Command menus with the classic blinking ▶ cursor
+ *     (nav, tabs, answer options, NPC choices)
+ * ---------------------------------------------------------------------------- */
+.nav-btn,
+.tab-btn,
+.option-btn,
+.dialogue-choice-btn {
+  position: relative;
+}
+
+.nav-btn::before,
+.tab-btn::before,
+.option-btn::before,
+.dialogue-choice-btn::before {
+  content: "▶";
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--px-gold);
+  text-shadow: 1px 1px 0 var(--px-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Cursor shows on keyboard focus everywhere, and on hover only where hover exists */
+.nav-btn:focus-visible::before,
+.tab-btn:focus-visible::before,
+.option-btn:focus-visible:not(:disabled)::before,
+.dialogue-choice-btn:focus-visible:not(:disabled)::before,
+.nav-btn.active::before,
+.tab-btn.active::before {
+  opacity: 1;
+  animation: px-cursor-blink 0.8s steps(2, jump-none) infinite;
+}
+
+@media (hover: hover) {
+  .nav-btn:hover::before,
+  .tab-btn:hover::before,
+  .option-btn:hover:not(:disabled)::before,
+  .dialogue-choice-btn:hover:not(:disabled)::before {
+    opacity: 1;
+    animation: px-cursor-blink 0.8s steps(2, jump-none) infinite;
+  }
+
+  /* Leave room for the cursor on pointer devices (mobile sizes untouched) */
+  .option-btn,
+  .dialogue-choice-btn {
+    padding-left: 22px;
+  }
+}
+
+@keyframes px-cursor-blink {
+  0% { opacity: 1; }
+  100% { opacity: 0.15; }
+}
+
+/* Navigation bar = top command strip */
+#nav-bar {
+  background: var(--px-win);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 0;
+  box-shadow: inset 0 -2px 0 var(--px-cream-dk), 0 3px 0 var(--px-ink);
+}
+
+.nav-btn,
+.tab-btn {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  padding-left: 18px;
+  background: transparent;
+  border: 2px solid transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+  text-shadow: 1px 1px 0 var(--px-ink);
+}
+
+.nav-btn:hover,
+.tab-btn:hover {
+  background: var(--px-win-2);
+  border-color: var(--px-ink);
+  color: var(--px-cream);
+}
+
+.nav-btn.active,
+.tab-btn.active {
+  background: var(--px-win-3);
+  border-color: var(--px-ink);
+  color: var(--px-gold-lt);
+  box-shadow: inset 0 -3px 0 var(--px-gold), inset 2px 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Answer options: flat menu rows with crisp state colors */
+.option-btn {
+  background: var(--px-win-2);
+  border: 2px solid var(--px-ink);
+  color: var(--px-cream);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.08), inset -2px -2px 0 rgba(0, 0, 0, 0.3), 0 3px 0 var(--px-ink);
+  transition: transform 60ms steps(1, end);
+}
+
+.option-btn:hover:not(:disabled) {
+  background: var(--px-win-3);
+  border-color: var(--px-gold);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.12), inset -2px -2px 0 rgba(0, 0, 0, 0.3), 0 3px 0 var(--px-ink);
+  transform: translateY(-1px);
+}
+
+.option-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: inset 2px 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.option-btn.selected {
+  background: #24406e;
+  border-color: var(--px-blue-lt);
+}
+
+.option-btn.correct {
+  background: var(--px-green-dk);
+  border-color: var(--px-green-lt);
+  color: #f2fff0;
+  box-shadow: inset 0 0 0 2px var(--px-green), 0 3px 0 var(--px-ink);
+  animation: px-blink 0.32s steps(2, jump-none) 3;
+}
+
+.option-btn.wrong {
+  background: var(--px-red-dk);
+  border-color: var(--px-red-lt);
+  color: #fff4ef;
+  box-shadow: inset 0 0 0 2px var(--px-red), 0 3px 0 var(--px-ink);
+  animation: px-shake 0.3s steps(1, end) both;
+}
+
+.option-btn.correct::before {
+  content: "◆";
+  opacity: 1;
+  color: var(--px-green-lt);
+  animation: none;
+}
+
+.option-btn.wrong::before {
+  content: "✕";
+  opacity: 1;
+  color: var(--px-red-lt);
+  animation: none;
+}
+
+.dialogue-choice-btn {
+  background: var(--px-win-2);
+  border: 2px solid var(--px-ink);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.08), 0 3px 0 var(--px-ink);
+}
+
+.dialogue-choice-btn:hover:not(:disabled) {
+  background: var(--px-win-3);
+  border-color: var(--px-gold);
+}
+
+/* Peek-Chinese chip */
+.btn-peek-zh {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  background: var(--px-ink);
+  color: var(--px-blue-lt);
+  border: 2px dashed var(--px-blue);
+  box-shadow: none;
+}
+
+/* ----------------------------------------------------------------------------
+ * P7. Stat bars — segmented, banded, drain in chunky steps
+ * ---------------------------------------------------------------------------- */
+.stat-bar {
+  background: #2a1f3d;
+  border: 2px solid var(--px-ink);
+  box-shadow: 0 0 0 1px rgba(244, 236, 208, 0.55);
+}
+
+/* Segment ticks over the fill, under the text */
+.stat-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 7px, rgba(11, 10, 24, 0.4) 7px 8px);
+}
+
+.stat-bar-fill {
+  box-shadow: none;
+  transition: width 0.4s steps(8, end);
+}
+
+#app .stat-bar-text {
+  font-family: var(--font-num);
+  font-size: 0.5rem;          /* 8px — Press Start 2P native grid, crisp */
+  font-weight: 400;
+  letter-spacing: 0;
+  text-shadow: 1px 0 0 var(--px-ink), -1px 0 0 var(--px-ink), 0 1px 0 var(--px-ink), 0 -1px 0 var(--px-ink);
+}
+
+/* Banded fills: highlight / base / shade (top → bottom) */
+#app .hp-bar .stat-bar-fill,
+#app #hud-hp-bar {
+  background: linear-gradient(180deg, var(--px-red-lt) 0 30%, var(--px-red) 30% 70%, var(--px-red-dk) 70%);
+  box-shadow: none;
+}
+
+#app .enemy-hp-bar .stat-bar-fill {
+  background: linear-gradient(180deg, #ffb44a 0 30%, #e8743c 30% 70%, var(--px-red-dk) 70%);
+  box-shadow: none;
+}
+
+#app .mp-bar .stat-bar-fill,
+#app #hud-mp-bar {
+  background: linear-gradient(180deg, var(--px-blue-lt) 0 30%, var(--px-blue) 30% 70%, var(--px-blue-dk) 70%);
+  box-shadow: none;
+}
+
+#app .exp-bar .stat-bar-fill,
+#app #hud-exp-bar {
+  background: linear-gradient(180deg, var(--px-gold-lt) 0 30%, var(--px-gold) 30% 70%, var(--px-gold-dk) 70%);
+  box-shadow: none;
+}
+
+#app .affection-bar .stat-bar-fill {
+  background: linear-gradient(180deg, #ffd0e4 0 30%, var(--px-sakura) 30% 70%, #b8507e 70%);
+}
+
+#app .explore-bar .stat-bar-fill {
+  background: linear-gradient(180deg, var(--px-green-lt) 0 30%, var(--px-green) 30% 70%, var(--px-green-dk) 70%);
+  box-shadow: none;
+}
+
+#app .speed-bar .stat-bar-fill,
+#app #battle-speed-bar,
+#app .timer-bar .stat-bar-fill {
+  background: linear-gradient(180deg, var(--px-blue-lt) 0 40%, var(--px-blue) 40%);
+  box-shadow: none;
+}
+
+/* Other progress tracks */
+.progress-track,
+.qbank-bar {
+  border: 2px solid var(--px-ink);
+  background: #2a1f3d;
+}
+
+/* ----------------------------------------------------------------------------
+ * P8. Badges & pills → square pixel tags
+ * ---------------------------------------------------------------------------- */
+.tag-pill,
+.jlpt-badge,
+.q-type-badge,
+.battle-badge,
+.map-progress-pill,
+.sp-banner-pill,
+.badge,
+.badge-active,
+.badge-passive,
+.pill,
+.notes-stat-pill {
+  border-width: 2px;
+  border-color: var(--px-ink);
+  box-shadow: inset 0 0 0 1px rgba(244, 236, 208, 0.25);
+}
+
+.jlpt-badge,
+.hud-level-pill {
+  font-family: var(--font-num);
+  font-size: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ----------------------------------------------------------------------------
+ * P9. Top HUD (sizes untouched — lines are inset shadows so --hud-h stays exact)
+ * ---------------------------------------------------------------------------- */
+#top-hud {
+  background: var(--px-night);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 0;
+  box-shadow: inset 0 -3px 0 var(--px-cream-dk), inset 0 -5px 0 var(--px-ink), 0 3px 0 var(--px-ink);
+}
+
+.hud-avatar {
+  border: 2px solid var(--px-cream);
+  box-shadow: 0 0 0 2px var(--px-ink);
+  background: #18204a;
+  image-rendering: pixelated;
+}
+
+.hud-name {
+  color: var(--px-gold-lt);
+  text-shadow: 1px 1px 0 var(--px-ink);
+}
+
+.hud-level-pill {
+  padding: 3px 5px;
+  background: var(--px-gold);
+  color: var(--px-ink);
+  border: 2px solid var(--px-ink);
+}
+
+.hud-title-badge {
+  font-family: var(--font-pixel);
+  color: var(--px-blue-lt);
+}
+
+.coin-chip,
+.sp-chip,
+.hud-mini-chip,
+.hud-mini-stat {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  border: 2px solid var(--px-ink);
+  background: var(--px-win-2);
+  box-shadow: inset 0 0 0 1px rgba(244, 236, 208, 0.18);
+}
+
+@media (max-width: 768px) {
+  #app #hud-collapsible-body {
+    border-top-color: var(--px-cream-dk);
+  }
+
+  #app #hud-mini-bar .hud-collapse-btn {
+    font-family: var(--font-pixel);
+    font-weight: 400;
+    background: var(--px-win-3);
+    color: var(--px-gold-lt);
+    border: 2px solid var(--px-ink);
+    box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.16), inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * P10. Dialogue (AVG) & speech bubbles
+ * ---------------------------------------------------------------------------- */
+.dialogue-speech-box {
+  background: var(--px-ink);
+  border: 2px solid var(--px-cream-dk);
+  box-shadow: 0 0 0 2px var(--px-ink), inset 0 0 0 2px var(--px-win-3);
+}
+
+.dialogue-next-cursor {
+  font-family: var(--font-pixel);
+  color: var(--px-gold);
+  animation: px-cursor-bob 0.7s steps(2, jump-none) infinite;
+}
+
+@keyframes px-cursor-bob {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(3px); }
+}
+
+.hero-speech-bubble,
+.enemy-speech-bubble {
+  background: var(--px-cream);
+  color: var(--px-ink);
+  border: 2px solid var(--px-ink);
+  box-shadow: 3px 3px 0 rgba(11, 10, 24, 0.6);
+}
+
+.hero-speech-bubble rt,
+.enemy-speech-bubble rt {
+  color: var(--px-blue-dk);
+  -webkit-text-fill-color: var(--px-blue-dk);
+}
+
+.hero-speech-bubble .speech-zh,
+.enemy-speech-bubble .speech-zh {
+  color: #4a4470;
+}
+
+/* ----------------------------------------------------------------------------
+ * P11. Retro battle feedback (hit / break / damage numbers / toasts)
+ *      Same class names the JS already toggles — only the motion changes.
+ * ---------------------------------------------------------------------------- */
+.anim-shake {
+  animation: px-shake 0.36s steps(1, end) both;
+}
+
+.anim-break-flash {
+  animation: px-flash 0.6s steps(1, end) both;
+}
+
+@keyframes px-shake {
+  0% { transform: translate(4px, 0); }
+  20% { transform: translate(-4px, 2px); }
+  40% { transform: translate(3px, -2px); }
+  60% { transform: translate(-3px, 0); }
+  80% { transform: translate(2px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes px-flash {
+  0% { filter: brightness(3) saturate(0); }
+  16% { filter: none; }
+  33% { filter: brightness(3) saturate(0); }
+  50% { filter: invert(1); }
+  66% { filter: none; }
+  100% { filter: none; }
+}
+
+@keyframes px-blink {
+  0% { filter: brightness(1.6); }
+  100% { filter: none; }
+}
+
+.floating-num {
+  font-family: var(--font-num);
+  font-weight: 400;
+  font-size: 1rem;
+  letter-spacing: 0;
+  animation-timing-function: steps(10, end);
+}
+
+.floating-num.num-dmg,
+.floating-num.num-crit,
+.floating-num.num-break,
+.floating-num.num-heal,
+.floating-num.num-enemy-dmg,
+.floating-num.num-shield {
+  text-shadow:
+    2px 0 0 var(--px-ink), -2px 0 0 var(--px-ink),
+    0 2px 0 var(--px-ink), 0 -2px 0 var(--px-ink),
+    3px 3px 0 var(--px-ink);
+}
+
+.floating-num.num-dmg { color: #ffffff; }
+.floating-num.num-crit { font-size: 1.25rem; color: var(--px-gold-lt); }
+.floating-num.num-break { font-size: 1.1rem; color: var(--px-blue-lt); }
+.floating-num.num-heal { color: var(--px-green-lt); }
+.floating-num.num-enemy-dmg { font-size: 1.1rem; color: var(--px-red-lt); }
+.floating-num.num-shield { color: var(--px-blue-lt); }
+
+/* Toasts = little message windows; type picks the frame color */
+#app #toast-container .toast-item {
+  border-style: solid;
+  border-width: var(--frame-w);
+  border-color: transparent;
+  border-image: var(--frame-cream) 3 stretch;
+  background: var(--px-win);
+  background-clip: padding-box;
+  color: var(--px-cream);
+  box-shadow: 4px 4px 0 rgba(11, 10, 24, 0.7);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+#app #toast-container .toast-item.toast-success { border-image-source: var(--frame-green); }
+#app #toast-container .toast-item.toast-error { border-image-source: var(--frame-red); }
+#app #toast-container .toast-item.toast-info { border-image-source: var(--frame-blue); }
+#app #toast-container .toast-item.toast-warning,
+#app #toast-container .toast-item.toast-gold,
+#app #toast-container .toast-item.toast-achievement {
+  border-image-source: var(--frame-gold);
+  background: #2e2350;
+  background-clip: padding-box;
+}
+
+/* Level-up / achievement toasts get a blinking pixel star */
+#app #toast-container .toast-item.toast-gold::before,
+#app #toast-container .toast-item.toast-achievement::before {
+  content: "★";
+  margin-right: 6px;
+  color: var(--px-gold);
+  animation: px-cursor-blink 0.5s steps(2, jump-none) infinite;
+}
+
+/* ----------------------------------------------------------------------------
+ * P12. Reduced motion: keep the look, drop the blinking/shaking
+ * ---------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .bg-atmosphere::before,
+  .nav-btn::before,
+  .tab-btn::before,
+  .option-btn::before,
+  .dialogue-choice-btn::before,
+  .dialogue-next-cursor,
+  .option-btn.correct,
+  .option-btn.wrong,
+  .anim-shake,
+  .anim-break-flash,
+  #app #toast-container .toast-item::before {
+    animation: none !important;
+  }
+}
