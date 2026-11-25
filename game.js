@@ -549,9 +549,9 @@
   }
 
   function getItemById(id) {
-    if (!id) return null;
+    if (typeof id !== 'string' || !id || UNSAFE_OBJECT_KEYS.has(id)) return null;
     const data = getData().ITEMS;
-    if (data && !Array.isArray(data) && data[id]) {
+    if (data && !Array.isArray(data) && Object.prototype.hasOwnProperty.call(data, id) && data[id]) {
       return data[id].id ? data[id] : Object.assign({ id }, data[id]);
     }
     return getItems().find((i) => i.id === id) || null;
@@ -583,9 +583,9 @@
   }
 
   function getEnemyById(id) {
-    if (!id) return null;
+    if (typeof id !== 'string' || !id || UNSAFE_OBJECT_KEYS.has(id)) return null;
     const data = getData().ENEMIES;
-    if (data && !Array.isArray(data) && data[id]) {
+    if (data && !Array.isArray(data) && Object.prototype.hasOwnProperty.call(data, id) && data[id]) {
       return data[id].id ? data[id] : Object.assign({ id }, data[id]);
     }
     return getEnemies().find((e) => e.id === id) || null;
@@ -1143,6 +1143,40 @@
     };
   }
 
+  function getValidTitlesSet() {
+    const valid = new Set(['初醒的旅人', ...Object.keys(TITLE_FLAVOR_TEXTS)]);
+    const add = (t) => {
+      if (typeof t === 'string' && t.trim()) valid.add(t.trim());
+    };
+    getJobs().forEach((j) => add(j && j.title));
+    getQuests().forEach((q) => {
+      if (!q) return;
+      add(q.reward && q.reward.title);
+      add(q.rewards && q.rewards.title);
+    });
+    getAchievements().forEach((a) => {
+      if (!a) return;
+      add(a.reward && a.reward.title);
+      add(a.rewards && a.rewards.title);
+    });
+    getNPCs().forEach((n) => {
+      if (!n || !Array.isArray(n.milestones)) return;
+      n.milestones.forEach((m) => {
+        if (!m) return;
+        add(m.title);
+        add(m.reward && m.reward.title);
+        add(m.rewards && m.rewards.title);
+      });
+    });
+    getShrineTiers().forEach((t) => {
+      if (!t) return;
+      add(t.rewardTitle);
+      add(t.rewards && t.rewards.title);
+      add(`${t.jlpt || '言霊'}試煉突破者`);
+    });
+    return valid;
+  }
+
   function sanitizeSaveData(raw) {
     const def = createDefaultState();
     if (!raw || typeof raw !== 'object') return def;
@@ -1162,26 +1196,40 @@
     out.player.exp = toSafeInt(rp.exp, 0, 0);
     out.player.nextExp = toSafeInt(rp.nextExp, Math.max(50, calcNextExp(out.player.level)), 50);
     out.player.maxHp = toSafeInt(rp.maxHp, def.player.maxHp, 30, 99999);
-    out.player.hp = clamp(Math.floor(Number(rp.hp ?? out.player.maxHp)), 1, out.player.maxHp * 3);
+    out.player.hp = toSafeInt(rp.hp, out.player.maxHp, 1, out.player.maxHp * 3);
     out.player.maxMp = toSafeInt(rp.maxMp, def.player.maxMp, 20, 99999);
-    out.player.mp = clamp(Math.floor(Number(rp.mp ?? out.player.maxMp)), 0, out.player.maxMp * 3);
+    out.player.mp = toSafeInt(rp.mp, out.player.maxMp, 0, out.player.maxMp * 3);
     out.player.baseINT = toSafeInt(rp.baseINT, def.player.baseINT, 1, 9999);
     out.player.baseWIS = toSafeInt(rp.baseWIS, def.player.baseWIS, 1, 9999);
     out.player.baseCHA = toSafeInt(rp.baseCHA, def.player.baseCHA, 1, 9999);
     out.player.gold = toSafeInt(rp.gold, def.player.gold, 0);
     out.player.sp = toSafeInt(rp.sp, def.player.sp, 0);
-    out.player.unlockedTitles = Array.isArray(rp.unlockedTitles) && rp.unlockedTitles.length > 0
-      ? Array.from(new Set(rp.unlockedTitles.map(String)))
-      : ['初醒的旅人'];
+    const validTitles = getValidTitlesSet();
+    const cleanTitles = Array.isArray(rp.unlockedTitles)
+      ? Array.from(
+          new Set(
+            rp.unlockedTitles
+              .filter((t) => typeof t === 'string')
+              .map((t) => t.trim().slice(0, 24))
+              .filter((t) => t && validTitles.has(t))
+          )
+        )
+      : [];
+    out.player.unlockedTitles = cleanTitles.length > 0 ? cleanTitles : ['初醒的旅人'];
     out.player.activeTitle = typeof rp.activeTitle === 'string' && out.player.unlockedTitles.includes(rp.activeTitle)
       ? rp.activeTitle
       : out.player.unlockedTitles[0];
 
-    const req = rp.equipment && typeof rp.equipment === 'object' ? rp.equipment : {};
+    const req = rp.equipment && typeof rp.equipment === 'object' && !Array.isArray(rp.equipment) ? rp.equipment : {};
+    const validEquipId = (slot, id) => {
+      if (typeof id !== 'string' || !id || UNSAFE_OBJECT_KEYS.has(id)) return null;
+      const item = getItemById(id);
+      return item && (!item.type || item.type === slot) ? id : null;
+    };
     out.player.equipment = {
-      weapon: typeof req.weapon === 'string' ? req.weapon : null,
-      armor: typeof req.armor === 'string' ? req.armor : null,
-      accessory: typeof req.accessory === 'string' ? req.accessory : null
+      weapon: validEquipId('weapon', req.weapon),
+      armor: validEquipId('armor', req.armor),
+      accessory: validEquipId('accessory', req.accessory)
     };
 
     const renh = rp.enhancements && typeof rp.enhancements === 'object' ? rp.enhancements : {};
@@ -1209,15 +1257,22 @@
     });
 
     // Progress
+    const validRegionSet = new Set(['r1', 'r2', 'r3', 'r4', 'r5', 'r6']);
     const rpr = raw.progress && typeof raw.progress === 'object' ? raw.progress : {};
-    out.progress.currentRegionId = typeof rpr.currentRegionId === 'string' ? rpr.currentRegionId : 'r1';
+    out.progress.currentRegionId = typeof rpr.currentRegionId === 'string' && validRegionSet.has(rpr.currentRegionId)
+      ? rpr.currentRegionId
+      : 'r1';
     const rex = rpr.regionExplore && typeof rpr.regionExplore === 'object' ? rpr.regionExplore : {};
     ['r1', 'r2', 'r3', 'r4', 'r5', 'r6'].forEach((rid) => {
       out.progress.regionExplore[rid] = clamp(Math.floor(Number(rex[rid]) || 0), 0, 100);
     });
-    out.progress.defeatedBosses = Array.isArray(rpr.defeatedBosses) ? Array.from(new Set(rpr.defeatedBosses.map(String))) : [];
+    out.progress.defeatedBosses = Array.isArray(rpr.defeatedBosses)
+      ? Array.from(new Set(rpr.defeatedBosses.map(String).filter((id) => validRegionSet.has(id))))
+      : [];
     // Regions whose mid-exploration elite has been beaten (missing in pre-v1.5 saves → [])
-    out.progress.defeatedElites = Array.isArray(rpr.defeatedElites) ? Array.from(new Set(rpr.defeatedElites.map(String))) : [];
+    out.progress.defeatedElites = Array.isArray(rpr.defeatedElites)
+      ? Array.from(new Set(rpr.defeatedElites.map(String).filter((id) => validRegionSet.has(id))))
+      : [];
     out.progress.unlockedAllOverride = Boolean(rpr.unlockedAllOverride);
     out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(rpr.clearedReadings.map(String))) : [];
     // shrineBest is rendered into innerHTML: rebuild each entry from whitelisted fields only
@@ -2274,7 +2329,7 @@
     if (!container) return;
     const el = document.createElement('div');
     el.className = `toast-item toast-${type}`;
-    el.innerHTML = message;
+    el.textContent = String(message == null ? '' : message);
     container.appendChild(el);
     setTimeout(() => {
       el.style.opacity = '0';
@@ -4954,23 +5009,31 @@
     }
   }
 
+  function formatBattleSpeedText(leftSec) {
+    const isNarrow = typeof window !== 'undefined' && Number(window.innerWidth) > 0 && window.innerWidth <= 360;
+    if (leftSec <= 0) {
+      return isNarrow ? '🧘 無加成' : '🧘 常速詠唱';
+    }
+    return isNarrow ? `⚡ ${leftSec.toFixed(1)}s` : `⚡ ${leftSec.toFixed(1)}s 速答`;
+  }
+
   function startBattleSpeedTimer() {
     stopBattleTimers();
     battle.qStartTime = performance.now();
     const bar = $('battle-speed-bar');
     const txt = $('battle-speed-text');
     if (bar) bar.style.width = '100%';
-    if (txt) txt.textContent = '⚡ 速答破防 10.0s';
+    if (txt) txt.textContent = formatBattleSpeedText(10);
 
     battle.speedTimerId = setInterval(() => {
       const elapsed = (performance.now() - battle.qStartTime) / 1000;
       const left = Math.max(0, 10 - elapsed);
       if (bar) bar.style.width = `${(left / 10) * 100}%`;
       if (left <= 0) {
-        if (txt) txt.textContent = '🧘 無速答加成';
+        if (txt) txt.textContent = formatBattleSpeedText(0);
         stopBattleTimers();
       } else {
-        if (txt) txt.textContent = `⚡ 速答破防 ${left.toFixed(1)}s`;
+        if (txt) txt.textContent = formatBattleSpeedText(left);
       }
     }, 100);
   }
@@ -8254,6 +8317,9 @@
     getBossPhaseInfo,
     getQuestDestination,
     getCurrentObjective,
+    getItemById,
+    getEnemyById,
+    formatBattleSpeedText,
     applyMobileHudCollapseState
   };
 
