@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>言霊の旅・像素圖示預覽</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 24px 16px 48px; background: #141230; color: #f4ecd0; font-family: "Yu Gothic UI", "Microsoft JhengHei", sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 1.3rem; }
+  p.note { margin: 0 0 20px; color: #b3acd2; font-size: .9rem; }
+  .portraits { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; align-items: flex-end; }
+  .portraits img { width: 96px; height: 96px; image-rendering: pixelated; background: #24457d; border: 3px solid #1a1018; }
+  .bg-toggle { margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .bg-toggle button { font: inherit; padding: 6px 12px; background: #332c70; color: #f4ecd0; border: 2px solid #1a1018; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .cell { margin: 0; padding: 12px; background: #1d1a45; border: 2px solid #4a3f8f; }
+  body.teal .cell { background: #1d5753; border-color: #2a7470; }
+  body.light .cell { background: #f4ecd0; border-color: #c9bf9c; color: #1a1018; }
+  .sizes { display: flex; align-items: flex-end; gap: 12px; min-height: 68px; }
+  .sizes img { image-rendering: pixelated; }
+  figcaption { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; font-size: .85rem; }
+  figcaption .was { color: #b3acd2; font-size: .78rem; }
+  body.light figcaption .was { color: #6b5f88; }
+</style>
+</head>
+<body>
+  <h1>像素圖示預覽（34 個，16×16）</h1>
+  <p class="note">每個圖示依序顯示 1×、2×、4×。上方為現有手繪頭像，用來比對畫風。原始格子定義在 tools/gen-pixel-icons.js。</p>
+  <div class="portraits">
+    <img src="../portraits/hero_swordsman.webp" alt="">
+    <img src="../portraits/npc_mayor.webp" alt="">
+    <img src="../portraits/npc_merchant.webp" alt="">
+    <img src="../portraits/npc_priest.webp" alt="">
+  </div>
+  <div class="bg-toggle">
+    <button type="button" onclick="document.body.className=''">夜空底</button>
+    <button type="button" onclick="document.body.className='teal'">城鎮青綠底</button>
+    <button type="button" onclick="document.body.className='light'">米色對話框底</button>
+  </div>
+  <div class="grid">
+      <figure class="cell">
+        <div class="sizes">
+          <img src="coin.svg" width="16" height="16" alt="">
+          <img src="coin.svg" width="32" height="32" alt="">
+          <img src="coin.svg" width="64" height="64" alt="coin">
+        </div>
+        <figcaption><b>coin</b><span>金幣</span><span class="was">取代：🪙</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="heart.svg" width="16" height="16" alt="">
+          <img src="heart.svg" width="32" height="32" alt="">
+          <img src="heart.svg" width="64" height="64" alt="heart">
+        </div>
+        <figcaption><b>heart</b><span>HP</span><span class="was">取代：♥ ❤️</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="mana.svg" width="16" height="16" alt="">
+          <img src="mana.svg" width="32" height="32" alt="">
+          <img src="mana.svg" width="64" height="64" alt="mana">
+        </div>
+        <figcaption><b>mana</b><span>MP</span><span class="was">取代：💧</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="star.svg" width="16" height="16" alt="">
+          <img src="star.svg" width="32" height="32" alt="">
+          <img src="star.svg" width="64" height="64" alt="star">
+        </div>
+        <figcaption><b>star</b><span>EXP</span><span class="was">取代：⭐</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="sparkle.svg" width="16" height="16" alt="">
+          <img src="sparkle.svg" width="32" height="32" alt="">
+          <img src="sparkle.svg" width="64" height="64" alt="sparkle">
+        </div>
+        <figcaption><b>sparkle</b><span>SP・技能</span><span class="was">取代：✨</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="gear.svg" width="16" height="16" alt="">
+          <img src="gear.svg" width="32" height="32" alt="">
+          <img src="gear.svg" width="64" height="64" alt="gear">
+        </div>
+        <figcaption><b>gear</b><span>設定</span><span class="was">取代：⚙</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="save.svg" width="16" height="16" alt="">
+          <img src="save.svg" width="32" height="32" alt="">
+          <img src="save.svg" width="64" height="64" alt="save">
+        </div>
+        <figcaption><b>save</b><span>存檔（記憶水晶）</span><span class="was">取代：💾</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="music.svg" width="16" height="16" alt="">
+          <img src="music.svg" width="32" height="32" alt="">
+          <img src="music.svg" width="64" height="64" alt="music">
+        </div>
+        <figcaption><b>music</b><span>BGM</span><span class="was">取代：🎵</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="speaker.svg" width="16" height="16" alt="">
+          <img src="speaker.svg" width="32" height="32" alt="">
+          <img src="speaker.svg" width="64" height="64" alt="speaker">
+        </div>
+        <figcaption><b>speaker</b><span>音效・朗讀</span><span class="was">取代：🔊</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="eye.svg" width="16" height="16" alt="">
+          <img src="eye.svg" width="32" height="32" alt="">
+          <img src="eye.svg" width="64" height="64" alt="eye">
+        </div>
+        <figcaption><b>eye</b><span>偷看中譯</span><span class="was">取代：👁</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="lock.svg" width="16" height="16" alt="">
+          <img src="lock.svg" width="32" height="32" alt="">
+          <img src="lock.svg" width="64" height="64" alt="lock">
+        </div>
+        <figcaption><b>lock</b><span>未解鎖</span><span class="was">取代：🔒</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="check.svg" width="16" height="16" alt="">
+          <img src="check.svg" width="32" height="32" alt="">
+          <img src="check.svg" width="64" height="64" alt="check">
+        </div>
+        <figcaption><b>check</b><span>完成</span><span class="was">取代：✅ ✔</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="turtle.svg" width="16" height="16" alt="">
+          <img src="turtle.svg" width="32" height="32" alt="">
+          <img src="turtle.svg" width="64" height="64" alt="turtle">
+        </div>
+        <figcaption><b>turtle</b><span>慢速朗讀</span><span class="was">取代：🐢</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="house.svg" width="16" height="16" alt="">
+          <img src="house.svg" width="32" height="32" alt="">
+          <img src="house.svg" width="64" height="64" alt="house">
+        </div>
+        <figcaption><b>house</b><span>城鎮</span><span class="was">取代：🏛️ 🏠</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="map.svg" width="16" height="16" alt="">
+          <img src="map.svg" width="32" height="32" alt="">
+          <img src="map.svg" width="64" height="64" alt="map">
+        </div>
+        <figcaption><b>map</b><span>世界地圖</span><span class="was">取代：🗺️</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="book.svg" width="16" height="16" alt="">
+          <img src="book.svg" width="32" height="32" alt="">
+          <img src="book.svg" width="64" height="64" alt="book">
+        </div>
+        <figcaption><b>book</b><span>修練・錯題筆記</span><span class="was">取代：📓 📖</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="person.svg" width="16" height="16" alt="">
+          <img src="person.svg" width="32" height="32" alt="">
+          <img src="person.svg" width="64" height="64" alt="person">
+        </div>
+        <figcaption><b>person</b><span>旅人・角色</span><span class="was">取代：⚔️ 角色</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="scroll.svg" width="16" height="16" alt="">
+          <img src="scroll.svg" width="32" height="32" alt="">
+          <img src="scroll.svg" width="64" height="64" alt="scroll">
+        </div>
+        <figcaption><b>scroll</b><span>任務・卷軸</span><span class="was">取代：📜</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="torii.svg" width="16" height="16" alt="">
+          <img src="torii.svg" width="32" height="32" alt="">
+          <img src="torii.svg" width="64" height="64" alt="torii">
+        </div>
+        <figcaption><b>torii</b><span>試煉神殿</span><span class="was">取代：⛩️</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="chest.svg" width="16" height="16" alt="">
+          <img src="chest.svg" width="32" height="32" alt="">
+          <img src="chest.svg" width="64" height="64" alt="chest">
+        </div>
+        <figcaption><b>chest</b><span>寶箱</span><span class="was">取代：🎁</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="campfire.svg" width="16" height="16" alt="">
+          <img src="campfire.svg" width="32" height="32" alt="">
+          <img src="campfire.svg" width="64" height="64" alt="campfire">
+        </div>
+        <figcaption><b>campfire</b><span>營火</span><span class="was">取代：🔥</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="skull.svg" width="16" height="16" alt="">
+          <img src="skull.svg" width="32" height="32" alt="">
+          <img src="skull.svg" width="64" height="64" alt="skull">
+        </div>
+        <figcaption><b>skull</b><span>首領</span><span class="was">取代：💀 👹</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="sword.svg" width="16" height="16" alt="">
+          <img src="sword.svg" width="32" height="32" alt="">
+          <img src="sword.svg" width="64" height="64" alt="sword">
+        </div>
+        <figcaption><b>sword</b><span>刀劍・冒險</span><span class="was">取代：⚔️ (sword)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="staff.svg" width="16" height="16" alt="">
+          <img src="staff.svg" width="32" height="32" alt="">
+          <img src="staff.svg" width="64" height="64" alt="staff">
+        </div>
+        <figcaption><b>staff</b><span>筆・杖</span><span class="was">取代：(staff)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="lute.svg" width="16" height="16" alt="">
+          <img src="lute.svg" width="32" height="32" alt="">
+          <img src="lute.svg" width="64" height="64" alt="lute">
+        </div>
+        <figcaption><b>lute</b><span>三味線・琵琶</span><span class="was">取代：(lute)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="cloak.svg" width="16" height="16" alt="">
+          <img src="cloak.svg" width="32" height="32" alt="">
+          <img src="cloak.svg" width="64" height="64" alt="cloak">
+        </div>
+        <figcaption><b>cloak</b><span>斗篷・羽織</span><span class="was">取代：(cloak)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="armor.svg" width="16" height="16" alt="">
+          <img src="armor.svg" width="32" height="32" alt="">
+          <img src="armor.svg" width="64" height="64" alt="armor">
+        </div>
+        <figcaption><b>armor</b><span>鎧甲・外套</span><span class="was">取代：🛡</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="robe.svg" width="16" height="16" alt="">
+          <img src="robe.svg" width="32" height="32" alt="">
+          <img src="robe.svg" width="64" height="64" alt="robe">
+        </div>
+        <figcaption><b>robe</b><span>法衣・禮服</span><span class="was">取代：(robe)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="amulet.svg" width="16" height="16" alt="">
+          <img src="amulet.svg" width="32" height="32" alt="">
+          <img src="amulet.svg" width="64" height="64" alt="amulet">
+        </div>
+        <figcaption><b>amulet</b><span>玉佩・御守</span><span class="was">取代：(amulet)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="ring.svg" width="16" height="16" alt="">
+          <img src="ring.svg" width="32" height="32" alt="">
+          <img src="ring.svg" width="64" height="64" alt="ring">
+        </div>
+        <figcaption><b>ring</b><span>戒指・單片鏡</span><span class="was">取代：💍</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="fan.svg" width="16" height="16" alt="">
+          <img src="fan.svg" width="32" height="32" alt="">
+          <img src="fan.svg" width="64" height="64" alt="fan">
+        </div>
+        <figcaption><b>fan</b><span>摺扇・御守</span><span class="was">取代：(talisman)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="herb.svg" width="16" height="16" alt="">
+          <img src="herb.svg" width="32" height="32" alt="">
+          <img src="herb.svg" width="64" height="64" alt="herb">
+        </div>
+        <figcaption><b>herb</b><span>回復藥草</span><span class="was">取代：🌿 🧪</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="elixir.svg" width="16" height="16" alt="">
+          <img src="elixir.svg" width="32" height="32" alt="">
+          <img src="elixir.svg" width="64" height="64" alt="elixir">
+        </div>
+        <figcaption><b>elixir</b><span>靈水・藥瓶</span><span class="was">取代：🧪 (elixir)</span></figcaption>
+      </figure>
+      <figure class="cell">
+        <div class="sizes">
+          <img src="charm.svg" width="16" height="16" alt="">
+          <img src="charm.svg" width="32" height="32" alt="">
+          <img src="charm.svg" width="64" height="64" alt="charm">
+        </div>
+        <figcaption><b>charm</b><span>護符</span><span class="was">取代：(charm / scroll)</span></figcaption>
+      </figure>
+  </div>
+</body>
+</html>
