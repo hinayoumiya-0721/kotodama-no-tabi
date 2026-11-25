@@ -895,13 +895,23 @@
   // Wraps a portrait image in an <svg> carrying the SAME root classes / data attributes as
   // SVGArt output (svg-hero hero-<job> hero-pose-<pose> / svg-npc npc-<id> emo-<mood>), so all
   // existing pose, emotion and sizing CSS keeps targeting it. No .px-g → no pixelate filter.
+  // Hand-drawn monster art (512x512 transparent WebP, see assets/monsters/PROMPTS.md).
+  // Enemies listed here use the image; any other enemy id keeps the SVGArt + pixel filter.
+  PORTRAIT_IMAGES.enemy = {};
+  [
+    'en_r1_slime', 'en_r1_crow', 'boss_r1_golem', 'en_r2_wisp', 'en_r2_wolf', 'boss_r2_knight',
+    'en_r3_tanuki', 'en_r3_puppet', 'boss_r3_kabuki', 'en_r4_harpy', 'en_r4_gargoyle', 'boss_r4_serpent',
+    'en_r5_automaton', 'en_r5_phantom', 'boss_r5_chancellor', 'en_r6_archon', 'en_r6_voidling', 'boss_r6_overlord'
+  ].forEach((id) => { PORTRAIT_IMAGES.enemy[id] = `assets/monsters/${id}.webp`; });
   function portraitImageSvg(kind, id, variant) {
     const src = PORTRAIT_IMAGES[kind] && Object.prototype.hasOwnProperty.call(PORTRAIT_IMAGES[kind], id)
       ? PORTRAIT_IMAGES[kind][id]
       : null;
     if (!src) return null;
     const v = String(variant || (kind === 'hero' ? 'idle' : 'neutral')).replace(/[^a-z0-9_-]/gi, '');
-    const rootAttrs = kind === 'hero'
+    const rootAttrs = kind === 'enemy'
+      ? `class="svg-art svg-enemy enemy-${id} enemy-pose-${v} has-portrait-img" data-enemy="${id}" data-pose="${v}"`
+      : kind === 'hero'
       ? `class="svg-art svg-hero hero-${id} hero-pose-${v} has-portrait-img" data-job="${id}" data-pose="${v}"`
       : `class="svg-art svg-npc npc-${id} emo-${v} has-portrait-img" data-npc="${id}" data-mood="${v}"`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" ${rootAttrs}>`
@@ -940,6 +950,8 @@
       return '<svg viewBox="0 0 120 120"><circle cx="60" cy="50" r="24" fill="#d4af37"/><rect x="30" y="80" width="60" height="32" rx="14" fill="#334155"/></svg>';
     },
     enemy(enemyId, isBoss, pose) {
+      const img = portraitImageSvg('enemy', enemyId, pose || 'idle');
+      if (img) return img;
       try {
         if (global.SVGArt && typeof global.SVGArt.enemy === 'function') {
           return pixelArt(global.SVGArt.enemy(enemyId, Boolean(isBoss), pose || 'idle'));
@@ -4670,6 +4682,7 @@
     }
     const enemyCard = document.querySelector('#view-battle .combatant-card.enemy-side');
     if (enemyCard) enemyCard.classList.toggle('boss-card', Boolean(enemy.isBoss || enemy.isElite));
+    if (enemyCard) enemyCard.classList.toggle('elite-card', Boolean(enemy.isElite));
 
     if ($('battle-enemy-name')) $('battle-enemy-name').textContent = enemy.name;
     if ($('battle-enemy-weakness')) {

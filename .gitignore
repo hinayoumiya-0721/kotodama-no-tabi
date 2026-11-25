@@ -7,3 +7,6 @@ tmp_*
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Original full-size monster art (processed 512px WebP lives in assets/monsters/)
+assets/monsters/_source/
