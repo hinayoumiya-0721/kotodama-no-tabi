@@ -1592,3 +1592,8 @@ textarea {
   height: 56px;
   margin: 0 auto 6px;
 }
+
+/* P23. Elite enemies reuse the normal monster art with a red aura (v1.8) */
+.combatant-card.elite-card .combatant-art svg {
+  filter: drop-shadow(0 0 4px rgba(232, 84, 60, 0.95)) drop-shadow(0 0 10px rgba(232, 84, 60, 0.6));
+}
