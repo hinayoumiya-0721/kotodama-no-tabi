@@ -157,6 +157,12 @@ test('wrongNotes / enhancements ignore __proto__ keys', () => {
   assert.strictEqual(Object.getPrototypeOf(s.wrongNotes), VM_OBJECT_PROTO);
 });
 
+test('defeatedElites: old saves get [], values are de-duplicated strings', () => {
+  same(sanitize({ player: {} }).progress.defeatedElites, []);
+  same(sanitize({ player: {}, progress: { defeatedElites: ['r1', 'r1', 2] } }).progress.defeatedElites, ['r1', '2']);
+  same(sanitize({ player: {}, progress: { defeatedElites: 'r1' } }).progress.defeatedElites, []);
+});
+
 console.log('\nadvanceWrongNoteSRS');
 
 function freshNote(id, overrides = {}) {
