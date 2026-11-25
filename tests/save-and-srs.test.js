@@ -157,10 +157,74 @@ test('wrongNotes / enhancements ignore __proto__ keys', () => {
   assert.strictEqual(Object.getPrototypeOf(s.wrongNotes), VM_OBJECT_PROTO);
 });
 
-test('defeatedElites: old saves get [], values are de-duplicated strings', () => {
+test('defeatedElites / defeatedBosses / currentRegionId filter to valid r1–r6 (BUG-2)', () => {
   same(sanitize({ player: {} }).progress.defeatedElites, []);
-  same(sanitize({ player: {}, progress: { defeatedElites: ['r1', 'r1', 2] } }).progress.defeatedElites, ['r1', '2']);
+  same(
+    sanitize({ player: {}, progress: { defeatedElites: ['r1', 'r1', 2, 'r3', '__proto__', 'toString'] } }).progress.defeatedElites,
+    ['r1', 'r3']
+  );
+  same(
+    sanitize({ player: {}, progress: { defeatedBosses: ['r2', 'r99', '__proto__', 'toString'] } }).progress.defeatedBosses,
+    ['r2']
+  );
+  assert.strictEqual(sanitize({ player: {}, progress: { currentRegionId: '__proto__' } }).progress.currentRegionId, 'r1');
+  assert.strictEqual(sanitize({ player: {}, progress: { currentRegionId: 'r4' } }).progress.currentRegionId, 'r4');
   same(sanitize({ player: {}, progress: { defeatedElites: 'r1' } }).progress.defeatedElites, []);
+});
+
+test('equipment prototype keys (__proto__ / toString) and wrong-slot items are rejected (BUG-2)', () => {
+  assert.strictEqual(Game.getItemById('__proto__'), null);
+  assert.strictEqual(Game.getItemById('toString'), null);
+  assert.strictEqual(Game.getEnemyById('__proto__'), null);
+  assert.strictEqual(Game.getEnemyById('toString'), null);
+  const s = sanitize(JSON.parse('{"player":{"jobId":"swordsman","equipment":{"weapon":"__proto__","armor":"toString","accessory":"valueOf"}}}'));
+  assert.strictEqual(s.player.equipment.weapon, null);
+  assert.strictEqual(s.player.equipment.armor, null);
+  assert.strictEqual(s.player.equipment.accessory, null);
+});
+
+test('formatBattleSpeedText keeps countdown seconds at front on 320px screens (BUG-4)', () => {
+  ctx.window.innerWidth = 1280;
+  assert.strictEqual(Game.formatBattleSpeedText(8.0), '⚡ 8.0s 速答');
+  ctx.window.innerWidth = 320;
+  assert.strictEqual(Game.formatBattleSpeedText(8.0), '⚡ 8.0s');
+  assert.strictEqual(Game.formatBattleSpeedText(0), '🧘 無加成');
+  delete ctx.window.innerWidth;
+});
+
+test('invalid player.hp / player.mp ("abc" / "") fall back to full HP/MP instead of 1/0 (BUG-3)', () => {
+  const s = sanitize({ player: { maxHp: null, hp: 'abc', mp: '' } });
+  assert.strictEqual(s.player.maxHp, def.player.maxHp);
+  assert.strictEqual(s.player.hp, def.player.maxHp);
+  assert.strictEqual(s.player.mp, def.player.maxMp);
+});
+
+test('unlockedTitles whitelist & showToast textContent block Stored XSS (BUG-1)', () => {
+  const s = sanitize({
+    player: {
+      name: '<b>XSS</b>',
+      unlockedTitles: ['初醒的旅人', '<img src=x onerror=alert(1)>', '言靈求道者'],
+      activeTitle: '<img src=x onerror=alert(1)>'
+    }
+  });
+  same(s.player.unlockedTitles, ['初醒的旅人', '言靈求道者']);
+  assert.strictEqual(s.player.activeTitle, '初醒的旅人');
+
+  // Verify showToast assigns textContent rather than innerHTML
+  const appended = [];
+  const prevGetById = ctx.document.getElementById;
+  const prevCreateEl = ctx.document.createElement;
+  ctx.document.getElementById = (id) => (id === 'toast-container' ? { appendChild: (el) => appended.push(el) } : null);
+  ctx.document.createElement = () => ({ style: {}, classList: { add: () => {}, remove: () => {}, toggle: () => {} } });
+  try {
+    Game.showToast('<b>XSS</b><img src=x onerror=alert(1)>', 'gold');
+    assert.strictEqual(appended.length, 1);
+    assert.strictEqual(appended[0].textContent, '<b>XSS</b><img src=x onerror=alert(1)>');
+    assert.strictEqual(appended[0].innerHTML, undefined);
+  } finally {
+    ctx.document.getElementById = prevGetById;
+    ctx.document.createElement = prevCreateEl;
+  }
 });
 
 console.log('\nadvanceWrongNoteSRS');
