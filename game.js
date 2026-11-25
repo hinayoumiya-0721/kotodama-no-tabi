@@ -636,6 +636,16 @@
   const ELITE_REWARD_MULT = 2.5;
   let exploreDryStreak = 0;
 
+  // Route choice (player feedback: pressing 前進 involved no decision). Before 100% the player
+  // picks a route each step; 'normal' is used for the post-100% patrol and the elite gate.
+  //  - safe : slower, fewer fights, more chests / events / campfires
+  //  - risky: faster, mostly fights, and battle / chest rewards ×1.3
+  const EXPLORE_ROUTES = {
+    normal: { pct: EXPLORE_STEP_PCT, battleChance: 0.55, rewardMult: 1 },
+    safe: { pct: 10, battleChance: 0.35, rewardMult: 1 },
+    risky: { pct: 20, battleChance: 0.8, rewardMult: 1.3 }
+  };
+
   function isRegionEliteDefeated(regionId) {
     return Array.isArray(state.progress.defeatedElites) && state.progress.defeatedElites.includes(regionId);
   }
@@ -1775,6 +1785,134 @@
     if (rd.id === 'rd_1' || !rd.unlockRegionId) return true;
     if (state.progress.unlockedAllOverride) return true;
     return isRegionUnlocked(rd.unlockRegionId);
+  }
+
+  // ---- Quest destinations: shared by the quest-card 「前往」 button and the objective bar ----
+  function getHighestUnlockedRegionId() {
+    let best = null;
+    getRegions().forEach((r) => { if (isRegionUnlocked(r.id)) best = r.id; });
+    return best || 'r1';
+  }
+
+  function getRegionIdForBoss(bossId) {
+    const region = getRegions().find((r) => r.bossId === bossId);
+    if (region) return region.id;
+    const boss = getEnemyById(bossId);
+    return boss && boss.isBoss && boss.regionId ? boss.regionId : null;
+  }
+
+  // Where a quest's 「前往」 should take the player, or null when there is no sensible place
+  // (then no button is shown). Region-based targets carry `locked` so the UI can explain.
+  function getQuestDestination(q) {
+    if (!q) return null;
+    const type = q.targetType || (q.goal && q.goal.type) || '';
+    const regionDest = (regionId) => {
+      const region = getRegionById(regionId);
+      if (!region) return null;
+      const locked = !isRegionUnlocked(region.id);
+      return { kind: 'explore', regionId: region.id, locked, label: locked ? `🔒 ${region.name}` : `▶ 前往 ${region.name}` };
+    };
+    switch (type) {
+      case 'defeat_boss':
+        return regionDest(getRegionIdForBoss(q.targetId));
+      case 'clear_reading':
+        return { kind: 'view', view: 'reading', label: '▶ 前往閱讀副本' };
+      case 'complete_shrine':
+        return { kind: 'view', view: 'shrine', label: '▶ 前往試煉神殿' };
+      case 'npc_talk':
+        return { kind: 'view', view: 'town', label: '▶ 前往城鎮' };
+      case 'correct_answers':
+      case 'win_battles':
+      case 'reach_fever': {
+        const cur = state.progress.currentRegionId;
+        return regionDest(cur && isRegionUnlocked(cur) ? cur : getHighestUnlockedRegionId());
+      }
+      default:
+        return null;
+    }
+  }
+
+  // ---- Current objective bar (town / world map / explore): the first unclaimed main quest ----
+  function getCurrentObjective() {
+    const mains = getQuests().filter((q) => (q.type || q.category || 'main') === 'main');
+    const q = mains.find((x) => !state.quests.claimedIds.includes(x.id));
+    if (!q) return null;
+    return { q, prog: evaluateGoalProgress(q), dest: getQuestDestination(q) };
+  }
+
+  function renderObjectiveBar(containerId) {
+    const el = $(containerId);
+    if (!el) return;
+    const obj = hasActiveSession ? getCurrentObjective() : null;
+    if (!obj) {
+      el.innerHTML = '';
+      el.classList.add('hidden');
+      return;
+    }
+    el.classList.remove('hidden');
+    const { q, prog, dest } = obj;
+    const alreadyHere = dest && dest.kind === 'explore' && currentView === 'explore'
+      && dest.regionId === state.progress.currentRegionId;
+    let action = '';
+    let actionDest = null;
+    if (prog.done) {
+      actionDest = { kind: 'quests', tab: 'main' };
+      action = '<button type="button" class="btn btn-gold btn-sm objective-btn">🎁 領取報酬</button>';
+    } else if (alreadyHere) {
+      action = '<span class="badge badge-gold">📍 目標就在此區</span>';
+    } else if (dest) {
+      actionDest = dest;
+      action = `<button type="button" class="btn btn-sm ${dest.locked ? 'btn-secondary' : 'btn-primary'} objective-btn">${escapeHtml(dest.label)}</button>`;
+    }
+    el.innerHTML = `
+      <span class="objective-label">🎯 目前目標</span>
+      <span class="objective-title">${escapeHtml(q.title || q.name || '')}</span>
+      <span class="objective-progress">${prog.current}/${prog.target}</span>
+      ${action}
+    `;
+    const btn = el.querySelector('.objective-btn');
+    if (btn && actionDest) btn.addEventListener('click', () => goToQuestDestination(actionDest));
+  }
+
+  // Performs the jump. All screen changes go through switchView(); per-view resets mirror
+  // what the nav / town buttons already do for reading & shrine.
+  function goToQuestDestination(dest) {
+    if (!dest) return;
+    Audio.playSFX('confirm');
+    if (dest.kind === 'explore') {
+      const region = getRegionById(dest.regionId);
+      if (!region) return;
+      if (!isRegionUnlocked(region.id)) {
+        mapSelectedRegionId = region.id; // map opens with this region's (locked) details
+        switchView('map');
+        const prevBoss = region.prevRegionId ? getRegionBoss(region.prevRegionId) : null;
+        const how = [
+          region.unlockLevel ? `升到 Lv.${region.unlockLevel}` : '',
+          prevBoss ? `擊敗「${prevBoss.name}」` : ''
+        ].filter(Boolean).join('，或');
+        showToast(`🔒 ${region.name} 尚未解鎖${how ? `：${how}` : ''}`, 'warning');
+        return;
+      }
+      state.progress.currentRegionId = region.id;
+      explorePendingEvent = null;
+      autoSave();
+      switchView('explore');
+      return;
+    }
+    if (dest.kind === 'quests') {
+      uiTabs.quests = dest.tab || 'main';
+      switchView('quests');
+      return;
+    }
+    if (dest.view === 'reading') {
+      reading.active = false;
+      const p = $('reading-paragraphs');
+      if (p) p.removeAttribute('data-rd-rendered');
+    } else if (dest.view === 'shrine' && !shrine.active) {
+      shrine.results = [];
+      shrine.tier = null;
+    }
+    switchView(dest.view);
   }
 
   function logMistake(questionId) {
@@ -2928,6 +3066,7 @@
   }
 
   function renderTown() {
+    renderObjectiveBar('town-objective');
     renderDailyTrainingPanel();
     const npcs = getNPCs();
     const grid = $('town-npc-grid');
@@ -3594,6 +3733,7 @@
   }
 
   function renderMap() {
+    renderObjectiveBar('map-objective');
     renderMapDifficultyBar();
     const regions = getRegions();
     const unlockedIds = regions.filter((r) => isRegionUnlocked(r.id)).map((r) => r.id);
@@ -3694,7 +3834,7 @@
     const logEl = $('explore-log');
     if (!logEl) return;
     if (exploreLogs.length === 0) {
-      logEl.innerHTML = '<div class="log-entry log-story">準備好踏入未知的領域了。點擊「前進探索」展開冒險。</div>';
+      logEl.innerHTML = '<div class="log-entry log-story">準備好踏入未知的領域了。選擇「小路」或「捷徑」展開冒險。</div>';
       return;
     }
     logEl.innerHTML = exploreLogs
@@ -3703,6 +3843,7 @@
   }
 
   function renderExplore() {
+    renderObjectiveBar('explore-objective');
     const region = getRegionById(state.progress.currentRegionId) || getRegions()[0];
     if (!region) return;
     const pct = clamp(state.progress.regionExplore[region.id] || 0, 0, 100);
@@ -3753,12 +3894,29 @@
     const eliteBlocking = pct === EXPLORE_ELITE_AT && !isRegionEliteDefeated(region.id);
     const eliteForUi = eliteBlocking ? createRegionElite(region.id) : null;
 
+    // Route choice only while there is road left and no elite in the way; otherwise the
+    // primary button is a single action (patrol / fight the elite) and the risky one hides.
+    const routeChoice = pct < 100 && !eliteForUi;
+    // Route buttons use a two-line label (name / details) so they stay compact on phones
+    const routeLabel = (main, sub) => `<span class="route-main">${main}</span><span class="route-sub">${sub}</span>`;
     const stepBtn = $('btn-explore-step');
     if (stepBtn) {
       stepBtn.disabled = Boolean(explorePendingEvent);
-      stepBtn.textContent = pct >= 100
-        ? '🧭 深入巡邏（遇怪・奇遇）'
-        : (eliteForUi ? `⚔️ 迎戰精英：${eliteForUi.name}` : `🧭 前進探索 (+${EXPLORE_STEP_PCT}%)`);
+      stepBtn.classList.toggle('route-btn', routeChoice);
+      if (routeChoice) {
+        stepBtn.innerHTML = routeLabel('🛤️ 安全小路', `+${EXPLORE_ROUTES.safe.pct}%・少遇敵`);
+      } else {
+        stepBtn.textContent = pct >= 100 ? '🧭 深入巡邏（遇怪・奇遇）' : `⚔️ 迎戰精英：${eliteForUi ? eliteForUi.name : ''}`;
+      }
+      stepBtn.title = routeChoice ? '前進較慢、較少遇敵，寶箱・奇遇・營火較多' : '';
+    }
+    const riskyBtn = $('btn-explore-risky');
+    if (riskyBtn) {
+      riskyBtn.classList.toggle('hidden', !routeChoice);
+      riskyBtn.classList.add('route-btn');
+      riskyBtn.disabled = Boolean(explorePendingEvent);
+      riskyBtn.innerHTML = routeLabel('⚔️ 危險捷徑', `+${EXPLORE_ROUTES.risky.pct}%・獎勵×${EXPLORE_ROUTES.risky.rewardMult}`);
+      riskyBtn.title = '前進較快、大多會遇敵，戰鬥與寶箱獎勵提高';
     }
 
     if (!explorePendingEvent && eliteForUi) {
@@ -3780,7 +3938,7 @@
           ? (bossDefeated
               ? '此地首領已被你擊退！可點擊「🔄 再戰首領」重溫決戰，或繼續巡邏蕩平殘餘魔物。'
               : '領域踏破率已達 100%，深處傳來震耳欲聾的咆哮！整備妥當後，點擊紅色按鈕迎戰區域首領。')
-          : (region.desc || '點擊「前進探索」深入荒野，途中將遭遇徘徊魔物、古老寶箱、石碑奇遇或營火歇息。');
+          : (region.desc || '選擇路線深入荒野：小路較安全，捷徑遇敵多但獎勵高。');
       }
       if ($('explore-event-choices')) $('explore-event-choices').innerHTML = '';
     }
@@ -3788,13 +3946,17 @@
     renderExploreLog();
   }
 
-  function handleExploreStep() {
+  // routeKey: 'safe' | 'risky' (route buttons). Click events or anything else → 'normal'.
+  // After 100% (patrol) the route no longer matters and 'normal' is always used.
+  function handleExploreStep(routeKey) {
     if (explorePendingEvent) return;
     const region = getRegionById(state.progress.currentRegionId);
     if (!region) return;
 
     const prevPct = clamp(state.progress.regionExplore[region.id] || 0, 0, 100);
-    const nextPct = Math.min(100, prevPct + EXPLORE_STEP_PCT);
+    const routeId = prevPct < 100 && typeof routeKey === 'string' && EXPLORE_ROUTES[routeKey] ? routeKey : 'normal';
+    const route = EXPLORE_ROUTES[routeId];
+    const nextPct = Math.min(100, prevPct + route.pct);
 
     // Mid-region elite gate: progress stops at EXPLORE_ELITE_AT until the elite is beaten
     // (fleeing / losing keeps it there, so the next step re-triggers the fight).
@@ -3829,23 +3991,24 @@
       return;
     }
 
-    // Weighted random encounter (< 100%). A "dry streak" guard turns the step after
-    // EXPLORE_MAX_DRY_STEPS fight-free steps into a fight, so the road is never empty.
+    // Weighted random encounter. Battle chance depends on the route; a "dry streak" guard
+    // turns the step after EXPLORE_MAX_DRY_STEPS fight-free steps into a fight. Non-battle
+    // steps keep the original 18:15:12 split → chest 40% / event 33% / campfire 27%.
     const roll = Math.random();
-    if (roll < 0.55 || exploreDryStreak >= EXPLORE_MAX_DRY_STEPS) {
-      // Monster Battle (55%, or forced by the dry-streak guard)
+    const sub = Math.random();
+    if (roll < route.battleChance || exploreDryStreak >= EXPLORE_MAX_DRY_STEPS) {
       exploreDryStreak = 0;
       const normals = getRegionNormalEnemies(region.id);
       const enemy = normals[Math.floor(Math.random() * normals.length)];
       if (enemy) {
         addExploreLog(`⚔️ 遭遇野生魔物【${enemy.name}】！準備進行言霊對決！`, 'battle');
-        startBattle(enemy, { returnView: 'explore' });
+        startBattle(enemy, { returnView: 'explore', rewardMult: route.rewardMult, rewardLabel: routeId === 'risky' ? '危險捷徑' : '' });
       }
-    } else if (roll < 0.73) {
-      // Ancient Treasure Chest (18%)
+    } else if (sub < 0.40) {
+      // Ancient Treasure Chest
       exploreDryStreak += 1;
       const diff = Number(region.difficulty || 1);
-      const goldFound = 25 + diff * 18 + Math.floor(Math.random() * 20);
+      const goldFound = Math.round((25 + diff * 18 + Math.floor(Math.random() * 20)) * route.rewardMult);
       const dropPool = ['con_herb', 'con_water', 'con_break_scroll', 'con_fever_charm'];
       const dropId = dropPool[Math.floor(Math.random() * dropPool.length)];
       const dropItem = getItemById(dropId);
@@ -3864,8 +4027,8 @@
       }
       addExploreLog(`🎁 發現古代寶箱！獲得 ${goldFound} 金幣${dropItem ? `與【${dropItem.name}】` : ''}。`, 'loot');
       showToast(`🎁 獲得 ${goldFound} 金幣${dropItem ? ` + ${dropItem.name}` : ''}！`, 'gold');
-    } else if (roll < 0.88) {
-      // Roadside Story Event (15%)
+    } else if (sub < 0.73) {
+      // Roadside Story Event
       exploreDryStreak += 1;
       const events = Array.isArray(region.events) && region.events.length > 0
         ? region.events
@@ -3881,7 +4044,7 @@
       const ev = events[Math.floor(Math.random() * events.length)];
       presentRoadsideEvent(region, ev);
     } else {
-      // Campfire Rest (12%)
+      // Campfire Rest
       exploreDryStreak += 1;
       const stats = getTotalStats();
       const healHp = Math.round(stats.maxHp * 0.5);
@@ -3991,6 +4154,8 @@
     if ($('explore-event-choices')) $('explore-event-choices').innerHTML = '';
     const stepBtn = $('btn-explore-step');
     if (stepBtn) stepBtn.disabled = false;
+    const riskyBtn = $('btn-explore-risky');
+    if (riskyBtn) riskyBtn.disabled = false;
 
     if (rew.triggerBattle) {
       const normals = getRegionNormalEnemies(region.id);
@@ -4326,7 +4491,10 @@
       reorderPool: [],
       reorderSelected: [],
       locked: false,
-      returnView: options.returnView || 'explore'
+      returnView: options.returnView || 'explore',
+      // Explore route bonus (危險捷徑 ×1.3); 1 for every other battle
+      rewardMult: Number(options.rewardMult) > 0 ? Number(options.rewardMult) : 1,
+      rewardLabel: typeof options.rewardLabel === 'string' ? options.rewardLabel : ''
     };
 
     const viewEl = $('view-battle');
@@ -5143,8 +5311,9 @@
 
     const baseExp = Number(enemy.exp ?? enemy.expReward ?? (enemy.isBoss ? 120 : 40));
     const baseGold = Number(enemy.gold ?? enemy.goldReward ?? (enemy.isBoss ? 140 : 35));
-    const finalExp = Math.round(baseExp * feverMult * n1ExpMult);
-    const finalGold = Math.round(baseGold * feverMult);
+    const routeMult = battle.rewardMult || 1;
+    const finalExp = Math.round(baseExp * feverMult * n1ExpMult * routeMult);
+    const finalGold = Math.round(baseGold * feverMult * routeMult);
 
     state.stats.battlesWon += 1;
     state.quests.dailyProgress.win_battles += 1;
@@ -5197,7 +5366,7 @@
 
     const rewardLines = [
       `⭐ 獲得經驗值：<strong>+${finalExp} EXP</strong>${battle.feverActive ? ' <span class="badge badge-gold">FEVER ×1.5</span>' : ''}${isDemonRealm ? ' <span class="badge badge-crimson">🔥 N1 魔境 EXP ×2</span>' : ''}`,
-      `🪙 獲得金幣：<strong>+${finalGold} 金幣</strong>`
+      `🪙 獲得金幣：<strong>+${finalGold} 金幣</strong>${routeMult > 1 ? ` <span class="badge badge-gold">${escapeHtml(battle.rewardLabel || "路線")} ×${routeMult}</span>` : ""}`
     ];
     if (isDemonRealm) {
       rewardLines.push('🔥 <strong>N1 魔境挑戰加成生效：</strong>經驗值雙倍、戰利品掉落率 ×2！');
@@ -6696,6 +6865,12 @@
       }
       if (rew.title) rewParts.push(`👑 稱號「${rew.title}」`);
 
+      // 「前往」 only on unfinished quests that map to a place (see getQuestDestination)
+      const dest = !claimed && !prog.done ? getQuestDestination(q) : null;
+      const goBtn = dest
+        ? `<button type="button" class="btn btn-sm ${dest.locked ? 'btn-secondary' : 'btn-primary'} quest-go-btn" data-go-quest="${escapeHtml(q.id)}">${escapeHtml(dest.label)}</button>`
+        : '';
+
       return `
         <div class="quest-card panel-card ${claimed ? 'quest-completed' : ready ? 'quest-ready' : ''}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
@@ -6703,12 +6878,12 @@
               <h3 style="margin:0 0 4px;color:var(--gold-bright);">${escapeHtml(q.title || q.name)}</h3>
               <p class="text-muted" style="font-size:0.88rem;margin:0;">${escapeHtml(q.desc || q.description || '')}</p>
             </div>
-            <div>
+            <div class="quest-card-actions">
               ${claimed
                 ? '<span class="badge badge-emerald">✔ 已領取</span>'
                 : ready
                   ? `<button type="button" class="btn btn-gold btn-sm" data-claim-quest="${escapeHtml(q.id)}">🎁 領取報酬</button>`
-                  : `<span class="badge">${prog.current} / ${prog.target}</span>`
+                  : `<span class="badge">${prog.current} / ${prog.target}</span>${goBtn}`
               }
             </div>
           </div>
@@ -6727,6 +6902,12 @@
       btn.addEventListener('click', () => {
         const qid = btn.getAttribute('data-claim-quest');
         claimQuestReward(qid);
+      });
+    });
+    listEl.querySelectorAll('[data-go-quest]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const q = getQuests().find((x) => x.id === btn.getAttribute('data-go-quest'));
+        goToQuestDestination(getQuestDestination(q));
       });
     });
   }
@@ -7716,7 +7897,9 @@
 
     // Explore buttons
     if ($('btn-explore-retreat')) $('btn-explore-retreat').addEventListener('click', () => { Audio.playSFX('click'); explorePendingEvent = null; switchView('map'); });
-    if ($('btn-explore-step')) $('btn-explore-step').addEventListener('click', handleExploreStep);
+    // Route buttons pass an explicit route (handleExploreStep ignores it after 100% / at the elite gate)
+    if ($('btn-explore-step')) $('btn-explore-step').addEventListener('click', () => handleExploreStep('safe'));
+    if ($('btn-explore-risky')) $('btn-explore-risky').addEventListener('click', () => handleExploreStep('risky'));
     if ($('btn-explore-boss')) $('btn-explore-boss').addEventListener('click', () => triggerRegionBossBattle(state.progress.currentRegionId));
     if ($('btn-explore-camp')) $('btn-explore-camp').addEventListener('click', () => { Audio.playSFX('click'); switchView('inventory'); });
 
@@ -8026,6 +8209,8 @@
     claimDailyTrainingTask,
     renderDailyTrainingPanel,
     getBossPhaseInfo,
+    getQuestDestination,
+    getCurrentObjective,
     applyMobileHudCollapseState
   };
 

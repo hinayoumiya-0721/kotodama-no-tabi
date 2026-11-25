@@ -199,5 +199,58 @@ test('Lv.3 due note becomes mastered', () => {
   assert.strictEqual(note.nextReviewAt, null);
 });
 
+console.log('\nquest destinations & objective');
+
+const QUESTS = (() => { const q = ctx.GAME_DATA.QUESTS; return Array.isArray(q) ? q : Object.values(q); })();
+const questById = (id) => QUESTS.find((q) => q.id === id);
+
+test('defeat_boss → explore the boss region (r1 unlocked)', () => {
+  const st = Game.getState();
+  st.player.level = 1;
+  st.progress.defeatedBosses = [];
+  const d = Game.getQuestDestination(questById('q_main_1'));
+  assert.strictEqual(d.kind, 'explore');
+  assert.strictEqual(d.regionId, 'r1');
+  assert.strictEqual(d.locked, false);
+});
+
+test('defeat_boss in a locked region is flagged locked', () => {
+  const d = Game.getQuestDestination(questById('q_main_3'));
+  assert.strictEqual(d.regionId, 'r3');
+  assert.strictEqual(d.locked, true);
+});
+
+test('reading / shrine / npc quests map to their screens; unmapped types get no button', () => {
+  const byType = (t) => QUESTS.find((q) => q.targetType === t);
+  assert.strictEqual(Game.getQuestDestination(byType('clear_reading')).view, 'reading');
+  assert.strictEqual(Game.getQuestDestination(byType('complete_shrine')).view, 'shrine');
+  assert.strictEqual(Game.getQuestDestination(byType('npc_talk')).view, 'town');
+  assert.strictEqual(Game.getQuestDestination(byType('enhance_item')), null);
+  assert.strictEqual(Game.getQuestDestination(byType('reach_level')), null);
+});
+
+test('battle-count quests go to the current region, or the highest unlocked one', () => {
+  const st = Game.getState();
+  const q = QUESTS.find((x) => x.targetType === 'win_battles');
+  st.progress.currentRegionId = 'r1';
+  assert.strictEqual(Game.getQuestDestination(q).regionId, 'r1');
+  st.progress.currentRegionId = 'r5';          // locked → fall back
+  st.player.level = 6;                          // unlocks r2, r3 by level
+  assert.strictEqual(Game.getQuestDestination(q).regionId, 'r3');
+  st.player.level = 1;
+  st.progress.currentRegionId = 'r1';
+});
+
+test('current objective = first unclaimed main quest', () => {
+  const st = Game.getState();
+  st.quests.claimedIds = [];
+  assert.strictEqual(Game.getCurrentObjective().q.id, 'q_main_1');
+  st.quests.claimedIds = ['q_main_1'];
+  assert.strictEqual(Game.getCurrentObjective().q.id, 'q_main_2');
+  st.quests.claimedIds = QUESTS.filter((q) => q.category === 'main').map((q) => q.id);
+  assert.strictEqual(Game.getCurrentObjective(), null);
+  st.quests.claimedIds = [];
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
