@@ -1454,3 +1454,72 @@ textarea {
     transform: none;
   }
 }
+
+/* ----------------------------------------------------------------------------
+ * P21. Current objective bar, quest 「前往」 buttons, explore route buttons (v1.6)
+ * ---------------------------------------------------------------------------- */
+.objective-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--px-ink);
+  border: 2px solid var(--px-win-3);
+  border-left: 4px solid var(--px-gold);
+  box-shadow: 3px 3px 0 rgba(11, 10, 24, 0.6);
+}
+
+.objective-label {
+  font-family: var(--font-pixel);
+  font-size: 0.82rem;
+  color: var(--px-gold-lt);
+  white-space: nowrap;
+}
+
+.objective-title {
+  flex: 1 1 160px;
+  min-width: 0;
+  font-weight: 700;
+  color: var(--px-cream);
+}
+
+.objective-progress {
+  font-family: var(--font-num);
+  font-size: 0.5rem;
+  color: var(--px-blue-lt);
+  white-space: nowrap;
+}
+
+.objective-bar .btn,
+.objective-bar .badge {
+  margin-left: auto;
+}
+
+.quest-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.route-btn {
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.route-btn .route-sub {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* Route buttons share the row; on phones they split it evenly */
+@media (max-width: 768px) {
+  .explore-action-bar #btn-explore-step,
+  .explore-action-bar #btn-explore-risky {
+    flex: 1 1 140px;
+  }
+}

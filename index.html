@@ -232,6 +232,8 @@
           </div>
         </div>
 
+        <div id="town-objective" class="objective-bar hidden" aria-live="polite"></div>
+
         <div id="town-daily-training" class="daily-training-panel panel-card"></div>
 
         <div class="town-layout">
@@ -291,6 +293,8 @@
           <div class="map-progress-pill">已解鎖區域：<b id="map-unlocked-count">1 / 6</b></div>
         </div>
 
+        <div id="map-objective" class="objective-bar hidden" aria-live="polite"></div>
+
         <div id="map-difficulty-bar" class="map-difficulty-bar panel-card" aria-label="世界地圖難度模式選擇"></div>
 
         <div class="map-layout">
@@ -312,6 +316,8 @@
           <button id="btn-explore-retreat" type="button" class="btn btn-secondary">🗺️ 返回地圖</button>
         </div>
 
+        <div id="explore-objective" class="objective-bar hidden" aria-live="polite"></div>
+
         <div class="explore-progress-card panel-card">
           <div class="explore-progress-header">
             <span>領域踏破率（50% 精英・100% 首領）</span>
@@ -329,13 +335,14 @@
           <div id="explore-visual" class="explore-visual"></div>
           <div class="explore-event-content">
             <h3 id="explore-event-title" class="explore-event-title">踏入荒野</h3>
-            <p id="explore-event-desc" class="explore-event-desc">點擊「前進探索」深入未知地界，迎擊徘徊魔物、破譯古碑或尋獲秘寶。</p>
+            <p id="explore-event-desc" class="explore-event-desc">選擇路線深入荒野：小路較安全，捷徑遇敵多但獎勵高。</p>
             <div id="explore-event-choices" class="explore-event-choices"></div>
           </div>
         </div>
 
         <div class="explore-action-bar">
-          <button id="btn-explore-step" type="button" class="btn btn-primary btn-lg">🧭 前進探索</button>
+          <button id="btn-explore-step" type="button" class="btn btn-primary btn-lg">🛤️ 安全小路</button>
+          <button id="btn-explore-risky" type="button" class="btn btn-danger btn-lg hidden">⚔️ 危險捷徑</button>
           <button id="btn-explore-boss" type="button" class="btn btn-danger btn-lg">👹 挑戰首領</button>
           <button id="btn-explore-camp" type="button" class="btn btn-secondary">🎒 行囊整備</button>
         </div>
