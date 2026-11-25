@@ -626,6 +626,40 @@
     return list;
   }
 
+  // ---- Exploration pacing & mid-region elite (player feedback: "before the boss you just
+  // keep pressing 前進 with nothing in the way") ----
+  // Old pacing: +25% per step → 4 steps, ~1.65 fights on average, ~9% chance of zero fights.
+  const EXPLORE_STEP_PCT = 15;          // 0 → 15 → 30 → 45 → [elite @50] → 65 → 80 → 95 → 100
+  const EXPLORE_ELITE_AT = 50;          // an elite blocks the road here until defeated
+  const EXPLORE_MAX_DRY_STEPS = 2;      // after 2 fight-free steps in a row, the next step is a fight
+  const ELITE_HP_MULT = 1.8;
+  const ELITE_REWARD_MULT = 2.5;
+  let exploreDryStreak = 0;
+
+  function isRegionEliteDefeated(regionId) {
+    return Array.isArray(state.progress.defeatedElites) && state.progress.defeatedElites.includes(regionId);
+  }
+
+  // Elite = the region's sturdiest normal enemy, buffed. Built at runtime (no data.js entry):
+  // it keeps the base `id` so enemy art / codex lookups keep working; `isElite` marks it.
+  function createRegionElite(regionId) {
+    const normals = getRegionNormalEnemies(regionId);
+    if (normals.length === 0) return null;
+    const base = normals.reduce((a, b) => (Number(b.hp || b.maxHp || 0) > Number(a.hp || a.maxHp || 0) ? b : a));
+    const hp = Math.round(Number(base.hp || base.maxHp || 100) * ELITE_HP_MULT);
+    return Object.assign({}, base, {
+      name: `精英・${base.name}`,
+      isElite: true,
+      isBoss: false,
+      regionId,
+      hp,
+      maxHp: hp,
+      breakMax: 3,
+      exp: Math.round(Number(base.exp ?? base.expReward ?? 40) * ELITE_REWARD_MULT),
+      gold: Math.round(Number(base.gold ?? base.goldReward ?? 35) * ELITE_REWARD_MULT)
+    });
+  }
+
   function getNPCs() {
     return toList(getData().NPCS);
   }
@@ -1001,6 +1035,7 @@
         currentRegionId: 'r1',
         regionExplore: { r1: 0, r2: 0, r3: 0, r4: 0, r5: 0, r6: 0 },
         defeatedBosses: [],
+        defeatedElites: [],
         unlockedAllOverride: false,
         clearedReadings: [],
         shrineBest: {},
@@ -1131,6 +1166,8 @@
       out.progress.regionExplore[rid] = clamp(Math.floor(Number(rex[rid]) || 0), 0, 100);
     });
     out.progress.defeatedBosses = Array.isArray(rpr.defeatedBosses) ? Array.from(new Set(rpr.defeatedBosses.map(String))) : [];
+    // Regions whose mid-exploration elite has been beaten (missing in pre-v1.5 saves → [])
+    out.progress.defeatedElites = Array.isArray(rpr.defeatedElites) ? Array.from(new Set(rpr.defeatedElites.map(String))) : [];
     out.progress.unlockedAllOverride = Boolean(rpr.unlockedAllOverride);
     out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(rpr.clearedReadings.map(String))) : [];
     // shrineBest is rendered into innerHTML: rebuild each entry from whitelisted fields only
@@ -3712,13 +3749,24 @@
       }
     }
 
+    // Elite is waiting when the player stands at the gate and has not beaten it yet
+    const eliteBlocking = pct === EXPLORE_ELITE_AT && !isRegionEliteDefeated(region.id);
+    const eliteForUi = eliteBlocking ? createRegionElite(region.id) : null;
+
     const stepBtn = $('btn-explore-step');
     if (stepBtn) {
       stepBtn.disabled = Boolean(explorePendingEvent);
-      stepBtn.textContent = pct >= 100 ? '🧭 深入巡邏（遇怪・奇遇）' : '🧭 前進探索 (+25%)';
+      stepBtn.textContent = pct >= 100
+        ? '🧭 深入巡邏（遇怪・奇遇）'
+        : (eliteForUi ? `⚔️ 迎戰精英：${eliteForUi.name}` : `🧭 前進探索 (+${EXPLORE_STEP_PCT}%)`);
     }
 
-    if (!explorePendingEvent) {
+    if (!explorePendingEvent && eliteForUi) {
+      if ($('explore-visual')) $('explore-visual').innerHTML = Art.exploreVisual(region, 'boss');
+      if ($('explore-event-title')) $('explore-event-title').textContent = `⚠️ 精英攔路：${eliteForUi.name}`;
+      if ($('explore-event-desc')) $('explore-event-desc').textContent = '強大的魔物擋住了去路，擊敗牠才能繼續深入。';
+      if ($('explore-event-choices')) $('explore-event-choices').innerHTML = '';
+    } else if (!explorePendingEvent) {
       if ($('explore-visual')) $('explore-visual').innerHTML = Art.exploreVisual(region, pct >= 100 ? 'boss' : 'step');
       if ($('explore-event-title')) {
         $('explore-event-title').textContent = pct >= 100
@@ -3746,7 +3794,25 @@
     if (!region) return;
 
     const prevPct = clamp(state.progress.regionExplore[region.id] || 0, 0, 100);
-    const nextPct = Math.min(100, prevPct + 25);
+    const nextPct = Math.min(100, prevPct + EXPLORE_STEP_PCT);
+
+    // Mid-region elite gate: progress stops at EXPLORE_ELITE_AT until the elite is beaten
+    // (fleeing / losing keeps it there, so the next step re-triggers the fight).
+    // Old saves already past the gate (e.g. 75% from the 25%-step era) are not sent back.
+    if (prevPct <= EXPLORE_ELITE_AT && nextPct >= EXPLORE_ELITE_AT && !isRegionEliteDefeated(region.id)) {
+      const elite = createRegionElite(region.id);
+      if (elite) {
+        state.progress.regionExplore[region.id] = EXPLORE_ELITE_AT;
+        exploreDryStreak = 0;
+        autoSave();
+        Audio.playSFX('boss_enter');
+        addExploreLog(`⚠️ 精英魔物【${elite.name}】擋住了去路！`, 'battle');
+        showToast(`⚠️ 精英【${elite.name}】攔路！擊敗牠才能繼續深入`, 'warning');
+        startBattle(elite, { returnView: 'explore' });
+        return;
+      }
+    }
+
     state.progress.regionExplore[region.id] = nextPct;
     autoSave();
 
@@ -3763,10 +3829,12 @@
       return;
     }
 
-    // Weighted random encounter (< 100%)
+    // Weighted random encounter (< 100%). A "dry streak" guard turns the step after
+    // EXPLORE_MAX_DRY_STEPS fight-free steps into a fight, so the road is never empty.
     const roll = Math.random();
-    if (roll < 0.55) {
-      // Monster Battle (55%)
+    if (roll < 0.55 || exploreDryStreak >= EXPLORE_MAX_DRY_STEPS) {
+      // Monster Battle (55%, or forced by the dry-streak guard)
+      exploreDryStreak = 0;
       const normals = getRegionNormalEnemies(region.id);
       const enemy = normals[Math.floor(Math.random() * normals.length)];
       if (enemy) {
@@ -3775,6 +3843,7 @@
       }
     } else if (roll < 0.73) {
       // Ancient Treasure Chest (18%)
+      exploreDryStreak += 1;
       const diff = Number(region.difficulty || 1);
       const goldFound = 25 + diff * 18 + Math.floor(Math.random() * 20);
       const dropPool = ['con_herb', 'con_water', 'con_break_scroll', 'con_fever_charm'];
@@ -3797,6 +3866,7 @@
       showToast(`🎁 獲得 ${goldFound} 金幣${dropItem ? ` + ${dropItem.name}` : ''}！`, 'gold');
     } else if (roll < 0.88) {
       // Roadside Story Event (15%)
+      exploreDryStreak += 1;
       const events = Array.isArray(region.events) && region.events.length > 0
         ? region.events
         : [{
@@ -3812,6 +3882,7 @@
       presentRoadsideEvent(region, ev);
     } else {
       // Campfire Rest (12%)
+      exploreDryStreak += 1;
       const stats = getTotalStats();
       const healHp = Math.round(stats.maxHp * 0.5);
       const healMp = Math.round(stats.maxMp * 0.5);
@@ -4176,6 +4247,7 @@
   // An enemy may override this with `hitsToDefeat` in data.js.
   const BATTLE_HITS_NORMAL = 4;
   const BATTLE_HITS_BOSS = 8;
+  const BATTLE_HITS_ELITE = 6;     // mid-region elite: at least 4 correct answers
   // Max per-hit multiplier from in-battle performance. With 1.5 a fight still needs at least
   // ceil(hits / 1.5) correct answers: 3 for normal enemies, 6 for bosses.
   const BATTLE_PERFORMANCE_CAP = 1.5;
@@ -4183,7 +4255,9 @@
   function getRequiredHits(enemy) {
     const override = enemy ? Math.floor(Number(enemy.hitsToDefeat)) : NaN;
     if (Number.isFinite(override) && override >= 1) return override;
-    return enemy && enemy.isBoss ? BATTLE_HITS_BOSS : BATTLE_HITS_NORMAL;
+    if (enemy && enemy.isBoss) return BATTLE_HITS_BOSS;
+    if (enemy && enemy.isElite) return BATTLE_HITS_ELITE;
+    return BATTLE_HITS_NORMAL;
   }
 
   function getMinAnswersToDefeat(enemy) {
@@ -4330,7 +4404,7 @@
     if ($('battle-region-label')) {
       $('battle-region-label').textContent = battle.isWrongNoteTraining
         ? `📓 錯題特訓・記憶試煉（進度 ${battle.masteredIdsInRun.length}/${battle.trainingTotal}）`
-        : `${region ? region.name : '戰場'}｜${enemy.isBoss ? '💀 BOSS 戰' : '⚔️ 遭遇戰'}`;
+        : `${region ? region.name : '戰場'}｜${enemy.isBoss ? '💀 BOSS 戰' : (enemy.isElite ? '⚠️ 精英戰' : '⚔️ 遭遇戰')}`;
     }
     const bossPhaseBadge = $('battle-boss-phase-badge');
     if (bossPhaseBadge) {
@@ -4397,7 +4471,7 @@
       arenaEl.classList.toggle('revenge-battle-stage', Boolean(battle.isWrongNoteTraining));
     }
     const enemyCard = document.querySelector('#view-battle .combatant-card.enemy-side');
-    if (enemyCard) enemyCard.classList.toggle('boss-card', Boolean(enemy.isBoss));
+    if (enemyCard) enemyCard.classList.toggle('boss-card', Boolean(enemy.isBoss || enemy.isElite));
 
     if ($('battle-enemy-name')) $('battle-enemy-name').textContent = enemy.name;
     if ($('battle-enemy-weakness')) {
@@ -5133,6 +5207,13 @@
     const lvRes = gainExp(finalExp);
     if (lvRes.leveledUp) {
       rewardLines.push(`🎉 升級至 <strong>Lv.${state.player.level}</strong>（SP +${lvRes.levelsGained}）！`);
+    }
+
+    // Elite first-clear: opens the road past EXPLORE_ELITE_AT in this region
+    if (enemy.isElite && !state.progress.defeatedElites.includes(regionId)) {
+      state.progress.defeatedElites.push(regionId);
+      rewardLines.push(`⚔️ 擊敗精英！<strong>前方的道路已開啟</strong>，可以繼續探索。`);
+      addExploreLog(`⚔️ 擊敗精英【${enemy.name}】，道路已開啟！`, 'battle');
     }
 
     // Boss first-clear & region unlock
