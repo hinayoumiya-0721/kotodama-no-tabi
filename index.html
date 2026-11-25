@@ -87,15 +87,15 @@
 
       <div class="hud-controls">
         <div class="hud-currency">
-          <span class="coin-chip">🪙 <b id="hud-gold">0</b></span>
-          <span class="sp-chip">✨ SP <b id="hud-sp">1</b></span>
+          <span class="coin-chip"><img class="px-icon" src="assets/icons/coin.svg" alt="" aria-hidden="true" draggable="false"> <b id="hud-gold">0</b></span>
+          <span class="sp-chip"><img class="px-icon" src="assets/icons/sparkle.svg" alt="" aria-hidden="true" draggable="false"> SP <b id="hud-sp">1</b></span>
         </div>
         <div class="hud-toggles">
           <button id="btn-toggle-furigana" type="button" class="btn-hud active" title="切換三段式日文沉浸模式">標準: 假名+中</button>
-          <button id="btn-open-save" type="button" class="btn-hud" title="存檔與讀取">💾 存檔</button>
+          <button id="btn-open-save" type="button" class="btn-hud" title="存檔與讀取"><img class="px-icon" src="assets/icons/save.svg" alt="" aria-hidden="true" draggable="false"> 存檔</button>
           <!-- Desktop: secondary settings live behind ⚙ (game.js toggles #top-hud.settings-open).
                Mobile: the menu renders inline inside the collapsible HUD body. -->
-          <button id="btn-hud-settings" type="button" class="btn-hud hud-settings-btn" aria-haspopup="true" aria-expanded="false" aria-controls="hud-settings-menu" title="設定">⚙</button>
+          <button id="btn-hud-settings" type="button" class="btn-hud hud-settings-btn" aria-haspopup="true" aria-expanded="false" aria-controls="hud-settings-menu" title="設定" aria-label="設定"><img class="px-icon" src="assets/icons/gear.svg" alt="" aria-hidden="true" draggable="false"></button>
           <div id="hud-settings-menu" class="hud-settings-menu" role="group" aria-label="設定">
             <select id="hud-difficulty-select" class="btn-hud hud-diff-select" aria-label="切換難度模式" title="隨時切換題庫難度模式">
               <option value="adaptive">⚡ 自適應 (N4-N1)</option>
@@ -104,8 +104,8 @@
               <option value="fixed_n2">🔮 固定 N2</option>
               <option value="fixed_n1">🔥 N1 魔境 ×2</option>
             </select>
-            <button id="btn-toggle-bgm" type="button" class="btn-hud" title="切換背景音樂">🎵 BGM</button>
-            <button id="btn-toggle-sfx" type="button" class="btn-hud" title="切換音效">🔊 SFX</button>
+            <button id="btn-toggle-bgm" type="button" class="btn-hud" title="切換背景音樂"><img class="px-icon" src="assets/icons/music.svg" alt="" aria-hidden="true" draggable="false"> BGM</button>
+            <button id="btn-toggle-sfx" type="button" class="btn-hud" title="切換音效"><img class="px-icon" src="assets/icons/speaker.svg" alt="" aria-hidden="true" draggable="false"> SFX</button>
           </div>
         </div>
       </div>
@@ -115,39 +115,39 @@
     <!-- Navigation Bar -->
     <!-- Sub-tab strip: shows only the tabs of the active dock group (game.js syncNavGroups) -->
     <nav id="nav-bar" class="nav-bar hidden" aria-label="分頁">
-      <button type="button" class="nav-btn active" data-view="town" data-group="town">🏛️ 城鎮據點</button>
-      <button type="button" class="nav-btn" data-view="map" data-group="adventure">🗺️ 世界地圖</button>
-      <button type="button" class="nav-btn" data-view="reading" data-group="adventure">📚 閱讀副本</button>
-      <button type="button" class="nav-btn" data-view="shrine" data-group="adventure">⛩️ 試煉神殿</button>
-      <button type="button" class="nav-btn" data-view="notes" data-group="training" id="nav-btn-notes">📓 錯題筆記 <span id="nav-notes-badge" class="nav-notes-badge hidden">0</span></button>
-      <button type="button" class="nav-btn" data-view="skills" data-group="training">✨ 技能樹</button>
-      <button type="button" class="nav-btn" data-view="character" data-group="traveler">⚔️ 角色</button>
-      <button type="button" class="nav-btn" data-view="inventory" data-group="traveler">🎒 背包</button>
-      <button type="button" class="nav-btn" data-view="quests" data-group="journal">📜 任務</button>
-      <button type="button" class="nav-btn" data-view="codex" data-group="journal">📖 圖鑑</button>
+      <button type="button" class="nav-btn active" data-view="town" data-group="town"><img class="px-icon" src="assets/icons/house.svg" alt="" aria-hidden="true" draggable="false"> 城鎮據點</button>
+      <button type="button" class="nav-btn" data-view="map" data-group="adventure"><img class="px-icon" src="assets/icons/map.svg" alt="" aria-hidden="true" draggable="false"> 世界地圖</button>
+      <button type="button" class="nav-btn" data-view="reading" data-group="adventure"><img class="px-icon" src="assets/icons/book.svg" alt="" aria-hidden="true" draggable="false"> 閱讀副本</button>
+      <button type="button" class="nav-btn" data-view="shrine" data-group="adventure"><img class="px-icon" src="assets/icons/torii.svg" alt="" aria-hidden="true" draggable="false"> 試煉神殿</button>
+      <button type="button" class="nav-btn" data-view="notes" data-group="training" id="nav-btn-notes"><img class="px-icon" src="assets/icons/check.svg" alt="" aria-hidden="true" draggable="false"> 錯題筆記 <span id="nav-notes-badge" class="nav-notes-badge hidden">0</span></button>
+      <button type="button" class="nav-btn" data-view="skills" data-group="training"><img class="px-icon" src="assets/icons/sparkle.svg" alt="" aria-hidden="true" draggable="false"> 技能樹</button>
+      <button type="button" class="nav-btn" data-view="character" data-group="traveler"><img class="px-icon" src="assets/icons/person.svg" alt="" aria-hidden="true" draggable="false"> 角色</button>
+      <button type="button" class="nav-btn" data-view="inventory" data-group="traveler"><img class="px-icon" src="assets/icons/chest.svg" alt="" aria-hidden="true" draggable="false"> 背包</button>
+      <button type="button" class="nav-btn" data-view="quests" data-group="journal"><img class="px-icon" src="assets/icons/scroll.svg" alt="" aria-hidden="true" draggable="false"> 任務</button>
+      <button type="button" class="nav-btn" data-view="codex" data-group="journal"><img class="px-icon" src="assets/icons/skull.svg" alt="" aria-hidden="true" draggable="false"> 圖鑑</button>
     </nav>
 
     <!-- Bottom 5-slot dock (main menu). Icons are 16x16 pixel paths. -->
     <nav id="nav-dock" class="nav-dock hidden" aria-label="主選單">
       <button type="button" class="dock-btn active" data-group="town">
-        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill-rule="evenodd" d="M7 1h2v1h2v1h2v1h2v2h-1v9H2V6H1V4h2V3h2V2h2zM6 10h4v5H6z"/></svg>
+        <img class="px-icon" src="assets/icons/house.svg" alt="" aria-hidden="true" draggable="false">
         <span>城鎮</span>
       </button>
       <button type="button" class="dock-btn" data-group="adventure">
-        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path d="M12 1h3v3h-1v1h-1v1h-1v1h-1v1h-1v1H9v1H8V9H7V8h1V7h1V6h1V5h1V4h1V3h1zM3 8h2v1h1v1h1v1h1v1h1v2H8v-1H7v1H5v1H3v-2h1v-2H3v-1H2V8z"/></svg>
+        <img class="px-icon" src="assets/icons/sword.svg" alt="" aria-hidden="true" draggable="false">
         <span>冒險</span>
       </button>
       <button type="button" class="dock-btn" data-group="training">
-        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill-rule="evenodd" d="M1 3h6v1h2V3h6v11H9v1H7v-1H1zM7 5v8h2V5z"/></svg>
+        <img class="px-icon" src="assets/icons/book.svg" alt="" aria-hidden="true" draggable="false">
         <span>修練</span>
         <span id="dock-notes-badge" class="dock-badge hidden">0</span>
       </button>
       <button type="button" class="dock-btn" data-group="traveler">
-        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path d="M6 1h4v4H6zM4 6h8v4h-1v5H9v-4H7v4H5v-5H4z"/></svg>
+        <img class="px-icon" src="assets/icons/person.svg" alt="" aria-hidden="true" draggable="false">
         <span>旅人</span>
       </button>
       <button type="button" class="dock-btn" data-group="journal">
-        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill-rule="evenodd" d="M3 1h10v14H3zM5 4v1h6V4zm0 3v1h6V7zm0 3v1h4v-1z"/></svg>
+        <img class="px-icon" src="assets/icons/scroll.svg" alt="" aria-hidden="true" draggable="false">
         <span>手帳</span>
       </button>
     </nav>
@@ -225,7 +225,7 @@
             <p id="town-banner-sub" class="town-banner-sub">古老言靈結界庇護的邊境村落。篝火常明，旅人可在此歇息整備、與居民寒暄修習日語，或前往各處聖域。</p>
           </div>
           <div class="town-quick-actions">
-            <button id="btn-town-rest" type="button" class="btn btn-heal">🛏️ 宿屋休憩</button>
+            <button id="btn-town-rest" type="button" class="btn btn-heal"><img class="px-icon" src="assets/icons/heart.svg" alt="" aria-hidden="true" draggable="false"> 宿屋休憩</button>
             <button id="btn-town-map" type="button" class="btn btn-primary">🗺️ 世界地圖</button>
             <button id="btn-town-reading" type="button" class="btn btn-secondary">📚 閱讀副本</button>
             <button id="btn-town-shrine" type="button" class="btn btn-gold">⛩️ 試煉神殿</button>
@@ -265,12 +265,12 @@
               <div class="dialogue-speech-box">
                 <div id="dialogue-text-jp" class="dialogue-text-jp"></div>
                 <div id="dialogue-zh-peek-wrap" class="zh-peek-wrap" data-peek-targets="dialogue-choices">
-                  <button id="btn-dialogue-peek-zh" type="button" class="btn-peek-zh">👁 偷看中譯</button>
+                  <button id="btn-dialogue-peek-zh" type="button" class="btn-peek-zh"><img class="px-icon" src="assets/icons/eye.svg" alt="" aria-hidden="true" draggable="false"> 偷看中譯</button>
                   <div id="dialogue-text-zh" class="dialogue-text-zh zh-collapsible">點選左側居民展開對話。體察對方的身分與語體，以得體的日文回應即可提升好感度、獲贈秘寶。</div>
                 </div>
                 <div class="dialogue-audio-row">
-                  <button id="btn-dialogue-tts" type="button" class="btn btn-sm btn-audio">🔊 朗讀</button>
-                  <button id="btn-dialogue-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速</button>
+                  <button id="btn-dialogue-tts" type="button" class="btn btn-sm btn-audio"><img class="px-icon" src="assets/icons/speaker.svg" alt="" aria-hidden="true" draggable="false"> 朗讀</button>
+                  <button id="btn-dialogue-tts-slow" type="button" class="btn btn-sm btn-audio"><img class="px-icon" src="assets/icons/turtle.svg" alt="" aria-hidden="true" draggable="false"> 慢速</button>
                 </div>
                 <span id="dialogue-next-cursor" class="dialogue-next-cursor hidden" aria-hidden="true">▼</span>
               </div>
@@ -313,7 +313,7 @@
             <h2 id="explore-region-title">探索區域</h2>
             <span id="explore-region-jlpt" class="jlpt-badge">N4</span>
           </div>
-          <button id="btn-explore-retreat" type="button" class="btn btn-secondary">🗺️ 返回地圖</button>
+          <button id="btn-explore-retreat" type="button" class="btn btn-secondary"><img class="px-icon" src="assets/icons/map.svg" alt="" aria-hidden="true" draggable="false"> 返回地圖</button>
         </div>
 
         <div id="explore-objective" class="objective-bar hidden" aria-live="polite"></div>
@@ -343,8 +343,8 @@
         <div class="explore-action-bar">
           <button id="btn-explore-step" type="button" class="btn btn-primary btn-lg">🛤️ 安全小路</button>
           <button id="btn-explore-risky" type="button" class="btn btn-danger btn-lg hidden">⚔️ 危險捷徑</button>
-          <button id="btn-explore-boss" type="button" class="btn btn-danger btn-lg">👹 挑戰首領</button>
-          <button id="btn-explore-camp" type="button" class="btn btn-secondary">🎒 行囊整備</button>
+          <button id="btn-explore-boss" type="button" class="btn btn-danger btn-lg"><img class="px-icon" src="assets/icons/skull.svg" alt="" aria-hidden="true" draggable="false"> 挑戰首領</button>
+          <button id="btn-explore-camp" type="button" class="btn btn-secondary"><img class="px-icon" src="assets/icons/chest.svg" alt="" aria-hidden="true" draggable="false"> 行囊整備</button>
         </div>
 
         <div class="explore-log-card panel-card">
@@ -416,13 +416,13 @@
               <span id="battle-speed-text" class="speed-text">⚡ 速答加成</span>
             </div>
             <div class="question-audio-btns">
-              <button id="btn-battle-tts-normal" type="button" class="btn btn-sm btn-audio">🔊 朗讀</button>
-              <button id="btn-battle-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速</button>
+              <button id="btn-battle-tts-normal" type="button" class="btn btn-sm btn-audio"><img class="px-icon" src="assets/icons/speaker.svg" alt="" aria-hidden="true" draggable="false"> 朗讀</button>
+              <button id="btn-battle-tts-slow" type="button" class="btn btn-sm btn-audio"><img class="px-icon" src="assets/icons/turtle.svg" alt="" aria-hidden="true" draggable="false"> 慢速</button>
             </div>
           </div>
 
           <div id="battle-zh-peek-wrap" class="zh-peek-wrap">
-            <button id="btn-battle-peek-zh" type="button" class="btn-peek-zh">👁 偷看中譯</button>
+            <button id="btn-battle-peek-zh" type="button" class="btn-peek-zh"><img class="px-icon" src="assets/icons/eye.svg" alt="" aria-hidden="true" draggable="false"> 偷看中譯</button>
             <div id="battle-q-prompt-zh" class="q-prompt-zh zh-collapsible"></div>
           </div>
           <div id="battle-q-prompt-jp" class="q-prompt-jp"></div>
@@ -515,7 +515,7 @@
           <div id="shrine-q-card" class="shrine-q-card panel-card">
             <div class="question-card-header">
               <span id="shrine-q-type" class="q-type-badge">文法</span>
-              <button id="btn-shrine-tts" type="button" class="btn btn-sm btn-audio">🔊 朗讀題目</button>
+              <button id="btn-shrine-tts" type="button" class="btn btn-sm btn-audio"><img class="px-icon" src="assets/icons/speaker.svg" alt="" aria-hidden="true" draggable="false"> 朗讀題目</button>
             </div>
             <div id="shrine-q-prompt-zh" class="q-prompt-zh"></div>
             <div id="shrine-q-prompt-jp" class="q-prompt-jp"></div>
@@ -588,17 +588,17 @@
       <section id="view-inventory" class="game-view" aria-label="旅人背包">
         <div class="view-header">
           <div>
-            <h2>🎒 旅人背包</h2>
+            <h2><img class="px-icon" src="assets/icons/chest.svg" alt="" aria-hidden="true" draggable="false"> 旅人背包</h2>
             <p class="view-subtitle">點選持有裝備或藥水以檢視數值加成，並可隨時穿戴或使用。</p>
           </div>
         </div>
 
         <div id="inv-tabs" class="tab-bar" role="tablist">
           <button type="button" class="tab-btn active" data-tab="all" role="tab">全部</button>
-          <button type="button" class="tab-btn" data-tab="weapon" role="tab">⚔️ 武器</button>
-          <button type="button" class="tab-btn" data-tab="armor" role="tab">🛡️ 防具</button>
-          <button type="button" class="tab-btn" data-tab="accessory" role="tab">💍 飾品</button>
-          <button type="button" class="tab-btn" data-tab="consumable" role="tab">🧪 消耗品</button>
+          <button type="button" class="tab-btn" data-tab="weapon" role="tab"><img class="px-icon" src="assets/icons/sword.svg" alt="" aria-hidden="true" draggable="false"> 武器</button>
+          <button type="button" class="tab-btn" data-tab="armor" role="tab"><img class="px-icon" src="assets/icons/armor.svg" alt="" aria-hidden="true" draggable="false"> 防具</button>
+          <button type="button" class="tab-btn" data-tab="accessory" role="tab"><img class="px-icon" src="assets/icons/ring.svg" alt="" aria-hidden="true" draggable="false"> 飾品</button>
+          <button type="button" class="tab-btn" data-tab="consumable" role="tab"><img class="px-icon" src="assets/icons/herb.svg" alt="" aria-hidden="true" draggable="false"> 消耗品</button>
         </div>
 
         <div class="inventory-layout">
@@ -684,8 +684,8 @@
             <div id="explain-correct-answer" class="explain-correct-answer"></div>
             <div id="explain-reading" class="explain-reading"></div>
             <div class="explain-audio-btns">
-              <button id="btn-explain-tts" type="button" class="btn btn-sm btn-audio">🔊 朗讀</button>
-              <button id="btn-explain-tts-slow" type="button" class="btn btn-sm btn-audio">🐢 慢速</button>
+              <button id="btn-explain-tts" type="button" class="btn btn-sm btn-audio"><img class="px-icon" src="assets/icons/speaker.svg" alt="" aria-hidden="true" draggable="false"> 朗讀</button>
+              <button id="btn-explain-tts-slow" type="button" class="btn btn-sm btn-audio"><img class="px-icon" src="assets/icons/turtle.svg" alt="" aria-hidden="true" draggable="false"> 慢速</button>
             </div>
           </div>
 
