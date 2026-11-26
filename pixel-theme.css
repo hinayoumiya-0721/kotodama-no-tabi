@@ -1947,3 +1947,125 @@ html[data-ui-scale="large"]   { zoom: 1.1; }
     padding: 9px 14px 9px 22px;
   }
 }
+
+/* ----------------------------------------------------------------------------
+ * P26. Discreet Corner Bug Report Button & Modal
+ * ---------------------------------------------------------------------------- */
+.bug-report-fab {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 125;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: rgba(20, 18, 48, 0.88);
+  color: var(--px-cream-dk);
+  border: 2px solid var(--px-border-mid);
+  box-shadow: 2px 2px 0 var(--px-ink);
+  font-family: var(--font-pixel);
+  font-size: 0.76rem;
+  line-height: 1.2;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.bug-report-fab:hover,
+.bug-report-fab:focus-visible {
+  opacity: 1;
+  color: var(--px-gold-lt);
+  border-color: var(--px-gold);
+}
+
+#app.has-dock .bug-report-fab {
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 640px) {
+  .bug-report-fab {
+    left: 8px;
+    bottom: 8px;
+    padding: 6px;
+    min-width: 32px;
+    min-height: 32px;
+    justify-content: center;
+    opacity: 0.62;
+  }
+
+  .bug-report-fab .bug-fab-label {
+    display: none;
+  }
+}
+
+.modal-bug-dialog {
+  max-width: 560px;
+}
+
+.bug-report-field {
+  margin-bottom: 12px;
+}
+
+.bug-report-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--px-gold-lt);
+  margin-bottom: 5px;
+}
+
+.bug-report-select,
+.bug-report-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(11, 10, 24, 0.9);
+  color: var(--px-cream);
+  border: 2px solid var(--px-border-mid);
+  padding: 8px 10px;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.bug-report-select:focus,
+.bug-report-textarea:focus {
+  outline: none;
+  border-color: var(--px-gold);
+}
+
+.bug-report-diag-details {
+  border: 2px solid var(--px-border-mid);
+  background: rgba(11, 10, 24, 0.7);
+  padding: 8px 10px;
+}
+
+.bug-report-diag-summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--px-blue-lt);
+  user-select: none;
+}
+
+.bug-report-diag {
+  margin: 8px 0 0;
+  padding: 8px;
+  background: rgba(7, 9, 14, 0.85);
+  border: 1px solid rgba(244, 236, 208, 0.16);
+  color: var(--px-cream-dk);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.bug-report-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}

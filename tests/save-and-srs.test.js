@@ -490,5 +490,31 @@ test('uiScale: valid scales preserved, invalid values fall back to "normal", set
   }
 });
 
+test('bug report tool generates safe diagnostics, textContent preview, and valid GitHub Issue URL', () => {
+  const diag = Game.collectBugReportDiagnostics();
+  assert.ok(diag.includes('版本：v1.5.5'));
+  assert.ok(diag.includes('畫面：'));
+  assert.ok(diag.includes('設定：'));
+
+  const text = Game.buildBugReportText({ category: '題目 / 日文勘誤', description: '<b>測試</b>' });
+  assert.ok(text.includes('類型：題目 / 日文勘誤'));
+  assert.ok(text.includes('<b>測試</b>'));
+
+  const url = Game.buildGithubIssueUrl({ category: '功能異常 / 卡住', description: '點了沒反應' });
+  assert.ok(url.startsWith('https://github.com/hinayoumiya-0721/kotodama-no-tabi/issues/new?title='));
+  assert.ok(url.includes('&body='));
+
+  const mockDiag = {};
+  const prevGetById = ctx.document.getElementById;
+  ctx.document.getElementById = (id) => (id === 'bug-report-diag' ? mockDiag : null);
+  try {
+    Game.openBugReportModal();
+    assert.ok(typeof mockDiag.textContent === 'string' && mockDiag.textContent.includes('版本：'));
+    assert.strictEqual(mockDiag.innerHTML, undefined, 'diagnostics must use textContent, never innerHTML');
+  } finally {
+    ctx.document.getElementById = prevGetById;
+  }
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
