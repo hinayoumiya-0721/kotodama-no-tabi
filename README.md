@@ -123,7 +123,7 @@ CHANGELOG.md          更新日誌
 
 ## 更新日誌
 
-各版本的變更請見 [CHANGELOG.md](CHANGELOG.md)，最新版本為 **v1.6.1**。
+各版本的變更請見 [CHANGELOG.md](CHANGELOG.md)，最新版本為 **v1.7.0**。
 
 ## 製作
 

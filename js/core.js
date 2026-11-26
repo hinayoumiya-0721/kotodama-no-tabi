@@ -12,7 +12,7 @@
   // ============================================================================
   // 1. Constants & Storage Keys
   // ============================================================================
-  const APP_VERSION = 'v1.6.1';
+  const APP_VERSION = 'v1.7.0';
   const GITHUB_REPO_ISSUES_URL = 'https://github.com/hinayoumiya-0721/kotodama-no-tabi/issues/new';
   const RECENT_ERROR_LIMIT = 5;
   const recentRuntimeErrors = [];
