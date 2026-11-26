@@ -2529,13 +2529,16 @@
     }
   }
 
-  function startFirstTutorialBattle() {
+  // replay=true (from the ⚙ guide): stay in the player's current region instead of teleporting to r1
+  function startFirstTutorialBattle({ replay = false } = {}) {
     closeModal('modal-tutorial');
-    state.progress.currentRegionId = 'r1';
+    if (!replay) state.progress.currentRegionId = 'r1';
     state.progress.tutorialStep = 1;
     autoSave();
-    const normals = getRegionNormalEnemies('r1');
-    const starterEnemy = getEnemyById('en_r1_slime') || normals[0];
+    const normals = getRegionNormalEnemies(state.progress.currentRegionId);
+    const starterEnemy = replay
+      ? (normals[Math.floor(Math.random() * normals.length)] || getEnemyById('en_r1_slime'))
+      : (getEnemyById('en_r1_slime') || normals[0]);
     if (starterEnemy) {
       addExploreLog(`🦊 コトハ引領你迎戰第一隻魔物【${starterEnemy.name}】！`, 'battle');
       startBattle(starterEnemy, { returnView: 'explore', isFirstTutorialBattle: true });
@@ -2611,7 +2614,7 @@
       if (replayBtn) {
         replayBtn.onclick = () => {
           Audio.playSFX('confirm');
-          startFirstTutorialBattle();
+          startFirstTutorialBattle({ replay: true });
         };
       }
     }
