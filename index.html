@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>言霊の旅（ことだまのたび）｜日文學習奇幻 RPG</title>
+  <!-- PWA: installable app + offline play (sw.js) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1d1a45">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/app/icon-32.png">
+  <link rel="apple-touch-icon" href="assets/app/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="言霊の旅">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap">
@@ -113,6 +121,7 @@
             <button id="btn-toggle-bgm" type="button" class="btn-hud" title="切換背景音樂"><img class="px-icon" src="assets/icons/music.svg" alt="" aria-hidden="true" draggable="false"> BGM</button>
             <button id="btn-toggle-sfx" type="button" class="btn-hud" title="切換音效"><img class="px-icon" src="assets/icons/speaker.svg" alt="" aria-hidden="true" draggable="false"> SFX</button>
             <button id="btn-open-guide" type="button" class="btn-hud" title="新手玩法速覽">❓ 玩法</button>
+            <button id="btn-install-app" type="button" class="btn-hud js-install-app hidden" title="安裝到桌面／主畫面，可離線遊玩">📲 安裝</button>
           </div>
         </div>
       </div>
@@ -177,6 +186,7 @@
             <button id="btn-title-continue" type="button" class="btn btn-primary btn-lg hidden">▶ 延續旅途</button>
             <button id="btn-title-new" type="button" class="btn btn-gold btn-lg">✨ 踏上新旅途</button>
             <button id="btn-title-load" type="button" class="btn btn-secondary btn-lg">💾 記憶書卷</button>
+            <button id="btn-title-install" type="button" class="btn btn-secondary js-install-app hidden">📲 安裝到桌面（可離線玩）</button>
           </div>
           <p class="title-footer-note">🎧 建議開啟音效與語音朗讀</p>
         </div>
@@ -931,6 +941,10 @@
         <details class="faq-item">
           <summary>進度會不見嗎？</summary>
           <p>遊戲會自動存在這個瀏覽器裡（共 3 個欄位）。清除瀏覽器資料或換裝置會讀不到，建議偶爾到頂部「存檔」下載 .json 備份，換裝置時再匯入。</p>
+        </details>
+        <details class="faq-item">
+          <summary>可以安裝成 App、離線玩嗎？</summary>
+          <p>可以。電腦用 Chrome／Edge：點標題畫面或 ⚙ 裡的「📲 安裝」，或網址列右側的安裝圖示。Android：瀏覽器選單 →「安裝應用程式」。iPhone／iPad：Safari 分享 →「加入主畫面」。安裝後打開過一次，之後沒有網路也能玩；有網路時會自動更新到最新版。存檔跟同一個瀏覽器裡的網頁版共用。</p>
         </details>
         <details class="faq-item">
           <summary>遇到 Bug 怎麼辦？</summary>

@@ -7350,6 +7350,71 @@
     }
   }
 
+  /* ---- PWA: service worker (offline play) + install button ---- */
+  let deferredInstallPrompt = null;
+
+  function isStandaloneApp() {
+    try {
+      return Boolean(
+        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+        (window.navigator && window.navigator.standalone === true)
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // The buttons only appear when the browser offers an install prompt (Chrome / Edge / Android)
+  function updateInstallButtons() {
+    const show = Boolean(deferredInstallPrompt) && !isStandaloneApp();
+    document.querySelectorAll('.js-install-app').forEach((btn) => btn.classList.toggle('hidden', !show));
+  }
+
+  function initPwa() {
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+    const canRegister =
+      typeof navigator !== 'undefined' &&
+      'serviceWorker' in navigator &&
+      typeof location !== 'undefined' &&
+      /^https?:$/.test(location.protocol);
+    if (canRegister) {
+      const register = () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      };
+      if (document.readyState === 'complete') register();
+      else window.addEventListener('load', register);
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      updateInstallButtons();
+    });
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      updateInstallButtons();
+      showToast('📲 已安裝！之後可以直接從桌面或主畫面的圖示開啟，沒網路也能玩。', 'gold');
+    });
+
+    document.querySelectorAll('.js-install-app').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const promptEvent = deferredInstallPrompt;
+        if (!promptEvent) {
+          showToast('請用瀏覽器選單的「安裝應用程式」或「加入主畫面」。', 'info');
+          return;
+        }
+        deferredInstallPrompt = null;
+        Audio.playSFX('confirm');
+        promptEvent.prompt();
+        try {
+          await promptEvent.userChoice;
+        } catch (_) { /* dismissed */ }
+        updateInstallButtons();
+      });
+    });
+    updateInstallButtons();
+  }
+
   /* ---- FAQ side drawer (collapsed edge tab → drawer on demand) ---- */
   function isFaqOpen() {
     const drawer = $('faq-drawer');
@@ -9483,6 +9548,7 @@
     }
     document.addEventListener('keydown', handleDrillKeydown);
     initFaqDrawer();
+    initPwa();
     if ($('btn-tutorial-close')) {
       $('btn-tutorial-close').addEventListener('click', () => {
         Audio.playSFX('click');
