@@ -59,10 +59,10 @@
 ```bash
 git clone https://github.com/hinayoumiya-0721/kotodama-no-tabi.git
 cd kotodama-no-tabi
-npx serve .        # 或任何靜態檔案伺服器，例如 python -m http.server
+node tools/serve.js    # 或任何靜態檔案伺服器，例如 npx serve . / python -m http.server
 ```
 
-接著用瀏覽器開啟伺服器顯示的網址。建議透過本機伺服器開啟，不要直接雙擊 `index.html`。
+接著用瀏覽器開啟 <http://127.0.0.1:5173/>。建議透過本機伺服器開啟，不要直接雙擊 `index.html`。
 
 ### 測試
 
@@ -83,6 +83,21 @@ node tools/gen-pixel-icons.js
 ```
 
 輸出會寫到 `assets/icons/`，同時產生預覽頁 `assets/icons/preview.html`。
+
+### 其他工具
+
+| 指令 | 用途 |
+|---|---|
+| `node tools/serve.js` | 本機伺服器（預設 port 5173），也負責把宣傳影片產生器的輸出存回硬碟 |
+| `node tools/validate-questions.js` | 題庫檢查（題號、選項、answerIndex、`<ruby>` 標籤） |
+| `node tools/gen-listening.js` | 由檔案內的題目清單產生 `data/questions/listening.js`（`{漢字\|かな}` 自動轉成注音假名） |
+| `node tools/gen-sw-precache.js` | 更新離線快取清單；新增／刪除遊戲檔案或發版前執行 |
+| `node tools/read-pptx.js <檔案.pptx>` | 列出 PowerPoint 每頁的文字、圖片與備忘稿，用來比對簡報的修改 |
+
+另外兩個獨立資料夾：
+
+- `promo/`：30 秒宣傳影片產生器，說明見 [promo/README.md](promo/README.md)。
+- `presentation/`：自主學習成果發表簡報（可編輯、可匯出 PPTX），說明見 [presentation/README.md](presentation/README.md)。
 
 ---
 
@@ -114,8 +129,10 @@ svg_art.js            向量備援圖（沒有立繪圖檔時使用）
 assets/portraits/     主角與城鎮居民立繪
 assets/monsters/      怪物立繪與生圖提示詞（PROMPTS.md）
 assets/icons/         像素 UI 圖示
-tools/                圖示產生器
+tools/                本機伺服器、題庫檢查、聽力題／圖示／快取清單產生器、PPTX 讀取器
 tests/                自動化測試
+promo/                宣傳影片產生器（輸出在 promo/out/，不進 git）
+presentation/         成果發表簡報
 CHANGELOG.md          更新日誌
 ```
 

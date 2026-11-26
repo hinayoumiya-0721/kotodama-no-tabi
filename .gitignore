@@ -10,3 +10,9 @@ Thumbs.db
 
 # Original full-size monster art (processed 512px WebP lives in assets/monsters/)
 assets/monsters/_source/
+
+# Promo video renders (regenerate with promo/index.html + tools/serve.js)
+promo/out/
+
+# Presenter's personal info for the slide deck (stays on this computer)
+presentation/presenter.local.js

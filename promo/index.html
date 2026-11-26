@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>言霊の旅 宣傳影片產生器</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+TC:wght@400;500;700&display=block">
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+<style>
+  body { margin: 0; background: #0b0a18; color: #c9bf9c; font: 14px/1.5 sans-serif; }
+  canvas { width: 960px; height: 540px; display: block; }
+  #log { padding: 8px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="log"></div>
+<script>
+'use strict';
+/* 30 秒宣傳影片：canvas 逐格繪製 → WebCodecs H.264 + AAC → mp4-muxer → POST 到本機伺服器存檔。
+ * ?t=秒數 只畫那一格；window.exportStills([...]) 輸出靜態檢查圖；window.renderVideo() 輸出影片。 */
+const W = 1920, H = 1080, FPS = 30, DUR = 30;
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const logEl = document.getElementById('log');
+const log = (m) => { logEl.textContent += m + '\n'; };
+
+const C = {
+  bg: '#100e26', panel: '#1d1a45', panel2: '#262158', border: '#4a4290', ink: '#0b0a18',
+  cream: '#f4ecd0', creamDk: '#c9bf9c', gold: '#f6c445', goldDk: '#a8741a',
+  green: '#5ec269', greenLt: '#a6e88a', cyan: '#8fd4ff', dim: '#8a83b8'
+};
+const PIX = '"DotGothic16"';
+const SANS = '"Noto Sans TC"';
+
+// ---------- helpers ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const smooth = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
+const ramp = (t, a, d) => smooth((t - a) / d);                       // 0→1 between a and a+d
+const life = (t, a, b, fi = 0.6, fo = 0.6) => Math.min(ramp(t, a, fi), 1 - ramp(t, b - fo, fo)); // scene alpha
+
+function text(str, x, y, { font = SANS, size = 40, weight = 500, color = C.cream, align = 'center', alpha = 1, base = 'alphabetic' } = {}) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.font = `${weight} ${size}px ${font}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = base;
+  ctx.fillText(str, x, y);
+  ctx.restore();
+}
+
+// Pixel window: ink outline, border, inner panel
+function panel(x, y, w, h, { fill = C.panel, border = C.border, alpha = 1 } = {}) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.fillStyle = C.ink; ctx.fillRect(x - 6, y - 6, w + 12, h + 12);
+  ctx.fillStyle = border; ctx.fillRect(x - 3, y - 3, w + 6, h + 6);
+  ctx.fillStyle = fill; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(x, y, w, 3);
+  ctx.restore();
+}
+
+// Ruby line. segs: [base, ruby?] or { blank: true, answer?: 'に', answerAlpha }
+function rubyLine(segs, cx, y, size, { color = C.cream, alpha = 1 } = {}) {
+  if (alpha <= 0) return;
+  const rs = Math.round(size * 0.42);
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  const items = segs.map((s) => {
+    if (s.blank) {
+      ctx.font = `400 ${size}px ${PIX}`;
+      return { s, w: ctx.measureText('（　）').width };
+    }
+    ctx.font = `400 ${size}px ${PIX}`;
+    const bw = ctx.measureText(s[0]).width;
+    ctx.font = `400 ${rs}px ${PIX}`;
+    const rw = s[1] ? ctx.measureText(s[1]).width : 0;
+    return { s, w: Math.max(bw, rw), bw };
+  });
+  const total = items.reduce((a, b) => a + b.w, 0);
+  let x = cx - total / 2;
+  items.forEach(({ s, w, bw }) => {
+    if (s.blank) {
+      ctx.font = `400 ${size}px ${PIX}`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      const a = s.answerAlpha || 0;
+      ctx.fillStyle = C.dim;
+      ctx.globalAlpha = alpha * (1 - a);
+      ctx.fillText('（　）', x, y);
+      ctx.globalAlpha = alpha * a;
+      ctx.fillStyle = C.greenLt;
+      ctx.textAlign = 'center';
+      ctx.fillText(s.answer || '', x + w / 2, y);
+      ctx.globalAlpha = alpha;
+      if (a > 0) { ctx.fillStyle = C.green; ctx.globalAlpha = alpha * a; ctx.fillRect(x + w / 2 - size * 0.45, y + 10, size * 0.9, 4); ctx.globalAlpha = alpha; }
+    } else {
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = `400 ${size}px ${PIX}`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = s[2] || color;
+      ctx.fillText(s[0], x + w / 2, y);
+      if (s[1]) {
+        ctx.font = `400 ${rs}px ${PIX}`;
+        ctx.fillStyle = C.creamDk;
+        ctx.fillText(s[1], x + w / 2, y - size * 0.98);
+      }
+    }
+    x += w;
+  });
+  ctx.restore();
+}
+
+// ---------- assets ----------
+const IMG_SRC = {
+  slime: '../assets/monsters/en_r1_slime.webp',
+  guide: '../assets/portraits/npc_guide.png',
+  sword: '../assets/portraits/hero_swordsman.webp',
+  bard: '../assets/portraits/hero_bard.webp',
+  kabuki: '../assets/monsters/boss_r3_kabuki.webp',
+  wisp: '../assets/monsters/en_r2_wisp.webp',
+  iSword: '../assets/icons/sword.svg',
+  iStar: '../assets/icons/star.svg',
+  iSpeaker: '../assets/icons/speaker.svg'
+};
+const IMG = {};
+let SLIME_WHITE = null; // white silhouette for the hit flash
+function loadImages() {
+  return Promise.all(Object.entries(IMG_SRC).map(([k, src]) => new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => { IMG[k] = im; res(); };
+    im.onerror = () => rej(new Error('image ' + src));
+    im.src = src;
+  })));
+}
+function img(key, x, y, size, { alpha = 1, smoothing = true } = {}) {
+  if (alpha <= 0 || !IMG[key]) return;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.imageSmoothingEnabled = smoothing;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(IMG[key], x, y, size, size);
+  ctx.restore();
+}
+
+// ---------- background ----------
+const STARS = (() => {
+  let s = 7; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  return Array.from({ length: 70 }, () => ({ x: r() * W, y: r() * H * 0.92, p: r() * 6.28, z: r() < 0.25 ? 4 : 2 }));
+})();
+function background(t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, 'rgba(40,34,96,0.0)'); g.addColorStop(1, 'rgba(40,34,96,0.35)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  STARS.forEach((s) => {
+    ctx.globalAlpha = 0.18 + 0.14 * Math.sin(t * 0.7 + s.p);
+    ctx.fillStyle = C.cream;
+    ctx.fillRect(Math.round(s.x), Math.round(s.y), s.z, s.z);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ---------- scenes ----------
+const LINE1 = [['大', 'おお'], ['きな'], ['荷物', 'にもつ'], ['はフロント'], { blank: true, answer: 'に' }, ['預', 'あず'], ['けてから、']];
+const LINE2 = [['町', 'まち'], ['を'], ['散歩', 'さんぽ'], ['しましょう。']];
+
+function caption(str, t, a, b) {
+  text(str, W / 2, 960, { size: 50, weight: 500, color: C.cream, alpha: life(t, a, b, 0.7, 0.6) });
+}
+
+function sceneTitle(t) {
+  const A = life(t, 0, 4.2, 0.01, 0.6);
+  if (A <= 0) return;
+  ctx.save(); ctx.globalAlpha = A;
+  const rise = (a) => 16 * (1 - ramp(t, a, 1.0));
+  text('ことだまのたび', W / 2, 395 + rise(0.5), { font: PIX, size: 40, weight: 400, color: C.creamDk, alpha: ramp(t, 0.5, 0.9) });
+  text('言霊の旅', W / 2, 548 + rise(0.7), { font: PIX, size: 150, weight: 400, color: C.cream, alpha: ramp(t, 0.7, 1.0) });
+  const lw = 440 * smooth((t - 1.5) / 0.8);
+  ctx.fillStyle = C.goldDk; ctx.fillRect(W / 2 - lw / 2, 598, lw, 4);
+  text('邊冒險，邊學日文。', W / 2, 690, { size: 46, weight: 500, color: C.creamDk, alpha: ramp(t, 2.0, 0.8) });
+  ctx.restore();
+}
+
+function sceneBattle(t) {
+  const A = life(t, 4.2, 10.4);
+  if (A <= 0) return;
+  ctx.save(); ctx.globalAlpha = A;
+  // Monster + HP (shake, squash and white flash on impact)
+  const since = t - IMPACT;
+  const shake = since > 0 && since < 0.35 ? Math.sin(since * 70) * 11 * (1 - since / 0.35) : 0;
+  const squash = since > 0 && since < 0.2 ? 0.06 * Math.sin((since / 0.2) * Math.PI) : 0;
+  const fy = Math.sin(t * 1.6) * 6;
+  const mx = 250 + shake, mSize = 440;
+  const my = 250 + fy + mSize * squash;
+  ctx.save();
+  ctx.translate(mx + mSize / 2, my + mSize);
+  ctx.scale(1 + squash * 0.6, 1 - squash);
+  img('slime', -mSize / 2, -mSize, mSize);
+  if (since > 0 && since < 0.2 && SLIME_WHITE) {
+    ctx.globalAlpha *= 0.85 * (1 - since / 0.2);
+    ctx.drawImage(SLIME_WHITE, -mSize / 2, -mSize, mSize, mSize);
+  }
+  ctx.restore();
+  const hp = 1 - 0.25 * smooth(since / 0.12);
+  const lag = 1 - 0.25 * smooth((since - 0.35) / 0.5);
+  panel(290, 720, 360, 18, { fill: '#2a1414', border: C.border });
+  ctx.fillStyle = 'rgba(244,236,208,0.55)'; ctx.fillRect(290, 720, 360 * lag, 18);
+  ctx.fillStyle = '#e8543c'; ctx.fillRect(290, 720, 360 * hp, 18);
+  text('HP', 270, 737, { font: PIX, size: 24, weight: 400, color: C.creamDk, align: 'right' });
+  // Question card
+  const cx = 840, cy = 210, cw = 860, ch = 540;
+  panel(cx, cy, cw, ch);
+  text('助詞辨析 ・ N4', cx + 40, cy + 62, { size: 28, weight: 500, color: C.gold, align: 'left' });
+  text('請選出最適合填入空格的助詞。', cx + cw - 40, cy + 62, { size: 26, weight: 400, color: C.dim, align: 'right' });
+  const ans = ramp(t, 7.45, 0.35);
+  const l1 = LINE1.map((s) => (s.blank ? { ...s, answerAlpha: ans } : s));
+  rubyLine(l1, cx + cw / 2, cy + 190, 42);
+  rubyLine(LINE2, cx + cw / 2, cy + 280, 42);
+  // Options 2x2
+  const opts = ['に', 'で', 'を', 'から'];
+  const L = ['A', 'B', 'C', 'D'];
+  opts.forEach((o, i) => {
+    const ox = cx + 40 + (i % 2) * 400, oy = cy + 340 + Math.floor(i / 2) * 92;
+    const ok = i === 0 ? ans : 0;
+    panel(ox, oy, 380, 72, { fill: C.panel2, border: ok > 0.5 ? C.green : C.border });
+    if (ok > 0) { ctx.fillStyle = `rgba(94,194,105,${0.16 * ok})`; ctx.fillRect(ox, oy, 380, 72); }
+    text(L[i], ox + 36, oy + 48, { font: PIX, size: 28, weight: 400, color: C.gold, align: 'center' });
+    text(o, ox + 190, oy + 50, { font: PIX, size: 38, weight: 400, color: C.cream });
+  });
+  // Selection cursor (blinks softly, then settles on A)
+  const cur = ramp(t, 6.3, 0.4) * (t < 7.45 ? (0.55 + 0.45 * Math.sin(t * 7)) : 1);
+  text('▶', cx + 22, cy + 390, { font: PIX, size: 26, weight: 400, color: C.cream, alpha: cur, align: 'center' });
+  battleFx(t, cx + 230, cy + 376);
+  ctx.restore();
+  caption('選對日文，就是攻擊。', t, 4.9, 10.4);
+}
+
+// ---- battle animation: the chosen word flies at the monster as a 言霊 and bursts on impact ----
+const LAUNCH = 7.62, IMPACT = 8.05;
+const TARGET = { x: 470, y: 455 };
+function flightPos(p, sx, sy) {
+  const cx1 = 800, cy1 = 210; // arc control point
+  const u = 1 - p;
+  return { x: u * u * sx + 2 * u * p * cx1 + p * p * TARGET.x, y: u * u * sy + 2 * u * p * cy1 + p * p * TARGET.y };
+}
+const SPARKS = Array.from({ length: 14 }, (_, i) => ({ a: (i / 14) * Math.PI * 2 + (i % 3) * 0.17, v: 300 + (i * 53) % 220, c: i % 2 ? C.gold : C.cream }));
+function battleFx(t, sx, sy) {
+  // Flight
+  if (t >= LAUNCH && t < IMPACT) {
+    const p = smooth((t - LAUNCH) / (IMPACT - LAUNCH));
+    for (let k = 6; k >= 1; k--) {
+      const q = clamp(p - k * 0.045);
+      if (q <= 0) continue;
+      const tp = flightPos(q, sx, sy);
+      ctx.globalAlpha = 0.5 * (1 - k / 7);
+      ctx.fillStyle = C.gold;
+      const s = 12 - k;
+      ctx.fillRect(Math.round(tp.x - s / 2), Math.round(tp.y - s / 2), s, s);
+    }
+    const pos = flightPos(p, sx, sy);
+    ctx.globalAlpha = 1;
+    ctx.save();
+    ctx.shadowColor = 'rgba(246,196,69,0.75)';
+    ctx.shadowBlur = 22;
+    text('に', pos.x, pos.y, { font: PIX, size: 64 + 18 * Math.sin(p * Math.PI), weight: 400, color: C.cream, base: 'middle' });
+    ctx.restore();
+  }
+  const since = t - IMPACT;
+  if (since < 0) return;
+  // Pixel sparks
+  if (since < 0.55) {
+    SPARKS.forEach((s) => {
+      const d = s.v * since * (1 - since * 0.6);
+      const size = Math.max(3, 14 * (1 - since / 0.55));
+      ctx.globalAlpha = 1 - since / 0.55;
+      ctx.fillStyle = s.c;
+      ctx.fillRect(Math.round(TARGET.x + Math.cos(s.a) * d - size / 2), Math.round(TARGET.y + Math.sin(s.a) * d - size / 2), size, size);
+    });
+    // Short impact ring of pixels
+    const r = 30 + since * 260;
+    ctx.globalAlpha = 0.6 * (1 - since / 0.55);
+    ctx.fillStyle = C.cream;
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      ctx.fillRect(Math.round(TARGET.x + Math.cos(a) * r - 3), Math.round(TARGET.y + Math.sin(a) * r - 3), 6, 6);
+    }
+    ctx.globalAlpha = 1;
+  }
+  // Damage number
+  if (since < 1.1) {
+    const pop = since < 0.12 ? 1.35 - 0.35 * (since / 0.12) : 1;
+    const a = since < 0.75 ? 1 : 1 - (since - 0.75) / 0.35;
+    const y = 300 - 60 * smooth(since / 0.9);
+    ctx.save();
+    ctx.globalAlpha = clamp(a);
+    ctx.translate(TARGET.x + 40, y);
+    ctx.scale(pop, pop);
+    ctx.font = `400 84px ${PIX}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 10; ctx.strokeStyle = C.ink; ctx.lineJoin = 'round';
+    ctx.strokeText('25', 0, 0);
+    ctx.fillStyle = C.gold;
+    ctx.fillText('25', 0, 0);
+    ctx.restore();
+  }
+}
+
+function sceneLearn(t) {
+  const A = life(t, 10.4, 16.0);
+  if (A <= 0) return;
+  ctx.save(); ctx.globalAlpha = A;
+  const px = 360, py = 150, pw = 1200, ph = 420;
+  panel(px, py, pw, ph);
+  text('解說', px + 44, py + 62, { size: 28, weight: 500, color: C.gold, align: 'left' });
+  const l1 = LINE1.map((s) => (s.blank ? { ...s, answerAlpha: 1 } : s));
+  rubyLine(l1, W / 2, py + 180, 42);
+  rubyLine(LINE2, W / 2, py + 262, 42);
+  text('「〜に預ける」＝把東西寄放在某處。「に」標示寄放的對象或地點。', W / 2, py + 352, { size: 30, weight: 400, color: C.creamDk });
+  // SRS timeline
+  const labels = ['1 天後', '3 天後', '7 天後', '已掌握'];
+  const y = 700, x0 = 600, step = 240;
+  ctx.fillStyle = C.border; ctx.fillRect(x0, y - 2, step * 3, 4);
+  labels.forEach((lb, i) => {
+    const on = ramp(t, 12.4 + i * 0.55, 0.3);
+    const x = x0 + i * step;
+    ctx.fillStyle = C.ink; ctx.fillRect(x - 16, y - 16, 32, 32);
+    ctx.fillStyle = C.border; ctx.fillRect(x - 13, y - 13, 26, 26);
+    ctx.fillStyle = i === 3 ? C.green : C.gold;
+    ctx.globalAlpha = A * on; ctx.fillRect(x - 13, y - 13, 26, 26); ctx.globalAlpha = A;
+    text(lb, x, y + 62, { size: 30, weight: 500, color: on > 0.5 ? C.cream : C.dim });
+  });
+  ctx.restore();
+  caption('答錯的題目，會在該複習的時候再出現。', t, 11.0, 16.0);
+}
+
+function sceneWorld(t) {
+  const A = life(t, 16.0, 21.6);
+  if (A <= 0) return;
+  ctx.save(); ctx.globalAlpha = A;
+  const keys = ['sword', 'guide', 'kabuki', 'wisp'];
+  const size = 330, gap = 56, total = keys.length * size + (keys.length - 1) * gap;
+  keys.forEach((k, i) => {
+    const a = ramp(t, 16.4 + i * 0.3, 0.7);
+    const x = (W - total) / 2 + i * (size + gap), y = 210 + 14 * (1 - a);
+    panel(x, y, size, size, { alpha: a });
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, size, size); ctx.clip();
+    img(k, x + 15, y + 30, size - 30, { alpha: a });
+    ctx.restore();
+  });
+  text('744 道題目 ・ N4 → N1 ・ 18 種魔物', W / 2, 692, { size: 44, weight: 500, color: C.cream, alpha: ramp(t, 17.8, 0.7) });
+  const chips = ['漢字讀音', '助詞', '動詞活用', '句子重組', '不自然表達', '聽力'];
+  ctx.font = `500 28px ${SANS}`;
+  const widths = chips.map((c) => ctx.measureText(c).width + 48);
+  const cw = widths.reduce((a, b) => a + b, 0) + 24 * (chips.length - 1);
+  let x = (W - cw) / 2;
+  chips.forEach((c, i) => {
+    const a = ramp(t, 18.4 + i * 0.12, 0.5);
+    panel(x, 752, widths[i], 54, { fill: C.panel2, alpha: a });
+    text(c, x + widths[i] / 2, 789, { size: 28, weight: 500, color: C.creamDk, alpha: a });
+    x += widths[i] + 24;
+  });
+  ctx.restore();
+}
+
+function sceneModes(t) {
+  const A = life(t, 21.6, 26.4);
+  if (A <= 0) return;
+  ctx.save(); ctx.globalAlpha = A;
+  const cards = [
+    ['iSword', '冒險', '探索地圖、打倒魔物', '挑戰各區域的首領'],
+    ['iStar', '浸式刷題', '不計時，一題接一題', '只練錯題也可以'],
+    ['iSpeaker', '聽力', '跟著日文朗讀練耳朵', '答錯一樣收進筆記']
+  ];
+  const w = 460, h = 420, gap = 60, total = 3 * w + 2 * gap;
+  cards.forEach(([icon, title, d1, d2], i) => {
+    const a = ramp(t, 22.0 + i * 0.3, 0.7);
+    const x = (W - total) / 2 + i * (w + gap), y = 250 + 12 * (1 - a);
+    panel(x, y, w, h, { alpha: a });
+    img(icon, x + w / 2 - 48, y + 56, 96, { alpha: a, smoothing: false });
+    text(title, x + w / 2, y + 230, { font: PIX, size: 50, weight: 400, color: C.cream, alpha: a });
+    text(d1, x + w / 2, y + 300, { size: 30, weight: 400, color: C.creamDk, alpha: a });
+    text(d2, x + w / 2, y + 348, { size: 30, weight: 400, color: C.creamDk, alpha: a });
+  });
+  ctx.restore();
+  caption('想冒險就冒險，想專心就刷題。', t, 23.0, 26.4);
+}
+
+function sceneEnd(t) {
+  const A = life(t, 26.4, 30.0, 0.7, 0.7);
+  if (A <= 0) return;
+  ctx.save(); ctx.globalAlpha = A;
+  img('guide', 1460, H - 400, 400, { alpha: ramp(t, 27.2, 0.8) });
+  text('ことだまのたび', W / 2, 330, { font: PIX, size: 34, weight: 400, color: C.creamDk });
+  text('言霊の旅', W / 2, 460, { font: PIX, size: 124, weight: 400, color: C.cream });
+  ctx.fillStyle = C.goldDk; ctx.fillRect(W / 2 - 200, 500, 400, 4);
+  text('免費 ・ 免安裝 ・ 手機電腦都能玩 ・ 可離線', W / 2, 600, { size: 38, weight: 500, color: C.creamDk, alpha: ramp(t, 26.9, 0.6) });
+  text('hinayoumiya-0721.github.io/kotodama-no-tabi', W / 2, 690, { size: 34, weight: 500, color: C.cyan, alpha: ramp(t, 27.3, 0.6) });
+  ctx.restore();
+}
+
+function draw(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  background(t);
+  sceneTitle(t); sceneBattle(t); sceneLearn(t); sceneWorld(t); sceneModes(t); sceneEnd(t);
+  // Fade from / to black
+  const k = Math.max(1 - ramp(t, 0, 0.8), ramp(t, DUR - 0.6, 0.6));
+  if (k > 0) { ctx.globalAlpha = k; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+}
+
+// ---------- audio (quiet 84 BPM music-box loop, rendered offline) ----------
+async function renderAudio() {
+  const SR = 48000;
+  const ac = new OfflineAudioContext(2, SR * DUR, SR);
+  const master = ac.createGain();
+  master.gain.setValueAtTime(0, 0);
+  master.gain.linearRampToValueAtTime(0.9, 1.2);
+  master.gain.setValueAtTime(0.9, DUR - 2.6);
+  master.gain.linearRampToValueAtTime(0, DUR - 0.1);
+  // Small generated room reverb
+  const conv = ac.createConvolver();
+  const ir = ac.createBuffer(2, SR * 2.2, SR);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    let s = 11 + ch;
+    for (let i = 0; i < d.length; i++) { s = (s * 16807) % 2147483647; d[i] = ((s / 2147483647) * 2 - 1) * Math.pow(1 - i / d.length, 3); }
+  }
+  conv.buffer = ir;
+  const wet = ac.createGain(); wet.gain.value = 0.22;
+  const dry = ac.createGain(); dry.gain.value = 0.85;
+  dry.connect(master); conv.connect(wet); wet.connect(master); master.connect(ac.destination);
+  const bus = ac.createGain(); bus.connect(dry); bus.connect(conv);
+
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  const BEAT = 60 / 84, BAR = BEAT * 4;
+  // F – G – Em – Am (IV V iii vi), as MIDI triads
+  const CHORDS = [[53, 57, 60], [55, 59, 62], [52, 55, 59], [57, 60, 64]];
+
+  function pad(m, t0, dur, g) {
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1100;
+    const env = ac.createGain();
+    env.gain.setValueAtTime(0, t0);
+    env.gain.linearRampToValueAtTime(g, t0 + 0.7);
+    env.gain.setValueAtTime(g, t0 + dur - 0.2);
+    env.gain.linearRampToValueAtTime(0, t0 + dur + 0.6);
+    [-4, 4].forEach((det) => {
+      const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = hz(m); o.detune.value = det;
+      o.connect(lp); o.start(t0); o.stop(t0 + dur + 0.7);
+    });
+    lp.connect(env); env.connect(bus);
+  }
+  function pluck(m, t0, g, len = 1.1) {
+    const env = ac.createGain();
+    env.gain.setValueAtTime(0, t0);
+    env.gain.linearRampToValueAtTime(g, t0 + 0.006);
+    env.gain.exponentialRampToValueAtTime(0.0005, t0 + len);
+    const o1 = ac.createOscillator(); o1.type = 'sine'; o1.frequency.value = hz(m);
+    const o2 = ac.createOscillator(); o2.type = 'triangle'; o2.frequency.value = hz(m + 12);
+    const g2 = ac.createGain(); g2.gain.value = 0.18;
+    o1.connect(env); o2.connect(g2); g2.connect(env); env.connect(bus);
+    o1.start(t0); o2.start(t0); o1.stop(t0 + len); o2.stop(t0 + len);
+  }
+  function bass(m, t0, dur) {
+    const env = ac.createGain();
+    env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.10, t0 + 0.05);
+    env.gain.setValueAtTime(0.10, t0 + dur - 0.3); env.gain.linearRampToValueAtTime(0, t0 + dur);
+    const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = hz(m);
+    o.connect(env); env.connect(bus); o.start(t0); o.stop(t0 + dur);
+  }
+
+  // Melody: chord tones + pentatonic passing notes, gentle and sparse (deterministic)
+  const PATTERNS = [
+    [0, null, 2, 1, null, 2, 1, null],
+    [2, null, 1, null, 0, 1, null, null],
+    [0, 1, null, 2, null, 1, 0, null],
+    [1, null, 2, null, 1, null, 0, null]
+  ];
+  const bars = Math.ceil(DUR / BAR);
+  for (let b = 0; b < bars; b++) {
+    const t0 = b * BAR;
+    const ch = CHORDS[b % 4];
+    ch.forEach((m) => pad(m + 12, t0, BAR, 0.022));
+    bass(ch[0] - 12, t0, BAR);
+    if (b >= 1 && t0 < DUR - 3) {
+      const pat = PATTERNS[b % 4];
+      pat.forEach((deg, k) => {
+        if (deg === null) return;
+        pluck(ch[deg] + 24, t0 + k * BEAT / 2, 0.07);
+      });
+    }
+  }
+  // Soft "correct" chime when option A lights up, and quiet ticks on the SRS dots
+  pluck(88, 7.45, 0.07, 1.2); pluck(93, 7.55, 0.06, 1.3);
+  (function impact(t0) {
+    const o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(170, t0); o.frequency.exponentialRampToValueAtTime(48, t0 + 0.22);
+    const g = ac.createGain(); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.32, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
+    o.connect(g); g.connect(bus); o.start(t0); o.stop(t0 + 0.4);
+    const nb = ac.createBuffer(1, Math.floor(SR * 0.16), SR); const nd = nb.getChannelData(0); let z = 3;
+    for (let i = 0; i < nd.length; i++) { z = (z * 16807) % 2147483647; nd[i] = ((z / 2147483647) * 2 - 1) * (1 - i / nd.length); }
+    const ns = ac.createBufferSource(); ns.buffer = nb;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1600;
+    const ng = ac.createGain(); ng.gain.value = 0.12;
+    ns.connect(lp); lp.connect(ng); ng.connect(bus); ns.start(t0);
+  })(8.05);
+  [12.4, 12.95, 13.5, 14.05].forEach((tt, i) => pluck(84 + [0, 2, 4, 7][i], tt, 0.035, 0.6));
+
+  return ac.startRendering();
+}
+
+// ---------- outputs ----------
+async function ready() {
+  await Promise.all([
+    document.fonts.load(`400 150px ${PIX}`, '言霊の旅ことだま'),
+    document.fonts.load(`400 30px ${PIX}`, 'ABCDHP0123456789'),
+    document.fonts.load(`500 46px ${SANS}`, '邊冒險學日文'),
+    document.fonts.load(`400 30px ${SANS}`, '答錯'),
+    loadImages()
+  ]);
+  if (!SLIME_WHITE) {
+    const oc = document.createElement('canvas');
+    oc.width = oc.height = 512;
+    const g = oc.getContext('2d');
+    g.drawImage(IMG.slime, 0, 0, 512, 512);
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, 512, 512);
+    SLIME_WHITE = oc;
+  }
+  await document.fonts.ready;
+}
+
+async function save(name, body) {
+  const r = await fetch('/__save/' + name, { method: 'POST', body });
+  if (!r.ok) throw new Error('save failed ' + r.status);
+}
+
+window.exportStills = async (times) => {
+  await ready();
+  for (const t of times) {
+    draw(t);
+    const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
+    await save(`still-${String(t).replace('.', '_')}.png`, blob);
+  }
+  return 'ok';
+};
+
+window.renderVideo = async () => {
+  await ready();
+  const t0 = performance.now();
+  const audio = await renderAudio();
+  log('audio rendered');
+  const aacOk = (await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: 48000, numberOfChannels: 2, bitrate: 160000 })).supported;
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: 'avc', width: W, height: H, frameRate: FPS },
+    audio: { codec: aacOk ? 'aac' : 'opus', numberOfChannels: 2, sampleRate: 48000 },
+    fastStart: 'in-memory'
+  });
+  let err = null;
+  const ve = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { err = e; } });
+  ve.configure({ codec: 'avc1.640028', width: W, height: H, bitrate: 10_000_000, framerate: FPS });
+  const frames = DUR * FPS;
+  for (let i = 0; i < frames; i++) {
+    draw(i / FPS);
+    const f = new VideoFrame(cv, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    ve.encode(f, { keyFrame: i % (FPS * 2) === 0 });
+    f.close();
+    while (ve.encodeQueueSize > 8) await new Promise((r) => ve.addEventListener('dequeue', r, { once: true }));
+    if (err) throw err;
+  }
+  await ve.flush();
+  log('video encoded');
+
+  const ae = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { err = e; } });
+  ae.configure({ codec: aacOk ? 'mp4a.40.2' : 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: 160000 });
+  const L = audio.getChannelData(0), R = audio.getChannelData(1);
+  for (let off = 0; off < audio.length; off += 1024) {
+    const n = Math.min(1024, audio.length - off);
+    const data = new Float32Array(n * 2);
+    data.set(L.subarray(off, off + n), 0);
+    data.set(R.subarray(off, off + n), n);
+    const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(off / 48000 * 1e6), data });
+    ae.encode(ad); ad.close();
+  }
+  await ae.flush();
+  if (err) throw err;
+  muxer.finalize();
+  const buf = muxer.target.buffer;
+  await save('kotodama-promo-30s.mp4', buf);
+  return { bytes: buf.byteLength, audio: aacOk ? 'aac' : 'opus', seconds: Math.round((performance.now() - t0) / 1000) };
+};
+
+const qt = new URLSearchParams(location.search).get('t');
+ready().then(() => { draw(qt ? Number(qt) : 2.5); log('ready'); }).catch((e) => log('ERROR ' + e.message));
+</script>
+</body>
+</html>
