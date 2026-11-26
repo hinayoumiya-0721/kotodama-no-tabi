@@ -1813,3 +1813,36 @@ textarea {
     animation: none !important;
   }
 }
+
+/* Save file transfer & collapsible manual JSON code */
+.save-transfer-hint {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 4px 0 10px;
+}
+
+.save-code-details {
+  margin-top: 8px;
+  border: 2px solid var(--px-border-mid);
+  background: rgba(12, 16, 26, 0.55);
+  padding: 8px 10px;
+}
+
+.save-code-summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--px-gold-lt);
+  list-style: none;
+  user-select: none;
+}
+
+.save-code-summary::-webkit-details-marker {
+  display: none;
+}
+
+.save-code-details[open] .save-code-summary {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--px-border-mid);
+}

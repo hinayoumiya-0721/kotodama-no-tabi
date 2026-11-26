@@ -749,13 +749,22 @@
           <div id="save-slots-list" class="save-slots-list"></div>
           <div id="save-transfer-section" class="save-transfer-section">
             <div class="save-transfer-header">
-              <strong>📦 跨裝置引繼碼（JSON）</strong>
-              <div class="save-transfer-actions">
-                <button id="btn-export-save-json" type="button" class="btn btn-sm btn-primary">📤 匯出引繼碼</button>
-                <button id="btn-import-save-json" type="button" class="btn btn-sm btn-gold">📥 匯入引繼碼</button>
+              <strong>📦 存檔備份與移轉（.json）</strong>
+              <div class="save-transfer-actions save-transfer-file-row">
+                <button id="btn-download-save-json" type="button" class="btn btn-sm btn-primary">💾 下載存檔 (.json)</button>
+                <button id="btn-upload-save-json" type="button" class="btn btn-sm btn-gold">📂 上傳存檔 (.json)</button>
+                <input id="input-import-save-file" type="file" accept=".json,application/json" hidden>
               </div>
             </div>
-            <textarea id="save-json-textarea" class="save-json-textarea" rows="3" placeholder="點擊「📤 匯出引繼碼」複製 JSON，或貼上引繼碼後點擊「📥 匯入引繼碼」…"></textarea>
+            <p class="save-transfer-hint text-muted">僅支援 <code>.json</code> 存檔檔（上限 1 MB），匯入時會自動驗證格式、過濾危險資料並先確認再覆蓋。</p>
+            <details id="save-code-details" class="save-code-details">
+              <summary class="save-code-summary">📋 進階：手動複製／貼上引繼碼</summary>
+              <div class="save-transfer-actions">
+                <button id="btn-export-save-json" type="button" class="btn btn-sm btn-primary">📤 產生並複製引繼碼</button>
+                <button id="btn-import-save-json" type="button" class="btn btn-sm btn-gold">📥 匯入貼上文字</button>
+              </div>
+              <textarea id="save-json-textarea" class="save-json-textarea" rows="3" placeholder="點擊「📤 產生並複製引繼碼」，或貼上 JSON 存檔碼後點擊「📥 匯入貼上文字」…"></textarea>
+            </details>
           </div>
         </div>
       </div>
