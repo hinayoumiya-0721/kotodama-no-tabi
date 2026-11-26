@@ -2121,7 +2121,7 @@
       "typeLabel": "句子重組（★）",
       "promptZh": "請將四個語塊重組為通順的日文句子，並選出填入 ★ 處的選項。",
       "promptJp": "<ruby>会議<rt>かいぎ</rt></ruby>の　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　お<ruby>願<rt>ねが</rt></ruby>いいたします。",
-      "fullRubyJp": "<ruby>会議<rt>かいぎ</rt></ruby>の<ruby>前<rt>まえ</rt></ruby>までに<ruby>資料<rt>しりょう</rt></ruby>に<span class=\"q-answer\"><ruby>目<rt>め</rt></ruby>を</span><ruby>通<rt>とお</rt></ruby>しておいていただくよう</span>お<ruby>願<rt>ねが</rt></ruby>いいたします。",
+      "fullRubyJp": "<ruby>会議<rt>かいぎ</rt></ruby>の<ruby>前<rt>まえ</rt></ruby>までに<ruby>資料<rt>しりょう</rt></ruby>に<span class=\"q-answer\"><ruby>目<rt>め</rt></ruby>を</span><ruby>通<rt>とお</rt></ruby>しておいていただくようお<ruby>願<rt>ねが</rt></ruby>いいたします。",
       "tts": "会議の前までに資料に目を通しておいていただくようお願いいたします。",
       "options": [
         "<ruby>目<rt>め</rt></ruby>を",

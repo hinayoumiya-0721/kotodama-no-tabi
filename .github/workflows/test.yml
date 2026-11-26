@@ -30,5 +30,8 @@ jobs:
             node --check "$f"
           done
 
+      - name: Question bank check (ids, options, answerIndex, ruby/span tags)
+        run: node tools/validate-questions.js
+
       - name: Unit tests (save / SRS / drill / PWA precache list)
         run: node tests/save-and-srs.test.js

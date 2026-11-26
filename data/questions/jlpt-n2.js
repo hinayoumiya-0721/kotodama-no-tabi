@@ -823,7 +823,7 @@
       "difficulty": 3,
       "type": "conjugation",
       "typeLabel": "文字語彙・語彙辨析",
-      "promptZh": "請選出與畫線部分「<ruby>あっさり</rt></ruby>」意思最接近的選項。",
+      "promptZh": "請選出與畫線部分「あっさり」意思最接近的選項。",
       "promptJp": "<ruby>長引<rt>ながび</rt></ruby>くかと<ruby>思<rt>おも</rt></ruby>っていた<ruby>契約<rt>けいやく</rt></ruby><ruby>交渉<rt>こうしょう</rt></ruby>が、<span class=\"q-target\">あっさり</span>まとまった。",
       "fullRubyJp": "<ruby>長引<rt>ながび</rt></ruby>くかと<ruby>思<rt>おも</rt></ruby>っていた<ruby>契約<rt>けいやく</rt></ruby><ruby>交渉<rt>こうしょう</rt></ruby>が、<span class=\"q-answer\"><ruby>意外<rt>いがい</rt></ruby>と<ruby>簡単<rt>かんたん</rt></ruby>に</span>まとまった。",
       "tts": "長引くかと思っていた契約交渉が、意外と簡単にまとまった。",
@@ -2145,7 +2145,7 @@
       "typeLabel": "句子重組（★）",
       "promptZh": "請將四個語塊重組為通順的日文句子，並選出填入 ★ 處的選項。",
       "promptJp": "そんな<ruby>根拠<rt>こんきょ</rt></ruby>のない<ruby>噂<rt>うわさ</rt></ruby>を　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　に<ruby>決<rt>き</rt></ruby>まっている。",
-      "fullRubyJp": "そんな<ruby>根拠<rt>こんきょ</rt></ruby>のない<ruby>噂<rt>うわさ</rt></ruby>を<ruby>真<rt>ま</rt></ruby>に<ruby>受<rt>う</rt></ruby>けたところで、<span class=\"q-answer\"><ruby>誰<rt>だれ</rt></ruby>にも</span><ruby>相手<rt>あいて</rt></ruby>にされない</span>に<ruby>決<rt>き</rt></ruby>まっている。",
+      "fullRubyJp": "そんな<ruby>根拠<rt>こんきょ</rt></ruby>のない<ruby>噂<rt>うわさ</rt></ruby>を<ruby>真<rt>ま</rt></ruby>に<ruby>受<rt>う</rt></ruby>けたところで、<span class=\"q-answer\"><ruby>誰<rt>だれ</rt></ruby>にも</span><ruby>相手<rt>あいて</rt></ruby>にされないに<ruby>決<rt>き</rt></ruby>まっている。",
       "tts": "そんな根拠のない噂を真に受けたところで、誰にも相手にされないに決まっている。",
       "options": [
         "<ruby>受<rt>う</rt></ruby>けたところで、",

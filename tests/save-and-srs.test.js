@@ -560,11 +560,11 @@ test('switchPlayerJob switches character idempotently, preserves HP/MP ratio & r
 test('drill: pool filters by JLPT/type/wrong-only; wrong answers go to notes; fixed rounds end', () => {
   const st = Game.getState();
   const all = Game.buildDrillPool({ jlpt: 'all', type: 'all', source: 'all' });
-  assert.strictEqual(all.length, 720);
+  assert.strictEqual(all.length, ctx.GAME_DATA.QUESTIONS.length);
   const n4 = Game.buildDrillPool({ jlpt: 'N4', type: 'all', source: 'all' });
-  assert.ok(n4.length > 0 && n4.length < 720);
+  assert.ok(n4.length > 0 && n4.length < all.length);
   const reading = Game.buildDrillPool({ jlpt: 'all', type: 'reading', source: 'all' });
-  assert.ok(reading.length > 0 && reading.length < 720);
+  assert.ok(reading.length > 0 && reading.length < all.length);
 
   st.wrongNotes = {};
   assert.strictEqual(Game.buildDrillPool({ source: 'wrong' }).length, 0);
@@ -599,6 +599,26 @@ test('drill: pool filters by JLPT/type/wrong-only; wrong answers go to notes; fi
   assert.strictEqual(d.total, 1);
   assert.strictEqual(d.current.id, q.id);
   Game.finishDrill();
+});
+
+test('question bank passes tools/validate-questions.js (ids, options, answerIndex, ruby/span tags)', () => {
+  const { validate, checkHtml } = require(path.join(ROOT, 'tools', 'validate-questions.js'));
+  const { errors } = validate();
+  assert.deepStrictEqual(errors, []);
+  // The checker itself catches the classic mistakes
+  assert.ok(checkHtml('<ruby>見送<rt>みおく</rt>').length > 0, 'unclosed <ruby>');
+  assert.ok(checkHtml('<ruby>あっさり</rt></ruby>').length > 0, 'stray </rt>');
+  assert.ok(checkHtml('<span class="q-answer">目を</span>通す</span>').length > 0, 'stray </span>');
+  assert.deepStrictEqual(checkHtml('<ruby>目<rt>め</rt></ruby>を'), []);
+});
+
+test('listening questions: present per region, drillable, transcript fallback without a Japanese voice', () => {
+  const qs = ctx.GAME_DATA.QUESTIONS.filter((q) => q.type === 'listening');
+  assert.ok(qs.length >= 24, 'at least 24 listening questions');
+  ['r1', 'r2', 'r3', 'r4', 'r5', 'r6'].forEach((r) => assert.ok(qs.some((q) => q.regionId === r), `listening in ${r}`));
+  qs.forEach((q) => assert.ok(/[぀-ヿ]/.test(q.tts), `${q.id} has Japanese tts`));
+  const pool = Game.buildDrillPool({ jlpt: 'all', type: 'listening', source: 'all' });
+  assert.strictEqual(pool.length, qs.length);
 });
 
 test('PWA: sw.js precache list matches the game files (run tools/gen-sw-precache.js if this fails)', () => {

@@ -70,7 +70,9 @@ npx serve .        # 或任何靜態檔案伺服器，例如 python -m http.serv
 node tests/save-and-srs.test.js
 ```
 
-共 40 項測試，涵蓋存檔匯入防護與非 JSON 攔截、畫面縮放設定、問題回報診斷、SRS 規則、任務目的地、朗讀防洩題、新手引導、浸式刷題、PWA 快取清單與成就／Toast 通知精簡。只需要 Node.js，不用安裝其他套件。
+共 42 項測試，涵蓋存檔匯入防護與非 JSON 攔截、畫面縮放設定、問題回報診斷、SRS 規則、任務目的地、朗讀防洩題、新手引導、浸式刷題、PWA 快取清單與成就／Toast 通知精簡。只需要 Node.js，不用安裝其他套件。
+
+修改題庫後可以先跑 `node tools/validate-questions.js`，檢查題號、選項、answerIndex 與 `<ruby>` 標籤。GitHub Actions 會在每個 PR 自動跑這兩項檢查。
 
 ### 重新產生像素圖示
 

@@ -1445,6 +1445,12 @@
     playSFX: playSFX,
     playTypeTick: playTypeTick,
     speak: speak,
-    stopSpeak: stopSpeak
+    stopSpeak: stopSpeak,
+    // True once a Japanese voice is available (listening questions fall back to text otherwise)
+    canSpeakJapanese: function () {
+      if (!speechAvailable) return false;
+      if (!jpVoiceReady) loadVoices();
+      return jpVoiceReady;
+    }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
