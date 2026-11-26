@@ -41,6 +41,7 @@
   --px-violet: #9b6cff;
   --px-violet-lt: #c9b2ff;
   --px-sakura: #ff9ec7;
+  --px-border-mid: #4a4290;
 
   /* Re-map style.css design tokens so every existing component recolors */
   --bg-obsidian: var(--px-night);
@@ -2193,4 +2194,197 @@ html[data-ui-scale="large"]   { zoom: 1.1; }
     flex: 1;
     min-width: 0;
   }
+}
+
+/* ----------------------------------------------------------------------------
+ * P27. 浸式刷題（Immersive Drill）
+ * ---------------------------------------------------------------------------- */
+.drill-content { display: flex; flex-direction: column; gap: 12px; }
+
+.drill-setup { display: flex; flex-direction: column; gap: 12px; }
+.drill-row { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.drill-row-label {
+  min-width: 3.5em;
+  padding-top: 6px;
+  color: var(--px-gold-lt);
+  font-family: var(--font-pixel);
+  font-size: 0.82rem;
+}
+.drill-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.drill-chip {
+  padding: 5px 10px;
+  background: var(--px-win-2);
+  color: var(--px-cream-dk);
+  border: 2px solid var(--px-border-mid);
+  box-shadow: 2px 2px 0 var(--px-ink);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.drill-chip:hover, .drill-chip:focus-visible { border-color: var(--px-gold); color: var(--px-cream); }
+.drill-chip.active {
+  background: var(--px-gold-dk);
+  color: var(--px-cream);
+  border-color: var(--px-gold);
+}
+.drill-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--px-cream-dk); }
+.drill-setup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 2px dashed var(--px-border-mid);
+}
+.drill-tip { font-size: 0.76rem; margin: 0; }
+.drill-tip kbd {
+  padding: 0 4px;
+  border: 1px solid var(--px-border-mid);
+  background: var(--px-win-2);
+  font-family: var(--font-pixel);
+}
+
+.drill-topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--px-cream-dk);
+}
+.drill-topbar strong { color: var(--px-gold-lt); }
+.drill-topbar .btn { margin-left: auto; }
+
+.drill-card { display: flex; flex-direction: column; gap: 10px; }
+.drill-q-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.drill-tts-btn { margin-left: auto; }
+.drill-q-zh { color: var(--px-cream-dk); font-size: 0.88rem; }
+.drill-q-jp { font-size: 1.15rem; line-height: 2; color: var(--px-cream); }
+.drill-options { display: grid; gap: 8px; }
+.drill-options.options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.drill-reorder-answer { color: var(--px-cream-dk); }
+
+.drill-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--px-night);
+  border: 2px solid var(--px-border-mid);
+}
+.drill-fb-head { font-family: var(--font-pixel); font-size: 0.95rem; }
+.drill-fb-head.is-ok { color: var(--px-green-lt); }
+.drill-fb-head.is-ng { color: var(--px-red-lt); }
+.drill-fb-answer { color: var(--px-gold-lt); }
+.drill-fb-jp { font-size: 1rem; line-height: 2; }
+.drill-fb-why, .drill-fb-exp { font-size: 0.85rem; color: var(--px-cream-dk); line-height: 1.6; }
+.drill-fb-why { border-left: 3px solid var(--px-red); padding-left: 8px; }
+
+.drill-summary { display: flex; flex-direction: column; gap: 12px; }
+.drill-summary h3 { margin: 0; color: var(--px-gold-lt); }
+.drill-summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.drill-summary-stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  background: var(--px-win-2);
+  border: 2px solid var(--px-border-mid);
+}
+.drill-summary-stats strong { font-size: 1.4rem; color: var(--px-gold-lt); }
+.drill-summary-stats span { font-size: 0.75rem; color: var(--px-cream-dk); }
+.drill-summary-sub { font-size: 0.85rem; color: var(--px-red-lt); }
+.drill-summary-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem; }
+.drill-summary-ans { margin-left: 6px; color: var(--px-gold-lt); }
+.drill-summary-perfect { margin: 0; color: var(--px-green-lt); }
+.drill-summary-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+@media (max-width: 640px) {
+  .drill-options.options-grid { grid-template-columns: 1fr; }
+  .drill-q-jp { font-size: 1.05rem; }
+}
+
+/* ----------------------------------------------------------------------------
+ * P28. FAQ 側邊抽屜（平常收成右側小標籤）
+ * ---------------------------------------------------------------------------- */
+.faq-tab {
+  position: fixed;
+  right: 0;
+  top: 42%;
+  z-index: 125;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 5px;
+  background: rgba(20, 18, 48, 0.9);
+  color: var(--px-cream-dk);
+  border: 2px solid var(--px-border-mid);
+  border-right: none;
+  box-shadow: -2px 2px 0 var(--px-ink);
+  font-family: var(--font-pixel);
+  font-size: 0.72rem;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.faq-tab:hover, .faq-tab:focus-visible, .faq-tab[aria-expanded="true"] {
+  opacity: 1;
+  color: var(--px-gold-lt);
+  border-color: var(--px-gold);
+}
+.faq-tab-label { writing-mode: vertical-rl; letter-spacing: 0.1em; }
+#app.view-battle-active .faq-tab { display: none; }
+
+.faq-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 140;
+  width: min(380px, 92vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--px-night);
+  border-left: 3px solid var(--px-gold-dk);
+  box-shadow: -4px 0 0 var(--px-ink);
+  transform: translateX(105%);
+  visibility: hidden;
+  transition: transform 0.2s ease, visibility 0s linear 0.2s;
+}
+.faq-drawer.open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.2s ease;
+}
+.faq-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 2px solid var(--px-border-mid);
+}
+.faq-head h3 { margin: 0; color: var(--px-gold-lt); font-size: 1rem; }
+.faq-body { flex: 1; overflow-y: auto; padding: 8px 14px 20px; }
+.faq-group {
+  margin: 14px 0 6px;
+  color: var(--px-gold);
+  font-family: var(--font-pixel);
+  font-size: 0.85rem;
+}
+.faq-item {
+  margin-bottom: 6px;
+  background: var(--px-win);
+  border: 2px solid var(--px-border-mid);
+}
+.faq-item summary {
+  padding: 8px 10px;
+  color: var(--px-cream);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.faq-item[open] summary { color: var(--px-gold-lt); border-bottom: 1px dashed var(--px-border-mid); }
+.faq-item p { margin: 0; padding: 8px 10px; font-size: 0.84rem; line-height: 1.65; color: var(--px-cream-dk); }
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-drawer, .faq-drawer.open { transition: none; }
 }

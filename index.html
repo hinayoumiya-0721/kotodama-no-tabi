@@ -127,6 +127,7 @@
       <button type="button" class="nav-btn" data-view="reading" data-group="adventure"><img class="px-icon" src="assets/icons/book.svg" alt="" aria-hidden="true" draggable="false"> 閱讀副本</button>
       <button type="button" class="nav-btn" data-view="shrine" data-group="adventure"><img class="px-icon" src="assets/icons/torii.svg" alt="" aria-hidden="true" draggable="false"> 試煉神殿</button>
       <button type="button" class="nav-btn" data-view="notes" data-group="training" id="nav-btn-notes"><img class="px-icon" src="assets/icons/check.svg" alt="" aria-hidden="true" draggable="false"> 錯題筆記 <span id="nav-notes-badge" class="nav-notes-badge hidden">0</span></button>
+      <button type="button" class="nav-btn" data-view="drill" data-group="training"><img class="px-icon" src="assets/icons/star.svg" alt="" aria-hidden="true" draggable="false"> 浸式刷題</button>
       <button type="button" class="nav-btn" data-view="skills" data-group="training"><img class="px-icon" src="assets/icons/sparkle.svg" alt="" aria-hidden="true" draggable="false"> 技能樹</button>
       <button type="button" class="nav-btn" data-view="character" data-group="traveler"><img class="px-icon" src="assets/icons/person.svg" alt="" aria-hidden="true" draggable="false"> 角色</button>
       <button type="button" class="nav-btn" data-view="inventory" data-group="traveler"><img class="px-icon" src="assets/icons/chest.svg" alt="" aria-hidden="true" draggable="false"> 背包</button>
@@ -689,6 +690,17 @@
         <div id="notes-list-container" class="notes-list-container"></div>
       </section>
 
+      <!-- 15. Immersive Drill (純浸式刷題): no HP, no rewards — just questions -->
+      <section id="view-drill" class="game-view" aria-label="浸式刷題">
+        <div class="view-header">
+          <div>
+            <h2>🎯 浸式刷題</h2>
+            <p class="view-subtitle">沒有血量、沒有計時，只管一題接一題。答錯的題目會自動收進錯題筆記。</p>
+          </div>
+        </div>
+        <div id="drill-content" class="drill-content"></div>
+      </section>
+
     </main>
 
     <!-- Modals -->
@@ -848,6 +860,88 @@
       <span class="bug-fab-icon" aria-hidden="true">🐞</span>
       <span class="bug-fab-label">回報</span>
     </button>
+
+    <!-- FAQ side drawer: a small edge tab; the drawer only opens when asked -->
+    <button id="btn-faq-toggle" type="button" class="faq-tab" aria-expanded="false" aria-controls="faq-drawer" title="常見問題 FAQ">
+      <span aria-hidden="true">📖</span><span class="faq-tab-label">FAQ</span>
+    </button>
+    <aside id="faq-drawer" class="faq-drawer" aria-label="常見問題 FAQ">
+      <div class="faq-head">
+        <h3>📖 冒險者 FAQ</h3>
+        <button id="btn-faq-close" type="button" class="btn-icon-close" aria-label="收起 FAQ">✕</button>
+      </div>
+      <div class="faq-body">
+        <h4 class="faq-group">⚔️ 戰鬥</h4>
+        <details class="faq-item">
+          <summary>怎麼攻擊？</summary>
+          <p>選出正確的日文就是攻擊。普通魔物大約答對 4 題、精英 6 題、首領 8 題就能擊倒；答錯會受到傷害，並跳出解說。</p>
+        </details>
+        <details class="faq-item">
+          <summary>速答和 FEVER 是什麼？</summary>
+          <p>題目上方有 10 秒倒數，時間內答對能削弱魔物護盾；連續答對 3 題會進入 FEVER，傷害與獎勵都會提升。</p>
+        </details>
+        <details class="faq-item">
+          <summary>破防卷軸怎麼用？</summary>
+          <p>戰鬥中使用，效果相當於答對 1 題的傷害。每場戰鬥限用 1 張，而且不會直接打倒魔物（至少留 1 HP）。</p>
+        </details>
+
+        <h4 class="faq-group">🧭 探索與冒險</h4>
+        <details class="faq-item">
+          <summary>安全小路和危險捷徑差在哪？</summary>
+          <p>安全小路：探索度 +10%，遇敵機率低。危險捷徑：探索度 +20%，幾乎都會遇敵，但獎勵 ×1.3。探索度 50% 會遇到精英，100% 可以挑戰區域首領。</p>
+        </details>
+        <details class="faq-item">
+          <summary>試煉神殿和閱讀副本是什麼？</summary>
+          <p>試煉神殿是限時的模擬考，依正確率評 S／A／B／C 並給經驗、金幣與稱號。閱讀副本是長文閱讀，練習找出關鍵句。兩者都在「冒險」選單裡。</p>
+        </details>
+
+        <h4 class="faq-group">📓 修練與複習</h4>
+        <details class="faq-item">
+          <summary>錯題筆記怎麼運作？</summary>
+          <p>答錯的題目會自動收進「修練 → 錯題筆記」，並依 1 → 3 → 7 天的間隔安排複習；到期時答對就往下一階推進，撐過最後一階會標記為「已掌握」。</p>
+        </details>
+        <details class="faq-item">
+          <summary>浸式刷題是什麼？</summary>
+          <p>在「修練 → 浸式刷題」可以不打怪、不計時，一題接一題地練。可依難度、題型、題數篩選，也能只練錯題。答錯一樣會收進錯題筆記，但不會給經驗或金幣。</p>
+        </details>
+        <details class="faq-item">
+          <summary>技能點（SP）要去哪裡用？</summary>
+          <p>每次升級會得到 SP，到「修練 → 技能樹」解鎖輔助技能。</p>
+        </details>
+
+        <h4 class="faq-group">🧑 角色與設定</h4>
+        <details class="faq-item">
+          <summary>可以換職業嗎？</summary>
+          <p>可以。到「旅人 → 角色」選擇其他職業即可切換，等級、裝備與學習進度都會保留，能力值會依新職業重新計算。戰鬥中和試煉進行中不能切換。</p>
+        </details>
+        <details class="faq-item">
+          <summary>假名太多／太少、題目太難／太簡單？</summary>
+          <p>頂部可切換「假名+中／無假名／全日文」；右上角 ⚙ 可以調整 N4～N1 的出題難度。</p>
+        </details>
+        <details class="faq-item">
+          <summary>畫面太大或太小？</summary>
+          <p>右上角 ⚙ 有「畫面大小」，可在 80%～110% 之間切換。</p>
+        </details>
+        <details class="faq-item">
+          <summary>朗讀沒有聲音？</summary>
+          <p>朗讀使用瀏覽器內建的日文語音。如果沒有聲音，請確認裝置有安裝日文語音（Windows：設定 → 時間與語言 → 語音）。題目朗讀時，空格與考點會念成「なになに」，避免直接洩漏答案。</p>
+        </details>
+
+        <h4 class="faq-group">💾 存檔與問題回報</h4>
+        <details class="faq-item">
+          <summary>進度會不見嗎？</summary>
+          <p>遊戲會自動存在這個瀏覽器裡（共 3 個欄位）。清除瀏覽器資料或換裝置會讀不到，建議偶爾到頂部「存檔」下載 .json 備份，換裝置時再匯入。</p>
+        </details>
+        <details class="faq-item">
+          <summary>遇到 Bug 怎麼辦？</summary>
+          <p>按左下角「🐞 回報」，會自動附上版本和目前畫面等診斷資訊（不含存檔與個人資料），可以複製到 Discord 或開 GitHub Issue。</p>
+        </details>
+        <details class="faq-item">
+          <summary>想再看一次新手教學？</summary>
+          <p>右上角 ⚙ →「❓ 玩法」可以重看重點，也能重新進行新手實戰。</p>
+        </details>
+      </div>
+    </aside>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container" aria-live="polite"></div>

@@ -496,7 +496,7 @@ test('uiScale: valid scales preserved, invalid values fall back to "normal", set
 
 test('bug report tool generates safe diagnostics, textContent preview, and valid GitHub Issue URL', () => {
   const diag = Game.collectBugReportDiagnostics();
-  assert.ok(diag.includes('版本：v1.5.5'));
+  assert.ok(diag.includes('版本：v1.6.0'));
   assert.ok(diag.includes('畫面：'));
   assert.ok(diag.includes('設定：'));
 
@@ -555,6 +555,50 @@ test('switchPlayerJob switches character idempotently, preserves HP/MP ratio & r
     maxHp: st.player.maxHp, maxMp: st.player.maxMp,
     baseINT: st.player.baseINT, baseWIS: st.player.baseWIS, baseCHA: st.player.baseCHA
   }, bardSnap);
+});
+
+test('drill: pool filters by JLPT/type/wrong-only; wrong answers go to notes; fixed rounds end', () => {
+  const st = Game.getState();
+  const all = Game.buildDrillPool({ jlpt: 'all', type: 'all', source: 'all' });
+  assert.strictEqual(all.length, 720);
+  const n4 = Game.buildDrillPool({ jlpt: 'N4', type: 'all', source: 'all' });
+  assert.ok(n4.length > 0 && n4.length < 720);
+  const reading = Game.buildDrillPool({ jlpt: 'all', type: 'reading', source: 'all' });
+  assert.ok(reading.length > 0 && reading.length < 720);
+
+  st.wrongNotes = {};
+  assert.strictEqual(Game.buildDrillPool({ source: 'wrong' }).length, 0);
+  assert.strictEqual(Game.startDrill({ source: 'wrong' }), false);
+
+  assert.strictEqual(Game.startDrill({ source: 'all', jlpt: 'N4', type: 'all', count: 10, autoNext: false }), true);
+  const d = Game.getDrillState();
+  assert.strictEqual(d.total, 10);
+  const q = d.current;
+  const wrongIdx = q.type === 'reorder' ? null : (q.answerIndex + 1) % q.options.length;
+  const wrongBefore = st.stats.totalWrong;
+  assert.strictEqual(Game.answerDrill(q.type === 'reorder' ? 'x' : wrongIdx), false);
+  assert.strictEqual(Game.answerDrill(0), null, 'cannot answer twice');
+  assert.strictEqual(st.stats.totalWrong, wrongBefore + 1);
+  assert.ok(st.wrongNotes[q.id], 'wrong answer recorded in notes');
+  same(Game.buildDrillPool({ source: 'wrong' }), [q.id]);
+
+  for (let i = 1; i < 10; i++) {
+    Game.nextDrillQuestion();
+    const cq = d.current;
+    Game.answerDrill(cq.type === 'reorder' ? cq.correctOrderPlain : cq.answerIndex);
+  }
+  assert.strictEqual(d.active, true);
+  Game.nextDrillQuestion();
+  assert.strictEqual(d.active, false);
+  assert.strictEqual(d.finished, true);
+  assert.strictEqual(d.results.length, 10);
+  assert.strictEqual(d.results.filter((r) => r.correct).length, 9);
+
+  // Retry only the wrong ones
+  assert.strictEqual(Game.startDrill(d.config, [q.id]), true);
+  assert.strictEqual(d.total, 1);
+  assert.strictEqual(d.current.id, q.id);
+  Game.finishDrill();
 });
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
