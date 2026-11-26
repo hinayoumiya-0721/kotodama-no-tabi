@@ -499,7 +499,7 @@ test('uiScale: valid scales preserved, invalid values fall back to "normal", set
 
 test('bug report tool generates safe diagnostics, textContent preview, and valid GitHub Issue URL', () => {
   const diag = Game.collectBugReportDiagnostics();
-  assert.ok(diag.includes('版本：v1.6.1'));
+  assert.ok(diag.includes('版本：v1.7.0'));
   assert.ok(diag.includes('畫面：'));
   assert.ok(diag.includes('設定：'));
 
