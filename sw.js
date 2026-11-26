@@ -5,7 +5,7 @@
  */
 
 // <precache> 由 tools/gen-sw-precache.js 產生，請勿手動編輯
-const CACHE_VERSION = 'e3dc8bb3ab49';
+const CACHE_VERSION = 'bfdf3c7d2f58';
 const PRECACHE = [
   "./",
   "assets/app/icon-180.png",

@@ -616,5 +616,90 @@ test('PWA: sw.js precache list matches the game files (run tools/gen-sw-precache
   manifest.icons.forEach((icon) => assert.ok(fs.existsSync(path.join(ROOT, icon.src)), `${icon.src} exists`));
 });
 
+console.log('\nachievement & toast consolidation');
+
+function withToastStub(fn) {
+  const container = {
+    children: [],
+    appendChild(el) {
+      el._parent = container;
+      container.children.push(el);
+    }
+  };
+  const prevGetById = ctx.document.getElementById;
+  const prevCreateEl = ctx.document.createElement;
+  ctx.document.getElementById = (id) => (id === 'toast-container' ? container : null);
+  ctx.document.createElement = () => {
+    const el = {
+      style: {},
+      classList: { add: () => {}, remove: () => {}, toggle: () => {} },
+      remove() {
+        const idx = container.children.indexOf(el);
+        if (idx >= 0) container.children.splice(idx, 1);
+      }
+    };
+    return el;
+  };
+  try {
+    fn(container);
+  } finally {
+    ctx.document.getElementById = prevGetById;
+    ctx.document.createElement = prevCreateEl;
+  }
+}
+
+test('single achievement emits 1 toast without duplicate title toast', () => {
+  // Import a fresh save so hasActiveSession is true
+  assert.strictEqual(Game.importSaveJsonCode(JSON.stringify({ player: { name: 'AchTester', level: 1, gold: 100, sp: 0 } }), { skipConfirm: true }), true);
+  const st = Game.getState();
+  st.achievements = [];
+  st.stats.battlesWon = 5; // triggers only ach_first_blood
+
+  withToastStub((container) => {
+    Game.checkAchievements();
+    assert.strictEqual(container.children.length, 1, 'should emit 1 toast instead of title + achievement');
+    assert.ok(container.children[0].className.includes('toast-achievement'));
+    assert.ok(container.children[0].textContent.includes('言靈初陣'));
+    assert.ok(container.children[0].textContent.includes('初陣劍士'));
+    assert.ok(st.achievements.includes('ach_first_blood'));
+    assert.ok(st.player.unlockedTitles.includes('初陣劍士'));
+    assert.strictEqual(st.player.gold, 220);
+    assert.strictEqual(st.player.sp, 1);
+  });
+});
+
+test('multiple simultaneous achievements consolidate into 1 toast with aggregated rewards', () => {
+  assert.strictEqual(Game.importSaveJsonCode(JSON.stringify({ player: { name: 'MultiAch', level: 1, gold: 0, sp: 0 } }), { skipConfirm: true }), true);
+  const st = Game.getState();
+  st.achievements = [];
+  st.stats.battlesWon = 5;       // ach_first_blood (+120G, +1SP, title)
+  st.stats.totalCorrect = 30;    // ach_scholar_path (+180G, +1SP, title)
+  st.stats.maxCombo = 10;        // ach_combo_master (+240G, +1SP, title)
+
+  withToastStub((container) => {
+    Game.checkAchievements();
+    assert.strictEqual(container.children.length, 1, '3 achievements must emit only 1 consolidated toast');
+    const msg = container.children[0].textContent;
+    assert.ok(msg.includes('連解 3 項成就'), `unexpected message: ${msg}`);
+    assert.ok(msg.includes('+540'), `expected aggregated gold +540 in: ${msg}`);
+    assert.ok(msg.includes('+3 SP'), `expected aggregated +3 SP in: ${msg}`);
+    assert.ok(msg.includes('稱號 ×3'), `expected title count in: ${msg}`);
+    assert.strictEqual(st.achievements.length, 3);
+    assert.strictEqual(st.player.gold, 540);
+    assert.strictEqual(st.player.sp, 3);
+  });
+});
+
+test('showToast caps simultaneous visible toasts at 2', () => {
+  withToastStub((container) => {
+    Game.showToast('t1', 'info');
+    Game.showToast('t2', 'info');
+    Game.showToast('t3', 'info');
+    assert.strictEqual(container.children.length, 2);
+    assert.strictEqual(container.children[0].textContent, 't2');
+    assert.strictEqual(container.children[1].textContent, 't3');
+  });
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
