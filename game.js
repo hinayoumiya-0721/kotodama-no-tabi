@@ -1914,11 +1914,11 @@
     return true;
   }
 
-  function grantTitle(titleStr) {
+  function grantTitle(titleStr, { silent = false } = {}) {
     if (!titleStr) return false;
     if (!state.player.unlockedTitles.includes(titleStr)) {
       state.player.unlockedTitles.push(titleStr);
-      showToast(`👑 解鎖新稱號：【${titleStr}】`, 'gold');
+      if (!silent) showToast(`👑 解鎖新稱號：【${titleStr}】`, 'gold');
       return true;
     }
     return false;
@@ -2467,19 +2467,45 @@
   // ============================================================================
   // 8. Toast & Modal Utilities
   // ============================================================================
+  const MAX_VISIBLE_TOASTS = 2;
+
   function showToast(message, type = 'info') {
     const container = $('toast-container');
     if (!container) return;
+
+    while (container.children && container.children.length >= MAX_VISIBLE_TOASTS) {
+      const oldest = container.children[0];
+      const prevLen = container.children.length;
+      if (oldest && typeof oldest.remove === 'function') oldest.remove();
+      else break;
+      if (container.children.length >= prevLen) break;
+    }
+
     const el = document.createElement('div');
     el.className = `toast-item toast-${type}`;
     el.textContent = String(message == null ? '' : message);
     container.appendChild(el);
-    setTimeout(() => {
+
+    let removed = false;
+    const removeEl = () => {
+      if (removed) return;
+      removed = true;
+      if (typeof el.remove === 'function') el.remove();
+    };
+    const timerId = setTimeout(() => {
+      if (removed) return;
       el.style.opacity = '0';
       el.style.transform = 'translateX(24px)';
       el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-      setTimeout(() => el.remove(), 260);
+      setTimeout(removeEl, 260);
     }, 3400);
+
+    if (typeof el.addEventListener === 'function') {
+      el.addEventListener('click', () => {
+        clearTimeout(timerId);
+        removeEl();
+      });
+    }
   }
 
   function openModal(id) {
@@ -8121,7 +8147,7 @@
       parts.push(`🎁 ${it ? it.name : rew.itemId}`);
     }
     if (rew.title) {
-      grantTitle(rew.title);
+      grantTitle(rew.title, { silent: true });
       parts.push(`👑 ${rew.title}`);
     }
 
@@ -8137,30 +8163,55 @@
   function checkAchievements() {
     if (!hasActiveSession) return;
     const list = getAchievements();
-    let anyNew = false;
+    const unlocked = [];
+    let totalGold = 0;
+    let totalExp = 0;
+    let totalSp = 0;
+    const newTitles = [];
 
     list.forEach((ach) => {
       if (state.achievements.includes(ach.id)) return;
       const prog = evaluateGoalProgress(ach);
-      if (prog.done) {
-        state.achievements.push(ach.id);
-        anyNew = true;
-        const rew = ach.rewards || ach.reward || {};
-        const notes = [];
-        if (rew.gold) { gainGold(rew.gold); notes.push(`🪙 +${rew.gold}`); }
-        if (rew.exp) { gainExp(rew.exp); notes.push(`⭐ +${rew.exp} EXP`); }
-        if (rew.sp) { state.player.sp += Number(rew.sp); notes.push(`✨ +${rew.sp} SP`); }
-        if (rew.title) { grantTitle(rew.title); notes.push(`👑 稱號「${rew.title}」`); }
+      if (!prog.done) return;
 
-        Audio.playSFX('levelup');
-        showToast(
-          `🏆 成就解鎖：【${ach.title || ach.name}】${notes.length ? `（${notes.join('、')}）` : ''}`,
-          'achievement'
-        );
+      state.achievements.push(ach.id);
+      unlocked.push(ach);
+      const rew = ach.rewards || ach.reward || {};
+      if (rew.gold) totalGold += gainGold(rew.gold);
+      if (rew.exp) totalExp += Math.max(0, Math.floor(Number(rew.exp) || 0));
+      if (rew.sp) {
+        const spAdd = Math.max(0, Math.floor(Number(rew.sp) || 0));
+        state.player.sp += spAdd;
+        totalSp += spAdd;
+      }
+      if (rew.title && grantTitle(rew.title, { silent: true })) {
+        newTitles.push(rew.title);
       }
     });
 
-    if (anyNew) autoSave();
+    if (unlocked.length === 0) return;
+
+    if (totalExp > 0) gainExp(totalExp);
+    Audio.playSFX('levelup');
+
+    const notes = [];
+    if (totalGold > 0) notes.push(`🪙 +${totalGold}`);
+    if (totalExp > 0) notes.push(`⭐ +${totalExp} EXP`);
+    if (totalSp > 0) notes.push(`✨ +${totalSp} SP`);
+    if (newTitles.length === 1) notes.push(`👑 稱號「${newTitles[0]}」`);
+    else if (newTitles.length > 1) notes.push(`👑 稱號 ×${newTitles.length}`);
+
+    const rewardSuffix = notes.length ? `（${notes.join('、')}）` : '';
+    if (unlocked.length === 1) {
+      const ach = unlocked[0];
+      showToast(`🏆 成就解鎖：【${ach.title || ach.name}】${rewardSuffix}`, 'achievement');
+    } else {
+      const names = unlocked.slice(0, 2).map((a) => `【${a.title || a.name}】`).join('、');
+      const more = unlocked.length > 2 ? ` 等 ${unlocked.length} 項` : '';
+      showToast(`🏆 連解 ${unlocked.length} 項成就：${names}${more}${rewardSuffix}`, 'achievement');
+    }
+
+    autoSave();
   }
 
   // ---- Codex (Bestiary, Achievements, Mistake Notebook) ----
