@@ -1846,3 +1846,104 @@ textarea {
   padding-bottom: 6px;
   border-bottom: 1px dashed var(--px-border-mid);
 }
+
+/* ----------------------------------------------------------------------------
+ * P25. In-Game UI Scale (4-step zoom) & Compact Desktop Density (>= 961px)
+ * ---------------------------------------------------------------------------- */
+html[data-ui-scale="compact"] { zoom: 0.8; }
+html[data-ui-scale="cozy"]    { zoom: 0.9; }
+html[data-ui-scale="normal"]  { zoom: 1; }
+html[data-ui-scale="large"]   { zoom: 1.1; }
+
+@supports not (zoom: 0.9) {
+  html[data-ui-scale="compact"] { font-size: 13.5px; }
+  html[data-ui-scale="cozy"]    { font-size: 14.5px; }
+  html[data-ui-scale="normal"]  { font-size: 16px; }
+  html[data-ui-scale="large"]   { font-size: 17.5px; }
+}
+
+.hud-scale-select {
+  min-width: 148px;
+}
+
+/* Tighter desktop proportions so Town/Battle fit in one 1080p laptop screen
+   (125%/150% OS display scaling) without cutting off dialogue choices.
+   Strictly scoped to >= 961px so mobile battle (--hud-h / 100dvh) stays untouched. */
+@media (min-width: 961px) {
+  .game-view {
+    max-width: 1040px;
+    padding: 12px 16px 76px;
+  }
+
+  #top-hud {
+    padding: 6px 14px;
+  }
+
+  .hud-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .view-header {
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+
+  .objective-bar {
+    padding: 7px 12px;
+    margin-bottom: 10px;
+  }
+
+  .panel-card {
+    padding: 14px 16px;
+  }
+
+  .town-layout {
+    grid-template-columns: 288px 1fr;
+    gap: 16px;
+  }
+
+  .town-npc-grid {
+    gap: 10px;
+  }
+
+  .npc-card-info {
+    padding: 16px 7px 6px;
+  }
+
+  .npc-card .npc-name {
+    font-size: 1.08rem;
+  }
+
+  .npc-card .npc-role {
+    font-size: 0.7rem;
+  }
+
+  #town-dialogue-panel {
+    padding: 14px 16px;
+  }
+
+  .dialogue-header {
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .dialogue-portrait {
+    width: 104px;
+    height: 112px;
+  }
+
+  .dialogue-speech-box {
+    padding: 12px 14px;
+    min-height: 82px;
+    margin-bottom: 10px;
+  }
+
+  .dialogue-choices {
+    gap: 8px;
+  }
+
+  .dialogue-choice-btn {
+    padding: 9px 14px 9px 22px;
+  }
+}

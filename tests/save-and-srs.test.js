@@ -469,5 +469,26 @@ test('buildSafeSaveFilename strips path/HTML/control characters and XSS payloads
   assert.strictEqual(s.player.activeTitle, '初醒的旅人');
 });
 
+test('uiScale: valid scales preserved, invalid values fall back to "normal", setUiScale updates html attribute', () => {
+  assert.strictEqual(def.settings.uiScale, 'normal');
+  assert.strictEqual(sanitize({ player: {}, settings: { uiScale: 'compact' } }).settings.uiScale, 'compact');
+  assert.strictEqual(sanitize({ player: {}, settings: { uiScale: 'cozy' } }).settings.uiScale, 'cozy');
+  assert.strictEqual(sanitize({ player: {}, settings: { uiScale: 'large' } }).settings.uiScale, 'large');
+  assert.strictEqual(sanitize({ player: {}, settings: { uiScale: '<script>' } }).settings.uiScale, 'normal');
+
+  const attrs = {};
+  const prevDocEl = ctx.document.documentElement;
+  ctx.document.documentElement = { setAttribute: (k, v) => { attrs[k] = v; } };
+  try {
+    assert.strictEqual(Game.setUiScale('compact', { silent: true }), 'compact');
+    assert.strictEqual(attrs['data-ui-scale'], 'compact');
+    assert.strictEqual(ctx.localStorage.getItem('kotodama_ui_scale'), 'compact');
+    assert.strictEqual(Game.setUiScale('invalid_zoom', { silent: true }), 'normal');
+    assert.strictEqual(attrs['data-ui-scale'], 'normal');
+  } finally {
+    ctx.document.documentElement = prevDocEl;
+  }
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
