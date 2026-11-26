@@ -5012,7 +5012,7 @@
   function formatBattleSpeedText(leftSec) {
     const isNarrow = typeof window !== 'undefined' && Number(window.innerWidth) > 0 && window.innerWidth <= 360;
     if (leftSec <= 0) {
-      return isNarrow ? '🧘 無加成' : '🧘 常速詠唱';
+      return isNarrow ? '🧘 無加成' : '🧘 無速答加成';
     }
     return isNarrow ? `⚡ ${leftSec.toFixed(1)}s` : `⚡ ${leftSec.toFixed(1)}s 速答`;
   }
