@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Regression tests for save-import hardening and SRS rules (QA v1.4 follow-ups).
- * Zero dependencies. Loads data.js + game.js in a Node VM with a minimal DOM stub
+ * Zero dependencies. Loads data.js + js/*.js (same order as index.html) in a Node VM with a minimal DOM stub
  * (document.readyState = 'loading', so Game.init() never runs).
  *
  *   node tests/save-and-srs.test.js
@@ -48,11 +48,14 @@ function loadGame() {
   context.window = context;
   context.globalThis = context;
   vm.createContext(context);
-  // Load the question bank parts in the same order as index.html, then data.js + game.js
+  // Load the scripts exactly as index.html does (question bank → data.js → js/*.js game modules).
+  // audio.js / svg_art.js need browser APIs and are left out; game code guards their absence.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const questionFiles = [...html.matchAll(/<script src="(data\/questions\/[^"]+\.js)"><\/script>/g)].map((m) => m[1]);
-  if (questionFiles.length === 0) throw new Error('no question bank scripts found in index.html');
-  for (const file of [...questionFiles, 'data.js', 'game.js']) {
+  const scripts = [...html.matchAll(/<script src="([^"]+\.js)"><\/script>/g)].map((m) => m[1]);
+  const files = scripts.filter((f) => f.startsWith('data/questions/') || f === 'data.js' || f.startsWith('js/'));
+  if (!files.some((f) => f.startsWith('data/questions/'))) throw new Error('no question bank scripts found in index.html');
+  if (!files.includes('js/main.js')) throw new Error('game modules (js/*.js) not found in index.html');
+  for (const file of files) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), context, { filename: file });
   }
   context.__objectProto = vm.runInContext("Object.prototype", context);
@@ -629,7 +632,7 @@ test('PWA: sw.js precache list matches the game files (run tools/gen-sw-precache
   const listed = JSON.parse(m[1]);
   const expected = buildPrecache().files;
   assert.deepStrictEqual(listed, expected);
-  ['./', 'index.html', 'game.js', 'data.js', 'manifest.webmanifest', 'assets/app/icon-192.png', 'data/questions/r1.js']
+  ['./', 'index.html', 'js/core.js', 'js/main.js', 'data.js', 'manifest.webmanifest', 'assets/app/icon-192.png', 'data/questions/r1.js']
     .forEach((f) => assert.ok(listed.includes(f), `${f} is precached`));
   assert.ok(!listed.some((f) => /^(tests|tools)\/|\.md$|_source|preview\.html$/.test(f)), 'no dev-only files');
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));

@@ -17,6 +17,7 @@ function isRuntimeFile(f) {
   if (f === 'index.html' || f === 'manifest.webmanifest') return true;
   if (/^[^/]+\.(js|css)$/.test(f)) return f !== 'sw.js';
   if (/^data\/questions\/[^/]+\.js$/.test(f)) return true;
+  if (/^js\/[^/]+\.js$/.test(f)) return true;
   if (f.startsWith('assets/')) {
     if (f.includes('/_source/')) return false;
     return /\.(png|webp|svg|jpg|jpeg|gif|mp3|ogg|wav)$/i.test(f);

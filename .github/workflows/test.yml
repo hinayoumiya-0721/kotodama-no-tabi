@@ -26,7 +26,7 @@ jobs:
       - name: Syntax check (all JS)
         run: |
           set -e
-          for f in *.js data/questions/*.js tools/*.js tests/*.js; do
+          for f in *.js js/*.js data/questions/*.js tools/*.js tests/*.js; do
             node --check "$f"
           done
 
