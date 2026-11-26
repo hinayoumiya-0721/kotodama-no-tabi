@@ -10,6 +10,35 @@
   // ============================================================================
   // 1. Constants & Storage Keys
   // ============================================================================
+  const APP_VERSION = 'v1.5.5';
+  const GITHUB_REPO_ISSUES_URL = 'https://github.com/hinayoumiya-0721/kotodama-no-tabi/issues/new';
+  const RECENT_ERROR_LIMIT = 5;
+  const recentRuntimeErrors = [];
+
+  function recordRuntimeError(rawMsg) {
+    const msg = String(rawMsg || '').replace(/[\x00-\x1f\x7f]/g, ' ').trim().slice(0, 160);
+    if (!msg) return;
+    recentRuntimeErrors.push({
+      time: new Date().toTimeString().slice(0, 8),
+      message: msg
+    });
+    if (recentRuntimeErrors.length > RECENT_ERROR_LIMIT) {
+      recentRuntimeErrors.shift();
+    }
+  }
+
+  if (typeof global !== 'undefined' && typeof global.addEventListener === 'function') {
+    global.addEventListener('error', (e) => {
+      if (e && (e.message || (e.error && e.error.message))) {
+        recordRuntimeError(e.message || e.error.message);
+      }
+    });
+    global.addEventListener('unhandledrejection', (e) => {
+      const r = e && e.reason;
+      recordRuntimeError(r && r.message ? r.message : String(r || 'Unhandled promise rejection'));
+    });
+  }
+
   const SAVE_VERSION = 1;
   const SAVE_KEYS = {
     auto: 'kotodama_save_auto',
@@ -8345,6 +8374,126 @@
   }
 
   // ============================================================================
+  // 17b. Corner Bug Report & Diagnostics Helper
+  // ============================================================================
+  function collectBugReportDiagnostics() {
+    const st = state || {};
+    const pr = st.progress || {};
+    const sets = st.settings || {};
+    const p = st.player || {};
+    const lines = [];
+    lines.push(`版本：${APP_VERSION}`);
+    lines.push(`畫面：${currentView || 'unknown'}${pr.currentRegionId ? `（區域 ${pr.currentRegionId}）` : ''}`);
+
+    if (battle && battle.active) {
+      const q = battle.currentQ;
+      const qInfo = q ? `${q.id || '?'} [${q.jlpt || '?'}/${q.type || '?'}]` : '無';
+      const eInfo = battle.enemy ? `${battle.enemy.id || battle.enemy.name || '?'}` : '無';
+      lines.push(`戰鬥中：題目 ${qInfo}｜敵人 ${eInfo}`);
+    } else if (reading && reading.active && reading.doc) {
+      lines.push(`閱讀副本中：${reading.doc.id || '?'}`);
+    } else if (shrine && shrine.active) {
+      const curQ = Array.isArray(shrine.questions) ? shrine.questions[shrine.index] : null;
+      lines.push(`試煉神殿中：題目 ${curQ ? (curQ.id || '?') : '?'}`);
+    }
+
+    lines.push(`設定：難度=${sets.difficultyMode || 'adaptive'}｜沉浸=${sets.immersionMode || 'standard'}｜縮放=${sets.uiScale || 'normal'}`);
+    lines.push(hasActiveSession
+      ? `進度：職業=${p.jobId || '?'}｜Lv.${p.level || 1}｜教學=${pr.tutorialStep}`
+      : '進度：尚未進入存檔');
+
+    const w = typeof window !== 'undefined' ? window.innerWidth : 0;
+    const h = typeof window !== 'undefined' ? window.innerHeight : 0;
+    const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Number(window.devicePixelRatio).toFixed(2) : '1';
+    const ua = typeof navigator !== 'undefined' && navigator.userAgent ? String(navigator.userAgent).slice(0, 100) : 'N/A';
+    lines.push(`環境：視窗 ${w}x${h} (DPR ${dpr})`);
+    lines.push(`UA：${ua}`);
+
+    if (recentRuntimeErrors.length > 0) {
+      lines.push('最近錯誤：');
+      recentRuntimeErrors.forEach((err) => {
+        lines.push(`  - [${err.time}] ${err.message}`);
+      });
+    } else {
+      lines.push('最近錯誤：（無）');
+    }
+    return lines.join('\n');
+  }
+
+  function buildBugReportText({ category = '功能異常 / 卡住', description = '' } = {}) {
+    const cleanCat = String(category || '功能異常 / 卡住').trim().slice(0, 40);
+    const cleanDesc = String(description || '').trim().slice(0, 1000) || '（未填寫文字描述）';
+    const diag = collectBugReportDiagnostics();
+    return [
+      `【言霊の旅 問題回報】`,
+      `類型：${cleanCat}`,
+      '',
+      '問題說明：',
+      cleanDesc,
+      '',
+      '--- 診斷資訊 ---',
+      diag
+    ].join('\n');
+  }
+
+  function buildGithubIssueUrl({ category = '功能異常 / 卡住', description = '' } = {}) {
+    const cleanCat = String(category || '功能異常 / 卡住').trim().slice(0, 40);
+    const firstLine = String(description || '').trim().split(/\r?\n/)[0].slice(0, 45);
+    const title = `[${cleanCat}] ${firstLine || `${currentView || '遊戲'} 問題回報 (${APP_VERSION})`}`;
+    let body = buildBugReportText({ category: cleanCat, description });
+    if (body.length > 1600) {
+      body = `${body.slice(0, 1590)}\n…(已截斷)`;
+    }
+    return `${GITHUB_REPO_ISSUES_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  }
+
+  function openBugReportModal() {
+    const diagEl = $('bug-report-diag');
+    if (diagEl) {
+      diagEl.textContent = collectBugReportDiagnostics();
+    }
+    openModal('modal-bug-report');
+  }
+
+  function copyBugReportToClipboard() {
+    const cat = $('bug-report-category') ? $('bug-report-category').value : '功能異常 / 卡住';
+    const desc = $('bug-report-desc') ? $('bug-report-desc').value : '';
+    const text = buildBugReportText({ category: cat, description: desc });
+
+    const done = () => {
+      Audio.playSFX('confirm');
+      showToast('📋 已複製問題回報內容，可以直接貼給作者或 Discord！', 'success');
+    };
+
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(text).then(done, () => fallbackCopyText(text, done));
+        return text;
+      }
+    } catch (_) {}
+
+    fallbackCopyText(text, done);
+    return text;
+  }
+
+  function fallbackCopyText(text, onSuccess) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (typeof onSuccess === 'function') onSuccess();
+    } catch (_) {
+      showToast('⚠️ 無法自動複製，請手動選取下方診斷資訊複製。', 'warning');
+    }
+  }
+
+  // ============================================================================
   // 18. Discreet Corner Dev / Test Tool
   // ============================================================================
   function ensureSessionForDev() {
@@ -8740,6 +8889,33 @@
 
     if ($('btn-shop-close')) $('btn-shop-close').addEventListener('click', () => { Audio.playSFX('click'); closeModal('modal-shop'); });
     if ($('btn-save-close')) $('btn-save-close').addEventListener('click', () => { Audio.playSFX('click'); clearSaveTransferInputs(); closeModal('modal-save'); });
+    if ($('btn-bug-report')) {
+      $('btn-bug-report').addEventListener('click', () => {
+        Audio.playSFX('click');
+        openBugReportModal();
+      });
+    }
+    if ($('btn-bug-report-close')) {
+      $('btn-bug-report-close').addEventListener('click', () => {
+        Audio.playSFX('click');
+        closeModal('modal-bug-report');
+      });
+    }
+    if ($('btn-bug-copy')) {
+      $('btn-bug-copy').addEventListener('click', () => copyBugReportToClipboard());
+    }
+    if ($('btn-bug-github')) {
+      $('btn-bug-github').addEventListener('click', () => {
+        const cat = $('bug-report-category') ? $('bug-report-category').value : '功能異常 / 卡住';
+        const desc = $('bug-report-desc') ? $('bug-report-desc').value : '';
+        const url = buildGithubIssueUrl({ category: cat, description: desc });
+        Audio.playSFX('confirm');
+        try {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        } catch (_) {}
+        showToast('🐙 已在新分頁開啟 GitHub Issue，送出前可再補充細節！', 'info');
+      });
+    }
     if ($('btn-tutorial-close')) {
       $('btn-tutorial-close').addEventListener('click', () => {
         Audio.playSFX('click');
@@ -8758,7 +8934,7 @@
     }
 
     // Backdrop click closes ONLY non-mandatory modals (never #modal-explain!)
-    ['modal-shop', 'modal-save', 'modal-generic', 'modal-tutorial'].forEach((mid) => {
+    ['modal-shop', 'modal-save', 'modal-generic', 'modal-tutorial', 'modal-bug-report'].forEach((mid) => {
       const overlay = $(mid);
       if (!overlay) return;
       overlay.addEventListener('click', (e) => {
@@ -8956,6 +9132,10 @@
     setTutorialStep,
     setUiScale,
     applyUiScaleSetting,
+    collectBugReportDiagnostics,
+    buildBugReportText,
+    buildGithubIssueUrl,
+    openBugReportModal,
     applyMobileHudCollapseState
   };
 

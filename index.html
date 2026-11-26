@@ -802,6 +802,46 @@
       </div>
     </div>
 
+    <!-- 6. Corner Bug Report & Feedback Modal -->
+    <div id="modal-bug-report" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bug-report-modal-title">
+      <div class="modal-dialog modal-bug-dialog">
+        <div class="modal-header">
+          <h3 id="bug-report-modal-title">🐞 問題回報與建議</h3>
+          <button id="btn-bug-report-close" type="button" class="btn-icon-close" aria-label="關閉回報視窗">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint">系統會自動附帶目前版本、畫面、題目編號與錯誤紀錄（不含個資），方便快速重現修正。</p>
+          <div class="bug-report-field">
+            <label for="bug-report-category" class="bug-report-label">問題類型</label>
+            <select id="bug-report-category" class="bug-report-select">
+              <option value="功能異常 / 卡住">🐛 功能異常 / 卡住</option>
+              <option value="畫面 / 排版問題">📐 畫面 / 排版問題</option>
+              <option value="題目 / 日文勘誤">📖 題目 / 日文勘誤</option>
+              <option value="體驗建議 / 其他">💡 體驗建議 / 其他</option>
+            </select>
+          </div>
+          <div class="bug-report-field">
+            <label for="bug-report-desc" class="bug-report-label">情況說明（選填）</label>
+            <textarea id="bug-report-desc" class="bug-report-textarea" rows="4" maxlength="1000" placeholder="簡述你遇到的狀況（例如：在哪個畫面點了什麼、哪一題讀音或翻譯怪怪的）…"></textarea>
+          </div>
+          <details id="bug-report-diag-details" class="bug-report-diag-details" open>
+            <summary class="bug-report-diag-summary">🔎 自動附帶的診斷資訊</summary>
+            <pre id="bug-report-diag" class="bug-report-diag"></pre>
+          </details>
+        </div>
+        <div class="modal-footer bug-report-footer">
+          <button id="btn-bug-copy" type="button" class="btn btn-primary">📋 複製回報（貼 Discord）</button>
+          <button id="btn-bug-github" type="button" class="btn btn-gold">🐙 開啟 GitHub Issue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Discreet Corner Bug Report Button -->
+    <button id="btn-bug-report" type="button" class="bug-report-fab" title="回報 Bug 或提供建議" aria-label="回報 Bug">
+      <span class="bug-fab-icon" aria-hidden="true">🐞</span>
+      <span class="bug-fab-label">回報</span>
+    </button>
+
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
