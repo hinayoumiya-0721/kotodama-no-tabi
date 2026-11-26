@@ -48,7 +48,11 @@ function loadGame() {
   context.window = context;
   context.globalThis = context;
   vm.createContext(context);
-  for (const file of ['data.js', 'game.js']) {
+  // Load the question bank parts in the same order as index.html, then data.js + game.js
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const questionFiles = [...html.matchAll(/<script src="(data\/questions\/[^"]+\.js)"><\/script>/g)].map((m) => m[1]);
+  if (questionFiles.length === 0) throw new Error('no question bank scripts found in index.html');
+  for (const file of [...questionFiles, 'data.js', 'game.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), context, { filename: file });
   }
   context.__objectProto = vm.runInContext("Object.prototype", context);

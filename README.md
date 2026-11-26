@@ -87,7 +87,8 @@ node tools/gen-pixel-icons.js
 ```
 index.html            主頁面
 game.js               遊戲邏輯（戰鬥、探索、任務、SRS、存檔）
-data.js               題庫、區域、敵人、道具、NPC 等資料
+data.js               區域、敵人、道具、NPC 等資料（組裝題庫）
+data/questions/       題庫（依區域 r1–r6 ＋ JLPT 模擬題 N3/N2/N1 分檔）
 style.css             基礎版面與響應式排版
 pixel-theme.css       16-bit 像素風主題（載入在 style.css 之後）
 audio.js              Web Audio 音效與語音朗讀
