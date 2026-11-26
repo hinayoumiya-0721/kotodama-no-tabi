@@ -191,6 +191,14 @@
   }
 
   const IMMERSION_MODES = ['standard', 'advanced', 'immersion'];
+  const UI_SCALE_STORAGE_KEY = 'kotodama_ui_scale';
+  const UI_SCALE_MODES = ['compact', 'cozy', 'normal', 'large'];
+  const UI_SCALE_LABELS = {
+    compact: '精巧 80%',
+    cozy: '適中 90%',
+    normal: '標準 100%',
+    large: '放大 110%'
+  };
 
   const DAILY_TRAINING_DEFS = [
     {
@@ -1173,7 +1181,8 @@
         furigana: true,
         immersionMode: 'standard',
         difficultyMode: 'adaptive',
-        adaptiveStartJlpt: 'N4'
+        adaptiveStartJlpt: 'N4',
+        uiScale: 'normal'
       }
     };
   }
@@ -1483,6 +1492,9 @@
       ? rset.difficultyMode
       : 'adaptive';
     out.settings.adaptiveStartJlpt = rset.adaptiveStartJlpt === 'N3' ? 'N3' : 'N4';
+    out.settings.uiScale = typeof rset.uiScale === 'string' && UI_SCALE_MODES.includes(rset.uiScale)
+      ? rset.uiScale
+      : 'normal';
 
     // Clamp HP/MP to actual derived max
     const derived = computeTotalStatsFor(out);
@@ -1682,6 +1694,7 @@
     stopBattleTimers();
     stopShrineTimer();
     applyFuriganaSetting();
+    applyUiScaleSetting();
     closeModal('modal-save');
     closeModal('modal-tutorial');
     Audio.playSFX('confirm');
@@ -2769,6 +2782,51 @@
     return nextMode;
   }
 
+  function getSavedUiScalePreference() {
+    try {
+      const v = localStorage.getItem(UI_SCALE_STORAGE_KEY);
+      if (v && UI_SCALE_MODES.includes(v)) return v;
+    } catch (_) {}
+    return 'normal';
+  }
+
+  function applyUiScaleSetting(overrideScale = null) {
+    let scale = overrideScale;
+    if (!UI_SCALE_MODES.includes(scale)) {
+      scale = hasActiveSession && state && state.settings && UI_SCALE_MODES.includes(state.settings.uiScale)
+        ? state.settings.uiScale
+        : getSavedUiScalePreference();
+    }
+    if (!UI_SCALE_MODES.includes(scale)) scale = 'normal';
+    if (state && state.settings) {
+      state.settings.uiScale = scale;
+    }
+    if (typeof document !== 'undefined' && document.documentElement) {
+      document.documentElement.setAttribute('data-ui-scale', scale);
+    }
+    const sel = $('hud-ui-scale-select');
+    if (sel && sel.value !== scale) {
+      sel.value = scale;
+    }
+    try {
+      localStorage.setItem(UI_SCALE_STORAGE_KEY, scale);
+    } catch (_) {}
+    return scale;
+  }
+
+  function setUiScale(scale, options = {}) {
+    const next = UI_SCALE_MODES.includes(scale) ? scale : 'normal';
+    if (state && state.settings) {
+      state.settings.uiScale = next;
+    }
+    applyUiScaleSetting(next);
+    if (hasActiveSession) autoSave();
+    if (!options.silent) {
+      showToast(`🔍 畫面大小已調整為【${UI_SCALE_LABELS[next] || next}】`, 'info');
+    }
+    return next;
+  }
+
   function applyMobileHudCollapseState() {
     const hud = $('top-hud');
     const toggleBtn = $('btn-hud-collapse-toggle');
@@ -2924,6 +2982,7 @@
 
     applyMobileHudCollapseState();
     applyFuriganaSetting();
+    applyUiScaleSetting();
     syncAudioButtons();
     syncDifficultyControls();
     updateNavMistakeBadge();
@@ -3239,6 +3298,7 @@
     state.player.equipment.weapon = starterWeapon;
     state.settings.difficultyMode = getDifficultyModeConfig(createSelectedDifficultyMode).id;
     state.settings.adaptiveStartJlpt = createAdaptiveStartJlpt === 'N3' ? 'N3' : 'N4';
+    state.settings.uiScale = getSavedUiScalePreference();
     state.progress.tutorialStep = 0;
 
     // Ensure full derived HP/MP including starter weapon bonus
@@ -8269,6 +8329,7 @@
 
     clearSaveTransferInputs();
     applyFuriganaSetting();
+    applyUiScaleSetting();
     updateHUD();
     closeModal('modal-save');
     closeModal('modal-tutorial');
@@ -8398,6 +8459,12 @@
       $('hud-difficulty-select').addEventListener('change', (e) => {
         Audio.playSFX('click');
         setDifficultyMode(e.target.value, { refreshCurrentBattleQuestion: true });
+      });
+    }
+    if ($('hud-ui-scale-select')) {
+      $('hud-ui-scale-select').addEventListener('change', (e) => {
+        Audio.playSFX('click');
+        setUiScale(e.target.value);
       });
     }
     if ($('btn-open-save')) {
@@ -8819,6 +8886,7 @@
     }
     applyMobileHudCollapseState();
     applyFuriganaSetting();
+    applyUiScaleSetting();
     syncAudioButtons();
     syncDifficultyControls();
     switchView('title');
@@ -8886,6 +8954,8 @@
     openKotohaModal,
     getTutorialStep,
     setTutorialStep,
+    setUiScale,
+    applyUiScaleSetting,
     applyMobileHudCollapseState
   };
 
