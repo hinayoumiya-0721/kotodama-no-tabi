@@ -6860,6 +6860,65 @@
   // ============================================================================
   // 16. Character, Skill Tree, Inventory, Quests & Codex
   // ============================================================================
+  function getExpectedJobStatsAtLevel(job, level) {
+    const base = getJobBaseStats(job);
+    const growth = getJobGrowth(job);
+    const steps = Math.max(0, Math.floor(safeNum(level) || 1) - 1);
+    return {
+      maxHp: base.hp + growth.hp * steps,
+      maxMp: base.mp + growth.mp * steps,
+      baseINT: base.INT + growth.INT * steps,
+      baseWIS: base.WIS + growth.WIS * steps,
+      baseCHA: base.CHA + growth.CHA * steps
+    };
+  }
+
+  function switchPlayerJob(targetJobId, options = {}) {
+    if (!state || !state.player) return false;
+    if (battle && battle.active) {
+      if (!options.silent) showToast('⚔️ 戰鬥中無法切換角色，請等戰鬥結束後再切換。', 'warning');
+      return false;
+    }
+    if (shrine && shrine.active) {
+      if (!options.silent) showToast('⛩️ 試煉進行中無法切換角色。', 'warning');
+      return false;
+    }
+    const jobs = getJobs();
+    const nextJob = jobs.find((j) => j.id === targetJobId);
+    if (!nextJob) return false;
+    if (state.player.jobId === nextJob.id) return false;
+
+    const p = state.player;
+    const prevJob = getJobById(p.jobId);
+    const prevTotal = getTotalStats();
+    const hpRatio = prevTotal.maxHp > 0 ? clamp(p.hp / prevTotal.maxHp, 0, 1) : 1;
+    const mpRatio = prevTotal.maxMp > 0 ? clamp(p.mp / prevTotal.maxMp, 0, 1) : 1;
+
+    const oldExp = getExpectedJobStatsAtLevel(prevJob, p.level);
+    const newExp = getExpectedJobStatsAtLevel(nextJob, p.level);
+
+    // Preserve any bonus stats above baseline while recalculating job stats idempotently
+    p.jobId = nextJob.id;
+    p.maxHp = Math.max(30, newExp.maxHp + Math.max(0, p.maxHp - oldExp.maxHp));
+    p.maxMp = Math.max(20, newExp.maxMp + Math.max(0, p.maxMp - oldExp.maxMp));
+    p.baseINT = Math.max(1, newExp.baseINT + Math.max(0, p.baseINT - oldExp.baseINT));
+    p.baseWIS = Math.max(1, newExp.baseWIS + Math.max(0, p.baseWIS - oldExp.baseWIS));
+    p.baseCHA = Math.max(1, newExp.baseCHA + Math.max(0, p.baseCHA - oldExp.baseCHA));
+
+    const nextTotal = getTotalStats();
+    p.hp = clamp(Math.round(nextTotal.maxHp * hpRatio), 1, nextTotal.maxHp);
+    p.mp = clamp(Math.round(nextTotal.maxMp * mpRatio), 0, nextTotal.maxMp);
+
+    if (hasActiveSession) autoSave();
+    updateHUD();
+    if (currentView === 'character') renderCharacter();
+    if (!options.silent) {
+      Audio.playSFX('confirm');
+      showToast(`🔄 已切換角色為【${nextJob.name}】！（等級、裝備與學習進度完整保留）`, 'gold');
+    }
+    return true;
+  }
+
   function renderCharacter() {
     const p = state.player;
     const job = getJobById(p.jobId);
@@ -6887,6 +6946,34 @@
         <div class="text-muted" style="font-size:0.82rem;">EXP ${p.exp} / ${p.nextExp}</div>
         <div class="text-gold" style="font-size:0.78rem;margin-top:6px;line-height:1.45;font-style:italic;">${escapeHtml(titleFlavor)}</div>
       `;
+    }
+
+    const jobSwitcherEl = $('char-job-switcher');
+    if (jobSwitcherEl) {
+      const jobs = getJobs();
+      jobSwitcherEl.innerHTML = jobs.map((j) => {
+        const active = j.id === p.jobId;
+        const preview = getExpectedJobStatsAtLevel(j, p.level);
+        return `
+          <button type="button" class="char-job-option ${active ? 'active' : ''}" data-switch-job="${escapeHtml(j.id)}" aria-pressed="${active ? 'true' : 'false'}">
+            <div class="char-job-option-art">${Art.hero(j.id, active ? 'victory' : 'idle')}</div>
+            <div class="char-job-option-meta">
+              <div class="char-job-option-name">${escapeHtml(j.name)}</div>
+              <div class="char-job-option-focus">${escapeHtml(j.focus || j.title || '')}</div>
+              <div class="text-cyan" style="font-size:0.7rem;margin-top:2px;">INT ${preview.baseINT} · WIS ${preview.baseWIS} · CHA ${preview.baseCHA}</div>
+            </div>
+            <span class="char-job-option-badge">${active ? '✔ 使用中' : '切換'}</span>
+          </button>
+        `;
+      }).join('');
+
+      jobSwitcherEl.querySelectorAll('[data-switch-job]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const jid = btn.getAttribute('data-switch-job');
+          if (!jid || jid === state.player.jobId) return;
+          switchPlayerJob(jid);
+        });
+      });
     }
 
     const titleSelect = $('char-title-select');
@@ -9136,6 +9223,7 @@
     buildBugReportText,
     buildGithubIssueUrl,
     openBugReportModal,
+    switchPlayerJob,
     applyMobileHudCollapseState
   };
 

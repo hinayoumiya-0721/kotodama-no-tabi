@@ -516,5 +516,42 @@ test('bug report tool generates safe diagnostics, textContent preview, and valid
   }
 });
 
+test('switchPlayerJob switches character idempotently, preserves HP/MP ratio & rejects unknown jobs', () => {
+  const st = Game.getState();
+  st.player.jobId = 'swordsman';
+  st.player.level = 5;
+  st.player.gold = 999;
+  st.player.equipment = { weapon: 'wp_wood_blade', armor: null, accessory: null };
+  // Set baseline stats for Lv.5 swordsman by bouncing through bard -> swordsman
+  assert.strictEqual(Game.switchPlayerJob('invalid_job', { silent: true }), false);
+  assert.strictEqual(Game.switchPlayerJob('swordsman', { silent: true }), false);
+
+  assert.strictEqual(Game.switchPlayerJob('bard', { silent: true }), true);
+  assert.strictEqual(st.player.jobId, 'bard');
+  const bardSnap = {
+    maxHp: st.player.maxHp, maxMp: st.player.maxMp,
+    baseINT: st.player.baseINT, baseWIS: st.player.baseWIS, baseCHA: st.player.baseCHA
+  };
+
+  // Set HP to half before switching so we verify ratio is preserved (no free full-heal exploit)
+  const totalBefore = Game.getTotalStats();
+  st.player.hp = Math.floor(totalBefore.maxHp / 2);
+
+  assert.strictEqual(Game.switchPlayerJob('scholar', { silent: true }), true);
+  assert.strictEqual(st.player.jobId, 'scholar');
+  assert.strictEqual(st.player.level, 5);
+  assert.strictEqual(st.player.gold, 999);
+  assert.strictEqual(st.player.equipment.weapon, 'wp_wood_blade');
+  const totalAfter = Game.getTotalStats();
+  assert.ok(st.player.hp <= Math.ceil(totalAfter.maxHp * 0.55) && st.player.hp >= Math.floor(totalAfter.maxHp * 0.45), 'HP ratio preserved');
+
+  // Switching back to bard reproduces identical base stats (idempotent)
+  assert.strictEqual(Game.switchPlayerJob('bard', { silent: true }), true);
+  same({
+    maxHp: st.player.maxHp, maxMp: st.player.maxMp,
+    baseINT: st.player.baseINT, baseWIS: st.player.baseWIS, baseCHA: st.player.baseCHA
+  }, bardSnap);
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
