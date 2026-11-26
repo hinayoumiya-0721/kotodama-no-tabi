@@ -396,6 +396,22 @@
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
   }
 
+  // QA S-2: objects such as {"toString":1} make Number()/String() throw. These helpers only
+  // accept real numbers / strings, so a corrupted save can never crash boot or loading.
+  function safeNum(v) {
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') return Number(v);
+    return NaN;
+  }
+  // QA S-3: imported lists are capped so a huge save cannot freeze the game or fill localStorage.
+  const SAVE_LIST_MAX = 2000;
+  const IMPORT_MAX_CHARS = 1000000;
+  function toStrList(arr) {
+    return Array.isArray(arr)
+      ? arr.filter((x) => typeof x === 'string' || typeof x === 'number').slice(0, SAVE_LIST_MAX).map(String)
+      : [];
+  }
+
   // Upper bounds for imported counters / item stacks (keeps numbers sane, never Infinity)
   const COUNTER_MAX = 1e7;
   const INVENTORY_QTY_MAX = 9999;
@@ -439,12 +455,29 @@
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
+  // QA L-2: the daily date used to be checked only in sanitizeSaveData (on load), so a game left
+  // open past midnight kept yesterday's progress and claims. Every daily read/write now calls this.
+  function ensureDailyQuestsFresh() {
+    if (!state || !state.quests) return;
+    const today = getTodayStr();
+    if (state.quests.dailyDate === today) return;
+    state.quests.dailyDate = today;
+    state.quests.dailyProgress = { win_battles: 0, correct_answers: 0, npc_talk: 0, complete_shrine: 0, reach_fever: 0 };
+    const dailyIds = new Set(getQuests().filter((q) => (q.type || q.category) === 'daily').map((q) => q.id));
+    state.quests.claimedIds = (state.quests.claimedIds || []).filter((id) => !dailyIds.has(id));
+  }
+
+  function getDailyProgress() {
+    ensureDailyQuestsFresh();
+    return state.quests.dailyProgress;
+  }
+
 
   function formatTimestamp(iso) {
     if (!iso) return '未知時間';
     try {
       const d = new Date(iso);
-      if (isNaN(d.getTime())) return String(iso);
+      if (isNaN(d.getTime())) return '未知時間';
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
@@ -452,7 +485,7 @@
       const mm = String(d.getMinutes()).padStart(2, '0');
       return `${y}/${m}/${day} ${hh}:${mm}`;
     } catch (_) {
-      return String(iso);
+      return '未知時間';
     }
   }
 
@@ -1234,15 +1267,15 @@
 
     const renh = rp.enhancements && typeof rp.enhancements === 'object' ? rp.enhancements : {};
     out.player.enhancements = {};
-    safeOwnKeys(renh).forEach((k) => {
-      out.player.enhancements[k] = clamp(Math.floor(Number(renh[k]) || 0), 0, 5);
+    safeOwnKeys(renh).filter((k) => getItemById(k)).slice(0, SAVE_LIST_MAX).forEach((k) => {
+      out.player.enhancements[k] = clamp(Math.floor(safeNum(renh[k]) || 0), 0, 5);
     });
 
     // Inventory
     if (Array.isArray(raw.inventory)) {
       const merged = new Map();
-      raw.inventory.forEach((entry) => {
-        if (entry && typeof entry.id === 'string' && entry.id && !UNSAFE_OBJECT_KEYS.has(entry.id)) {
+      raw.inventory.slice(0, SAVE_LIST_MAX).forEach((entry) => {
+        if (entry && typeof entry.id === 'string' && entry.id && !UNSAFE_OBJECT_KEYS.has(entry.id) && getItemById(entry.id)) {
           const qty = toSafeInt(entry.qty, 0, 0, INVENTORY_QTY_MAX);
           if (qty > 0) merged.set(entry.id, Math.min(INVENTORY_QTY_MAX, (merged.get(entry.id) || 0) + qty));
         }
@@ -1253,7 +1286,7 @@
     // Skills
     const rsk = raw.skills && typeof raw.skills === 'object' ? raw.skills : {};
     SKILL_IDS.forEach((sid) => {
-      out.skills[sid] = clamp(Math.floor(Number(rsk[sid]) || 0), 0, 3);
+      out.skills[sid] = clamp(Math.floor(safeNum(rsk[sid]) || 0), 0, 3);
     });
 
     // Progress
@@ -1264,17 +1297,17 @@
       : 'r1';
     const rex = rpr.regionExplore && typeof rpr.regionExplore === 'object' ? rpr.regionExplore : {};
     ['r1', 'r2', 'r3', 'r4', 'r5', 'r6'].forEach((rid) => {
-      out.progress.regionExplore[rid] = clamp(Math.floor(Number(rex[rid]) || 0), 0, 100);
+      out.progress.regionExplore[rid] = clamp(Math.floor(safeNum(rex[rid]) || 0), 0, 100);
     });
     out.progress.defeatedBosses = Array.isArray(rpr.defeatedBosses)
-      ? Array.from(new Set(rpr.defeatedBosses.map(String).filter((id) => validRegionSet.has(id))))
+      ? Array.from(new Set(toStrList(rpr.defeatedBosses).filter((id) => validRegionSet.has(id))))
       : [];
     // Regions whose mid-exploration elite has been beaten (missing in pre-v1.5 saves → [])
     out.progress.defeatedElites = Array.isArray(rpr.defeatedElites)
-      ? Array.from(new Set(rpr.defeatedElites.map(String).filter((id) => validRegionSet.has(id))))
+      ? Array.from(new Set(toStrList(rpr.defeatedElites).filter((id) => validRegionSet.has(id))))
       : [];
     out.progress.unlockedAllOverride = Boolean(rpr.unlockedAllOverride);
-    out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(rpr.clearedReadings.map(String))) : [];
+    out.progress.clearedReadings = Array.isArray(rpr.clearedReadings) ? Array.from(new Set(toStrList(rpr.clearedReadings))) : [];
     // shrineBest is rendered into innerHTML: rebuild each entry from whitelisted fields only
     // (rank ∈ S/A/B/C, integer score/total/timeLeft) — never copy untrusted objects through.
     out.progress.shrineBest = {};
@@ -1296,8 +1329,8 @@
     const rbg = rpr.bagByJlpt && typeof rpr.bagByJlpt === 'object' ? rpr.bagByJlpt : {};
     const rcc = rpr.cycleCountsByJlpt && typeof rpr.cycleCountsByJlpt === 'object' ? rpr.cycleCountsByJlpt : {};
     JLPT_LEVELS.forEach((lvl) => {
-      out.progress.solvedByJlpt[lvl] = Array.isArray(rsj[lvl]) ? Array.from(new Set(rsj[lvl].map(String))) : [];
-      out.progress.bagByJlpt[lvl] = Array.isArray(rbg[lvl]) ? Array.from(new Set(rbg[lvl].map(String))) : [];
+      out.progress.solvedByJlpt[lvl] = Array.isArray(rsj[lvl]) ? Array.from(new Set(toStrList(rsj[lvl]))) : [];
+      out.progress.bagByJlpt[lvl] = Array.isArray(rbg[lvl]) ? Array.from(new Set(toStrList(rbg[lvl]))) : [];
       out.progress.cycleCountsByJlpt[lvl] = toSafeInt(rcc[lvl], 0, 0, 100000);
     });
 
@@ -1306,8 +1339,8 @@
     ['mayor', 'merchant', 'scholar', 'priest'].forEach((nid) => {
       const n = rnpc[nid] && typeof rnpc[nid] === 'object' ? rnpc[nid] : {};
       out.npc[nid] = {
-        affection: clamp(Math.floor(Number(n.affection) || 0), 0, 100),
-        talkedIds: Array.isArray(n.talkedIds) ? Array.from(new Set(n.talkedIds.map(String))) : [],
+        affection: clamp(Math.floor(safeNum(n.affection) || 0), 0, 100),
+        talkedIds: Array.isArray(n.talkedIds) ? Array.from(new Set(toStrList(n.talkedIds))) : [],
         claimedMilestones: Array.isArray(n.claimedMilestones)
           ? Array.from(new Set(n.claimedMilestones.map((m) => toSafeInt(m, 0, 0, 100)).filter((m) => m > 0)))
           : []
@@ -1318,7 +1351,7 @@
     const rq = raw.quests && typeof raw.quests === 'object' ? raw.quests : {};
     const today = getTodayStr();
     const savedDate = typeof rq.dailyDate === 'string' ? rq.dailyDate : today;
-    out.quests.claimedIds = Array.isArray(rq.claimedIds) ? Array.from(new Set(rq.claimedIds.map(String))) : [];
+    out.quests.claimedIds = Array.isArray(rq.claimedIds) ? Array.from(new Set(toStrList(rq.claimedIds))) : [];
     if (savedDate === today) {
       const dp = rq.dailyProgress && typeof rq.dailyProgress === 'object' ? rq.dailyProgress : {};
       out.quests.dailyDate = today;
@@ -1345,12 +1378,12 @@
     ].forEach((k) => {
       out.stats[k] = toSafeInt(rst[k], 0, 0, COUNTER_MAX);
     });
-    out.stats.encounteredEnemies = Array.isArray(rst.encounteredEnemies) ? Array.from(new Set(rst.encounteredEnemies.map(String))) : [];
-    out.stats.defeatedEnemies = Array.isArray(rst.defeatedEnemies) ? Array.from(new Set(rst.defeatedEnemies.map(String))) : [];
+    out.stats.encounteredEnemies = Array.isArray(rst.encounteredEnemies) ? Array.from(new Set(toStrList(rst.encounteredEnemies))) : [];
+    out.stats.defeatedEnemies = Array.isArray(rst.defeatedEnemies) ? Array.from(new Set(toStrList(rst.defeatedEnemies))) : [];
 
     // Mistakes (legacy array)
     if (Array.isArray(raw.mistakes)) {
-      out.mistakes = raw.mistakes
+      out.mistakes = raw.mistakes.slice(0, SAVE_LIST_MAX)
         .filter((m) => m && typeof m.questionId === 'string')
         .map((m) => ({
           questionId: m.questionId,
@@ -1363,21 +1396,21 @@
     out.wrongNotes = {};
     if (raw.wrongNotes && typeof raw.wrongNotes === 'object' && !Array.isArray(raw.wrongNotes)) {
       const nowMs = Date.now();
-      safeOwnKeys(raw.wrongNotes).forEach((qid) => {
+      safeOwnKeys(raw.wrongNotes).slice(0, SAVE_LIST_MAX).forEach((qid) => {
         const entry = raw.wrongNotes[qid];
         if (!entry || typeof entry !== 'object') return;
         const id = typeof entry.id === 'string' && entry.id ? entry.id : String(qid);
         if (UNSAFE_OBJECT_KEYS.has(id)) return;
         const rawMastered = Boolean(entry.mastered);
         const rawSrs = entry.srsLevel !== undefined && entry.srsLevel !== null
-          ? clamp(Math.floor(Number(entry.srsLevel) || 0), 0, 4)
+          ? clamp(Math.floor(safeNum(entry.srsLevel) || 0), 0, 4)
           : (rawMastered ? 4 : 0);
         const isMastered = rawMastered || rawSrs >= 4;
         const srsLevel = isMastered ? 4 : rawSrs;
         const nextReviewAt = isMastered
           ? null
-          : (entry.nextReviewAt !== undefined && entry.nextReviewAt !== null && Number.isFinite(Number(entry.nextReviewAt))
-              ? Number(entry.nextReviewAt)
+          : (entry.nextReviewAt !== undefined && entry.nextReviewAt !== null && Number.isFinite(safeNum(entry.nextReviewAt))
+              ? safeNum(entry.nextReviewAt)
               : nowMs);
         out.wrongNotes[id] = {
           id,
@@ -1402,7 +1435,7 @@
         dateStr: todayDateStr,
         correctCount: toSafeInt(rdt.correctCount, 0, 0, COUNTER_MAX),
         reviewCount: toSafeInt(rdt.reviewCount, 0, 0, COUNTER_MAX),
-        claimedIds: Array.isArray(rdt.claimedIds) ? Array.from(new Set(rdt.claimedIds.map(String))) : []
+        claimedIds: Array.isArray(rdt.claimedIds) ? Array.from(new Set(toStrList(rdt.claimedIds))) : []
       };
     } else {
       out.dailyTraining = {
@@ -1414,7 +1447,7 @@
     }
 
     // Achievements
-    out.achievements = Array.isArray(raw.achievements) ? Array.from(new Set(raw.achievements.map(String))) : [];
+    out.achievements = Array.isArray(raw.achievements) ? Array.from(new Set(toStrList(raw.achievements))) : [];
 
     // Settings (3-tier Immersion Mode backwards compatible with legacy furigana boolean)
     const rset = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
@@ -1578,8 +1611,8 @@
     let bestTime = -1;
     SAVE_SLOT_LIST.forEach((slot) => {
       const raw = readRawSlot(slot.key);
-      if (raw && raw.player) {
-        const ts = raw.savedAt ? Date.parse(raw.savedAt) : 0;
+      if (raw && raw.player && typeof raw.player === 'object') {
+        const ts = typeof raw.savedAt === 'string' ? (Date.parse(raw.savedAt) || 0) : 0;
         if (ts > bestTime) {
           bestTime = ts;
           bestKey = slot.key;
@@ -1615,7 +1648,14 @@
       showToast('此書卷尚無銘刻紀錄。', 'warning');
       return false;
     }
-    state = sanitizeSaveData(raw);
+    let loaded;
+    try {
+      loaded = sanitizeSaveData(raw);
+    } catch (_) {
+      showToast('❌ 這個存檔已損毀，無法讀取。', 'error');
+      return false;
+    }
+    state = loaded;
     hasActiveSession = true;
     battle.active = false;
     shrine.active = false;
@@ -3368,7 +3408,7 @@
     }
 
     state.stats.npcTalks += 1;
-    state.quests.dailyProgress.npc_talk += 1;
+    getDailyProgress().npc_talk += 1;
 
     const emotion = choice.replyEmotion || (baseDelta >= 10 ? 'happy' : baseDelta <= 0 ? 'surprised' : 'serious');
     townState.awaitingNext = true;
@@ -4591,7 +4631,8 @@
       returnView: options.returnView || 'explore',
       // Explore route bonus (危險捷徑 ×1.3); 1 for every other battle
       rewardMult: Number(options.rewardMult) > 0 ? Number(options.rewardMult) : 1,
-      rewardLabel: typeof options.rewardLabel === 'string' ? options.rewardLabel : ''
+      rewardLabel: typeof options.rewardLabel === 'string' ? options.rewardLabel : '',
+      scrollUsed: false
     };
 
     const viewEl = $('view-battle');
@@ -5163,7 +5204,7 @@
       battle.consecutiveWrong = 0;
       battle.combo += 1;
       state.stats.totalCorrect += 1;
-      state.quests.dailyProgress.correct_answers += 1;
+      getDailyProgress().correct_answers += 1;
       state.stats.maxCombo = Math.max(state.stats.maxCombo, battle.combo);
 
       if (battle.isWrongNoteTraining) {
@@ -5196,7 +5237,7 @@
         battle.feverActive = true;
         battle.difficultyOffset = 1;
         state.stats.feverCount += 1;
-        state.quests.dailyProgress.reach_fever = (state.quests.dailyProgress.reach_fever || 0) + 1;
+        getDailyProgress().reach_fever = (getDailyProgress().reach_fever || 0) + 1;
         showToast('⚡ FEVER TIME 啟動！攻擊火力 +25%、結算 EXP/金幣 ×1.5！', 'gold');
       } else if (battle.consecutiveCorrect >= 2 && battle.difficultyOffset < 0) {
         battle.difficultyOffset = 0;
@@ -5422,7 +5463,7 @@
     const finalGold = Math.round(baseGold * feverMult * routeMult);
 
     state.stats.battlesWon += 1;
-    state.quests.dailyProgress.win_battles += 1;
+    getDailyProgress().win_battles += 1;
     if (!battle.isWrongNoteTraining && !state.stats.defeatedEnemies.includes(enemy.id)) {
       state.stats.defeatedEnemies.push(enemy.id);
     }
@@ -5655,6 +5696,30 @@
     updateHUD();
   }
 
+  // QA P1-1: q.tts is the *answered* sentence, so speaking it during a battle / shrine question
+  // gives the answer away. While a question is open we speak only the stem: blanks and the
+  // reading-target word become 「なになに」. Stems with no Japanese (e.g. Chinese reorder
+  // prompts) return '' (nothing to read). Full q.tts stays for the explanation modal / notes.
+  function getQuestionSpeakText(q) {
+    if (!q) return '';
+    if (q.type === 'listening') return q.tts || stripRubyHtml(q.fullRubyJp || '');
+    const masked = String(q.promptJp || '')
+      .replace(/<span class="q-(?:blank|target)"[^>]*>[\s\S]*?<\/span>/g, 'なになに')
+      .replace(/<br\s*\/?>/gi, '。');
+    const text = stripRubyHtml(masked).replace(/\s+/g, ' ').trim();
+    return /[぀-ヿ]/.test(text) ? text : '';
+  }
+
+  function speakQuestionStem(q, rate) {
+    const text = getQuestionSpeakText(q);
+    if (!text) {
+      showToast('這一題沒有可以朗讀的日文題幹。', 'info');
+      return false;
+    }
+    Audio.speak(text, rate);
+    return true;
+  }
+
   function useClairaudience() {
     if (!battle.active || battle.locked || !battle.currentQ) return;
     const lv = state.skills.clairaudience || 0;
@@ -5674,7 +5739,7 @@
     state.player.hp = Math.min(stats.maxHp, state.player.hp + heal);
 
     Audio.playSFX('heal');
-    Audio.speak(battle.currentQ.tts || stripRubyHtml(battle.currentQ.fullRubyJp), 0.65);
+    speakQuestionStem(battle.currentQ, 0.65);
     showHeroSpeech(HERO_BATTLE_LINES.skillListen.jp, HERO_BATTLE_LINES.skillListen.zh, 'speech-skill');
     setBattlePoses('attack', battle.enemyStunned ? 'break' : 'idle', 1100);
     spawnFloatingNumber('player', `+${heal} HP`, 'num-heal');
@@ -5686,7 +5751,15 @@
   function useBattleConsumable(itemId) {
     if (!battle.active || battle.locked) return;
     const item = getItemById(itemId);
-    if (!item || !removeItem(itemId, 1)) return;
+    if (!item) return;
+    const isBreakScroll = itemId === 'con_break_scroll' || (item.effect && (item.effect.type === 'break' || item.effect.breakDamage));
+    // QA L-1: break scrolls bypassed "fixed answers per battle" (25 dmg each, unlimited).
+    // Now: at most one per battle, checked before the item is consumed.
+    if (isBreakScroll && battle.scrollUsed) {
+      showToast('每場戰鬥只能使用一張破防卷軸。', 'warning');
+      return;
+    }
+    if (!removeItem(itemId, 1)) return;
 
     const stats = getTotalStats();
     const eff = item.effect || {};
@@ -5716,8 +5789,11 @@
       showToast(`🧪 使用【${item.name}】，回復 +${val} MP！`, 'info');
     } else if (itemId === 'con_break_scroll' || effType === 'break' || eff.breakDamage) {
       const bVal = Number(eff.breakDamage || eff.value || 2);
-      const bonusDmg = Number(eff.bonusDamage || 25);
-      battle.enemyHp = Math.max(0, battle.enemyHp - bonusDmg);
+      // One correct answer's worth of damage (enemyMaxHp / requiredHits), and it can never
+      // bring the enemy below 1 HP — the finishing blow must come from answering (also fixes L-3).
+      battle.scrollUsed = true;
+      const bonusDmg = Math.min(battle.enemyHp - 1, Math.max(1, Math.round(battle.enemyMaxHp / getRequiredHits(battle.enemy))));
+      battle.enemyHp = Math.max(1, battle.enemyHp - Math.max(0, bonusDmg));
       if (!battle.enemyStunned) {
         battle.enemyBreak = Math.max(0, battle.enemyBreak - bVal);
         if (battle.enemyBreak <= 0) {
@@ -5737,7 +5813,7 @@
       if (bonusDmg > 0) {
         setTimeout(() => spawnFloatingNumber('enemy', `-${bonusDmg}`, 'num-dmg'), 120);
       }
-      showToast(`📜 使用【${item.name}】，造成 ${bVal} 點破防與 ${bonusDmg} 點傷害！`, 'gold');
+      showToast(`📜 使用【${item.name}】，造成 ${bVal} 點破防與 ${Math.max(0, bonusDmg)} 點傷害！`, 'gold');
       checkBossPhaseTransition();
       if (battle.enemyHp <= 0) {
         autoSave();
@@ -5758,7 +5834,7 @@
       setBattlePoses('attack', battle.enemyStunned ? 'break' : 'idle', 950);
       battle.consecutiveCorrect = Math.max(battle.consecutiveCorrect, 3);
       state.stats.feverCount += 1;
-      state.quests.dailyProgress.reach_fever = (state.quests.dailyProgress.reach_fever || 0) + 1;
+      getDailyProgress().reach_fever = (getDailyProgress().reach_fever || 0) + 1;
       if (eff.healHpPct) {
         const healVal = Math.max(10, Math.round((stats.maxHp * Number(eff.healHpPct)) / 100));
         state.player.hp = Math.min(stats.maxHp, state.player.hp + healVal);
@@ -5941,7 +6017,7 @@
           if (isCorrect) {
             reading.correctCount += 1;
             state.stats.totalCorrect += 1;
-            state.quests.dailyProgress.correct_answers += 1;
+            getDailyProgress().correct_answers += 1;
             recordDailyTrainingProgress('correct', 1);
             const rdSrs = advanceWrongNoteSRS(noteId, true, { requireDue: true });
             if (rdSrs.advanced) showToast(`📓 閱讀錯題記憶曲線提升：${rdSrs.label}！`, 'success');
@@ -6243,7 +6319,7 @@
 
     const ttsBtn = $('btn-shrine-tts');
     if (ttsBtn) {
-      ttsBtn.onclick = () => Audio.speak(q.tts || stripRubyHtml(q.promptJp), 1.0);
+      ttsBtn.onclick = () => speakQuestionStem(q, 1.0);
     }
 
     const container = $('shrine-options-container');
@@ -6286,7 +6362,7 @@
 
     if (isCorrect) {
       state.stats.totalCorrect += 1;
-      state.quests.dailyProgress.correct_answers += 1;
+      getDailyProgress().correct_answers += 1;
       recordDailyTrainingProgress('correct', 1);
     } else {
       state.stats.totalWrong += 1;
@@ -6330,7 +6406,7 @@
     const lvRes = gainExp(exp);
 
     state.stats.shrineCompleted += 1;
-    state.quests.dailyProgress.complete_shrine += 1;
+    getDailyProgress().complete_shrine += 1;
     if (rank === 'S') state.stats.shrineRankS += 1;
 
     // Personal best
@@ -6936,6 +7012,7 @@
   }
 
   function renderQuests() {
+    ensureDailyQuestsFresh();
     renderDailyTrainingPanel();
     document.querySelectorAll('#quest-tabs .tab-btn').forEach((b) => {
       b.classList.toggle('active', b.getAttribute('data-tab') === uiTabs.quests);
@@ -7019,6 +7096,7 @@
   }
 
   function claimQuestReward(questId) {
+    ensureDailyQuestsFresh();
     const q = getQuests().find((x) => x.id === questId);
     if (!q || state.quests.claimedIds.includes(questId)) return;
     const prog = evaluateGoalProgress(q);
@@ -7583,7 +7661,13 @@
     if (!listEl) return;
 
     listEl.innerHTML = SAVE_SLOT_LIST.map((slot) => {
-      const raw = readRawSlot(slot.key);
+      // QA S-1: never render raw localStorage — sanitize first (numbers / ids / names are cleaned)
+      const rawSlot = readRawSlot(slot.key);
+      let raw = null;
+      let corrupted = false;
+      if (rawSlot && rawSlot.player && typeof rawSlot.player === 'object') {
+        try { raw = sanitizeSaveData(rawSlot); } catch (_) { corrupted = true; }
+      }
       const hasData = Boolean(raw && raw.player);
       const job = hasData ? getJobById(raw.player.jobId) : null;
       const region = hasData && raw.progress ? getRegionById(raw.progress.currentRegionId) : null;
@@ -7597,8 +7681,10 @@
                   <strong>${escapeHtml(raw.player.name)}</strong>（${escapeHtml(job ? job.name : '')} Lv.${raw.player.level || 1}）
                   ・🪙 ${raw.player.gold || 0}・📍 ${escapeHtml(region ? region.name : '黎明之村')}
                 </div>
-                <div class="text-muted" style="font-size:0.78rem;margin-top:2px;">存檔時間：${formatTimestamp(raw.savedAt)}</div>`
-              : '<div class="text-muted" style="font-size:0.86rem;margin-top:4px;">（空欄位）</div>'
+                <div class="text-muted" style="font-size:0.78rem;margin-top:2px;">存檔時間：${escapeHtml(formatTimestamp(raw.savedAt))}</div>`
+              : (corrupted
+                  ? '<div style="font-size:0.86rem;margin-top:4px;color:var(--crimson-bright);">（存檔已損毀）</div>'
+                  : '<div class="text-muted" style="font-size:0.86rem;margin-top:4px;">（空欄位）</div>')
             }
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -7691,6 +7777,11 @@
       showToast('❌ 請先貼上 JSON 存檔碼後再點擊匯入。', 'error');
       return false;
     }
+    // QA S-3: a real save is ~10–200 KB; refuse anything absurdly large before parsing it
+    if (trimmed.length > IMPORT_MAX_CHARS) {
+      showToast('❌ 存檔碼過大，未覆蓋現有存檔。', 'error');
+      return false;
+    }
 
     let parsed;
     try {
@@ -7741,15 +7832,23 @@
     stopTypewriter();
     Audio.stopSpeak();
 
+    const prevState = state;
+    const prevSession = hasActiveSession;
     state = nextState;
     hasActiveSession = true;
+    // QA S-3: if the browser refuses the write (quota), roll back instead of claiming success
+    if (!autoSave()) {
+      state = prevState;
+      hasActiveSession = prevSession;
+      showToast('❌ 瀏覽器儲存空間不足，匯入未完成，現有存檔未變更。', 'error');
+      return false;
+    }
     battle.active = false;
     shrine.active = false;
     reading.active = false;
     crossRegionNotifiedKeys = new Set();
 
     applyFuriganaSetting();
-    autoSave();
     updateHUD();
     closeModal('modal-save');
     Audio.playSFX('levelup');
@@ -8012,12 +8111,12 @@
     // Battle controls
     if ($('btn-battle-tts-normal')) {
       $('btn-battle-tts-normal').addEventListener('click', () => {
-        if (battle.currentQ) Audio.speak(battle.currentQ.tts || stripRubyHtml(battle.currentQ.fullRubyJp), 1.0);
+        if (battle.currentQ) speakQuestionStem(battle.currentQ, 1.0);
       });
     }
     if ($('btn-battle-tts-slow')) {
       $('btn-battle-tts-slow').addEventListener('click', () => {
-        if (battle.currentQ) Audio.speak(battle.currentQ.tts || stripRubyHtml(battle.currentQ.fullRubyJp), 0.65);
+        if (battle.currentQ) speakQuestionStem(battle.currentQ, 0.65);
       });
     }
     if ($('btn-skill-vocab')) $('btn-skill-vocab').addEventListener('click', useVocabInsight);
@@ -8226,6 +8325,8 @@
     }
     if ($('dev-reset-all')) {
       $('dev-reset-all').addEventListener('click', () => {
+        // QA S-4: one click used to wipe all save slots with no confirmation
+        if (typeof global.confirm === 'function' && !global.confirm('確定要刪除所有存檔欄位嗎？這個動作無法復原。')) return;
         Object.values(SAVE_KEYS).forEach(deleteSlot);
         stopBattleTimers();
         stopShrineTimer();
@@ -8320,6 +8421,7 @@
     getItemById,
     getEnemyById,
     formatBattleSpeedText,
+    getQuestionSpeakText,
     applyMobileHudCollapseState
   };
 

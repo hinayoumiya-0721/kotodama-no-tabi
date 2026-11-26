@@ -11,7 +11,7 @@
       name: '言靈劍士',
       jpName: '<ruby>言霊<rt>ことだま</rt></ruby><ruby>剣士<rt>けんし</rt></ruby>',
       focus: 'INT 重視・語彙斬擊',
-      desc: '將精準的詞彙化為鋒刃的旅人。擁有最高初始生命值與語彙攻擊力（INT），能在正面對決中迅速瓦解敵方的言靈護盾。',
+      desc: '將精準的詞彙化為鋒刃的旅人。擁有最高的初始生命值與智力（INT），暴擊率最高，擅長在正面對決中穩定推進。',
       baseStats: { maxHp: 115, maxMp: 45, INT: 14, WIS: 9, CHA: 8 },
       growth: { maxHp: 16, maxMp: 6, INT: 3, WIS: 2, CHA: 1 },
       startWeaponId: 'wp_wood_blade'
@@ -1232,7 +1232,7 @@
       price: 90,
       shoppable: true,
       minRegion: 1,
-      desc: '記載破邪真言的咒符卷軸，對敵人直接造成 2 點破防與 25 點追加傷害。',
+      desc: '記載破邪真言的咒符卷軸，對敵人造成 2 點破防與相當於答對一題的傷害（無法直接擊倒），每場戰鬥限用一張。',
       stats: { INT: 0, WIS: 0, CHA: 0, maxHp: 0, maxMp: 0 },
       effect: { breakDamage: 2, bonusDamage: 25 }
     },
@@ -7043,7 +7043,7 @@
       "options": [
         "<ruby>健康<rt>けんこう</rt></ruby>のために、<ruby>一駅<rt>ひとえき</rt></ruby><ruby>手前<rt>てまえ</rt></ruby>で<ruby>降<rt>お</rt></ruby>りて<ruby>歩<rt>ある</rt></ruby>くことにしました。",
         "<ruby>来月<rt>らいげつ</rt></ruby>からアルバイトの<ruby>時給<rt>じきゅう</rt></ruby>が<ruby>上<rt>あ</rt></ruby>がることにしました。",
-        "<ruby>今年<rt>ことし</rt></ruby>の<ruby>学園祭<rt>がくえんさい</rt></ruby>は<ruby>雨<rt>あめ</rt></ruby>のため<ruby>中止<rt>ちゅうし</rt></ruby>になることになりました。",
+        "<ruby>今年<rt>ことし</rt></ruby>の<ruby>学園祭<rt>がくえんさい</rt></ruby>は<ruby>雨<rt>あめ</rt></ruby>のため<ruby>中止<rt>ちゅうし</rt></ruby>することになりました。",
         "<ruby>就活<rt>しゅうかつ</rt></ruby>に<ruby>集中<rt>しゅうちゅう</rt></ruby>するため、しばらくバイトの<ruby>回数<rt>かいすう</rt></ruby>を<ruby>減<rt>へ</rt></ruby>らすことにしました。"
       ],
       "answerIndex": 1,
@@ -14180,8 +14180,8 @@
       "type": "conjugation",
       "typeLabel": "文字語彙・近義替換",
       "promptZh": "請選出與畫線部分「せっかく」意思最接近的選項。",
-      "promptJp": "みんな<ruby>忙<rt>いそが</rt></ruby>しいのに、<span class=\"q-target\">わざわざ</span><ruby>見送<rt>みお</rt></ruby>りに<ruby>来<rt>き</rt></ruby>てくれてありがとう。",
-      "fullRubyJp": "みんな<ruby>忙<rt>いそが</rt></ruby>しいのに、<span class=\"q-answer\"><ruby>特別<rt>とくべつ</rt></ruby>に</span><ruby>見送<rt>みお</rt></ruby>りに<ruby>来<rt>き</rt></ruby>てくれてありがとう。",
+      "promptJp": "みんな<ruby>忙<rt>いそが</rt></ruby>しいのに、<span class=\"q-target\">わざわざ</span><ruby>見送<rt>みおく</rt></ruby>りに<ruby>来<rt>き</rt></ruby>てくれてありがとう。",
+      "fullRubyJp": "みんな<ruby>忙<rt>いそが</rt></ruby>しいのに、<span class=\"q-answer\"><ruby>特別<rt>とくべつ</rt></ruby>に</span><ruby>見送<rt>みおく</rt></ruby>りに<ruby>来<rt>き</rt></ruby>てくれてありがとう。",
       "tts": "みんな忙しいのに、特別に見送りに来てくれてありがとう。",
       "options": [
         "<ruby>特別<rt>とくべつ</rt></ruby>に",
@@ -15356,8 +15356,8 @@
       "type": "conjugation",
       "typeLabel": "句子重組（★）",
       "promptZh": "請將四個語塊重組為通順的日文句子，並選出填入 ★ 處的選項。",
-      "promptJp": "このスープは　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　おいしくなりますよ。",
-      "fullRubyJp": "このスープは<ruby>温<rt>あたた</rt></ruby>かいうちに<span class=\"q-answer\"><ruby>少<rt>すこ</rt></ruby>し</span>コショウを<ruby>入<rt>い</rt></ruby>れるとおいしくなりますよ。",
+      "promptJp": "このスープは　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　おいしくなりますよ。",
+      "fullRubyJp": "このスープは<span class=\"q-answer\"><ruby>温<rt>あたた</rt></ruby>かいうちに</span><ruby>少<rt>すこ</rt></ruby>しコショウを<ruby>入<rt>い</rt></ruby>れるとおいしくなりますよ。",
       "tts": "このスープは温かいうちに少しコショウを入れるとおいしくなりますよ。",
       "options": [
         "コショウを",
@@ -15365,12 +15365,12 @@
         "<ruby>入<rt>い</rt></ruby>れると",
         "<ruby>温<rt>あたた</rt></ruby>かいうちに"
       ],
-      "answerIndex": 1,
-      "kanaReading": "すこし",
-      "correctDisplay": "少し（すこし）",
-      "wrongReason": "正確語序為「このスープは〔温かいうちに〕★〔少し〕〔コショウを〕〔入れると〕おいしくなりますよ」，故第 2 格（★）為「少し」。",
+      "answerIndex": 3,
+      "kanaReading": "あたたかいうちに",
+      "correctDisplay": "温かいうちに（あたたかいうちに）",
+      "wrongReason": "正確語序為「このスープは★〔温かいうちに〕〔少し〕〔コショウを〕〔入れると〕おいしくなりますよ」，第 1 格（★）為「温かいうちに」。「少し」與「コショウを」前後對調也通順，所以 ★ 放在不受影響的第 1 格。",
       "explanation": "「温かいうちに（趁熱時）」為時間點，後面副詞「少し」修飾動詞「コショウを入れると（放入一點胡椒的話）」。",
-      "hint": "先說「趁熱的時候」，再修飾要放進去的調味料分量。"
+      "hint": "★ 在第一格：先說「趁熱的時候」這個時間點。"
     },
     {
       "id": "q_jlpt_n3_078",
@@ -15428,8 +15428,8 @@
       "type": "conjugation",
       "typeLabel": "句子重組（★）",
       "promptZh": "請將四個語塊重組為通順的日文句子，並選出填入 ★ 處的選項。",
-      "promptJp": "<ruby>仕事<rt>しごと</rt></ruby>が　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<ruby>休<rt>やす</rt></ruby>みがちだ。",
-      "fullRubyJp": "<ruby>仕事<rt>しごと</rt></ruby>が<ruby>忙<rt>いそが</rt></ruby>しいせいか、<ruby>最近<rt>さいきん</rt></ruby>はヨガ<ruby>教室<rt>きょうしつ</rt></ruby>を<span class=\"q-answer\">ついつい</span><ruby>休<rt>やす</rt></ruby>みがちだ。",
+      "promptJp": "<ruby>仕事<rt>しごと</rt></ruby>が　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<ruby>休<rt>やす</rt></ruby>みがちだ。",
+      "fullRubyJp": "<ruby>仕事<rt>しごと</rt></ruby>が<ruby>忙<rt>いそが</rt></ruby>しいせいか、<span class=\"q-answer\"><ruby>最近<rt>さいきん</rt></ruby>は</span>ヨガ<ruby>教室<rt>きょうしつ</rt></ruby>をついつい<ruby>休<rt>やす</rt></ruby>みがちだ。",
       "tts": "仕事が忙しいせいか、最近はヨガ教室をついつい休みがちだ。",
       "options": [
         "ヨガ<ruby>教室<rt>きょうしつ</rt></ruby>を",
@@ -15437,12 +15437,12 @@
         "<ruby>最近<rt>さいきん</rt></ruby>は",
         "<ruby>忙<rt>いそが</rt></ruby>しいせいか、"
       ],
-      "answerIndex": 1,
-      "kanaReading": "ついつい",
-      "correctDisplay": "ついつい",
-      "wrongReason": "正確語序為「仕事が〔忙しいせいか、〕〔最近は〕〔ヨガ教室を〕★〔ついつい〕休みがちだ」，第 4 格（★）為「ついつい」。",
+      "answerIndex": 2,
+      "kanaReading": "さいきんは",
+      "correctDisplay": "最近は（さいきんは）",
+      "wrongReason": "正確語序為「仕事が〔忙しいせいか、〕★〔最近は〕〔ヨガ教室を〕〔ついつい〕休みがちだ」，第 2 格（★）為「最近は」。「ヨガ教室を」與「ついつい」對調也通順，所以 ★ 放在第 2 格。",
       "explanation": "「〜せいか（或許是因為…）」、「ついつい（不知不覺就…）」、「〜がちだ（動不動容易…）」皆為 N3 高頻搭配！",
-      "hint": "★ 在最後一格，副詞直接修飾後方的「休みがちだ（動不動就請假）」。"
+      "hint": "★ 在第二格：先說原因「忙しいせいか、」，接著是時間「最近は」。"
     },
     {
       "id": "q_jlpt_n3_081",
@@ -15645,7 +15645,7 @@
       "typeLabel": "句子重組（★）",
       "promptZh": "請將四個語塊重組為通順的日文句子，並選出填入 ★ 處的選項。",
       "promptJp": "<ruby>会議<rt>かいぎ</rt></ruby>の　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　お<ruby>願<rt>ねが</rt></ruby>いいたします。",
-      "fullRubyJp": "<ruby>会議<rt>かいぎ</rt></ruby>の<ruby>前<rt>まえ</rt></ruby>までに<ruby>資料<rt>しりょう</rt></ruby>に<span class=\"q-answer\"><ruby>目<rt>め</rt></ruby>を</span><ruby>通<rt>とお</rt></ruby>して<ruby>おいていただくよう</span>お<ruby>願<rt>ねが</rt></ruby>いいたします。",
+      "fullRubyJp": "<ruby>会議<rt>かいぎ</rt></ruby>の<ruby>前<rt>まえ</rt></ruby>までに<ruby>資料<rt>しりょう</rt></ruby>に<span class=\"q-answer\"><ruby>目<rt>め</rt></ruby>を</span><ruby>通<rt>とお</rt></ruby>しておいていただくよう</span>お<ruby>願<rt>ねが</rt></ruby>いいたします。",
       "tts": "会議の前までに資料に目を通しておいていただくようお願いいたします。",
       "options": [
         "<ruby>目<rt>め</rt></ruby>を",
@@ -17571,7 +17571,7 @@
         "（<ruby>社外<rt>しゃがい</rt></ruby>のお<ruby>客様<rt>きゃくさま</rt></ruby>に）「あいにく、<ruby>担当<rt>たんとう</rt></ruby>の<ruby>山田<rt>やまだ</rt></ruby>はただいま<ruby>席<rt>せき</rt></ruby>を<ruby>外<rt>はず</rt></ruby>しております。」",
         "（<ruby>社外<rt>しゃがい</rt></ruby>の<ruby>取引先<rt>とりひきさき</rt></ruby>に）「はい、<ruby>部長<rt>ぶちょう</rt></ruby>の<ruby>鈴木<rt>すずき</rt></ruby>もそのようにおっしゃっておりました。」",
         "（<ruby>社外<rt>しゃがい</rt></ruby>のお<ruby>客様<rt>きゃくさま</rt></ruby>に）「<ruby>弊社<rt>へいしゃ</rt></ruby>の<ruby>製品<rt>せいひん</rt></ruby>をご<ruby>愛用<rt>あいよう</rt></ruby>いただき、<ruby>誠<rt>まこと</rt></ruby>にありがとうございます。」",
-        "（<ruby>上司<rt>じょうし</rt></ruby>に）「<ruby>部長<rt>ぶちょう</rt></ruby>、<ruby>先<rt>さき</rt></ruby>ほどの<ruby>資料<rt>しりょう</rt></ruby>はすでにお<ruby>目<rt>め</rt></ruby>を<ruby>通<rt>とお</rt></ruby>しになりましたか。」"
+        "（<ruby>上司<rt>じょうし</rt></ruby>に）「<ruby>部長<rt>ぶちょう</rt></ruby>、<ruby>先<rt>さき</rt></ruby>ほどの<ruby>資料<rt>しりょう</rt></ruby>にはもう<ruby>目<rt>め</rt></ruby>を<ruby>通<rt>とお</rt></ruby>されましたか。」"
       ],
       "answerIndex": 1,
       "kanaReading": "すずきもそのように申しておりました",
@@ -18069,7 +18069,7 @@
       "typeLabel": "句子重組（★）",
       "promptZh": "請將四個語塊重組為通順的日文句子，並選出填入 ★ 處的選項。",
       "promptJp": "そんな<ruby>根拠<rt>こんきょ</rt></ruby>のない<ruby>噂<rt>うわさ</rt></ruby>を　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　に<ruby>決<rt>き</rt></ruby>まっている。",
-      "fullRubyJp": "そんな<ruby>根拠<rt>こんきょ</rt></ruby>のない<ruby>噂<rt>うわさ</rt></ruby>を<ruby>真<rt>ま</rt></ruby>に<ruby>受<rt>う</rt></ruby>けたところで、<span class=\"q-answer\"><ruby>誰<rt>だれ</rt></ruby>にも</span><ruby>相手にされない</span>に<ruby>決<rt>き</rt></ruby>まっている。",
+      "fullRubyJp": "そんな<ruby>根拠<rt>こんきょ</rt></ruby>のない<ruby>噂<rt>うわさ</rt></ruby>を<ruby>真<rt>ま</rt></ruby>に<ruby>受<rt>う</rt></ruby>けたところで、<span class=\"q-answer\"><ruby>誰<rt>だれ</rt></ruby>にも</span><ruby>相手<rt>あいて</rt></ruby>にされない</span>に<ruby>決<rt>き</rt></ruby>まっている。",
       "tts": "そんな根拠のない噂を真に受けたところで、誰にも相手にされないに決まっている。",
       "options": [
         "<ruby>受<rt>う</rt></ruby>けたところで、",
@@ -18116,8 +18116,8 @@
       "type": "conjugation",
       "typeLabel": "句子重組（★）",
       "promptZh": "請將四個語塊重組為通順的日文句子，並選出填入 ★ 處的選項。",
-      "promptJp": "<ruby>長年<rt>ながねん</rt></ruby><ruby>温<rt>あたた</rt></ruby>めてきた　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<ruby>至<rt>いた</rt></ruby>った。",
-      "fullRubyJp": "<ruby>長年<rt>ながねん</rt></ruby><ruby>温<rt>あたた</rt></ruby>めてきた<ruby>構想<rt>こうそう</rt></ruby>を<span class=\"q-answer\">ようやく</span><ruby>実現<rt>じつげん</rt></ruby>させる<ruby>段階<rt>だんかい</rt></ruby>に<ruby>至<rt>いた</rt></ruby>った。",
+      "promptJp": "<ruby>長年<rt>ながねん</rt></ruby><ruby>温<rt>あたた</rt></ruby>めてきた　<span class=\"q-blank\" style=\"color:var(--gold-bright);\">★</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<span class=\"q-blank\">＿＿＿</span>　<ruby>至<rt>いた</rt></ruby>った。",
+      "fullRubyJp": "<ruby>長年<rt>ながねん</rt></ruby><ruby>温<rt>あたた</rt></ruby>めてきた<span class=\"q-answer\"><ruby>構想<rt>こうそう</rt></ruby>を</span>ようやく<ruby>実現<rt>じつげん</rt></ruby>させる<ruby>段階<rt>だんかい</rt></ruby>に<ruby>至<rt>いた</rt></ruby>った。",
       "tts": "長年温めてきた構想をようやく実現させる段階に至った。",
       "options": [
         "<ruby>構想<rt>こうそう</rt></ruby>を",
@@ -18125,12 +18125,12 @@
         "ようやく",
         "<ruby>実現<rt>じつげん</rt></ruby>させる"
       ],
-      "answerIndex": 2,
-      "kanaReading": "ようやく",
-      "correctDisplay": "ようやく",
-      "wrongReason": "正確語序為「長年温めてきた〔構想を〕★〔ようやく〕〔実現させる〕〔段階に〕至った」，第 2 格（★）為「ようやく」。",
+      "answerIndex": 0,
+      "kanaReading": "こうそうを",
+      "correctDisplay": "構想を（こうそうを）",
+      "wrongReason": "正確語序為「長年温めてきた★〔構想を〕〔ようやく〕〔実現させる〕〔段階に〕至った」，第 1 格（★）為「構想を」。「ようやく」放在「段階に」之後也成立，所以 ★ 放在第 1 格。",
       "explanation": "書面慣用表現「〜段階に至る（到達了實現…的階段）」，「ようやく（好不容易、終於）」修飾「実現させる（使構想付諸實現）」。",
-      "hint": "接在「構想を」之後，修飾動詞「實現」的「終於、好不容易」。"
+      "hint": "★ 在第一格：被「長年温めてきた」修飾、最後要實現的那個名詞。"
     },
     {
       "id": "q_jlpt_n2_093",

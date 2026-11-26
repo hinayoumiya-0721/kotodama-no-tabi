@@ -151,8 +151,8 @@ test('shrineBest is rebuilt from whitelisted fields only (BUG-1, stored XSS)', (
 });
 
 test('wrongNotes / enhancements ignore __proto__ keys', () => {
-  const s = sanitize(JSON.parse('{"player":{"enhancements":{"__proto__":{"x":1},"w1":3}},"wrongNotes":{"__proto__":{"id":"__proto__"}}}'));
-  same(Object.keys(s.player.enhancements), ['w1']);
+  const s = sanitize(JSON.parse('{"player":{"enhancements":{"__proto__":{"x":1},"wp_wood_blade":3,"not_an_item":2}},"wrongNotes":{"__proto__":{"id":"__proto__"}}}'));
+  same(Object.keys(s.player.enhancements), ['wp_wood_blade']);  // unknown item ids are dropped too (QA S-3)
   same(Object.keys(s.wrongNotes), []);
   assert.strictEqual(Object.getPrototypeOf(s.wrongNotes), VM_OBJECT_PROTO);
 });
@@ -314,6 +314,58 @@ test('current objective = first unclaimed main quest', () => {
   st.quests.claimedIds = QUESTS.filter((q) => q.category === 'main').map((q) => q.id);
   assert.strictEqual(Game.getCurrentObjective(), null);
   st.quests.claimedIds = [];
+});
+
+console.log('\nQA_REPORT v1.5.1 fixes');
+
+test('P1-1: battle read-aloud never speaks the answered sentence or the target word', () => {
+  const plain = (h) => String(h || '').replace(/<rt>[^<]*<\/rt>/g, '').replace(/<[^>]+>/g, '');
+  const leaks = [];
+  ctx.GAME_DATA.QUESTIONS.forEach((q) => {
+    if (q.type === 'listening') return;
+    const said = Game.getQuestionSpeakText(q);
+    const prompt = String(q.promptJp || '');
+    const target = (prompt.match(/<span class="q-target"[^>]*>([\s\S]*?)<\/span>/) || [])[1];
+    if (q.tts && said && said.replace(/\s/g, '') === String(q.tts).replace(/\s/g, '')) leaks.push(`${q.id}: speaks full tts`);
+    if (target && said.includes(plain(target))) leaks.push(`${q.id}: speaks target "${plain(target)}"`);
+    if (/q-blank/.test(prompt) && !said.includes('なになに')) leaks.push(`${q.id}: blank not masked`);
+  });
+  assert.strictEqual(leaks.length, 0, leaks.slice(0, 5).join('; '));
+});
+
+test('P1-1: prompts without Japanese (e.g. Chinese reorder stems) speak nothing', () => {
+  const q = ctx.GAME_DATA.QUESTIONS.find((x) => x.type === 'reorder' && !/[぀-ヿ]/.test(String(x.promptJp || '').replace(/<[^>]+>/g, '')));
+  assert.ok(q, 'expected at least one reorder question with a Chinese stem');
+  assert.strictEqual(Game.getQuestionSpeakText(q), '');
+});
+
+test('S-2: corrupted values ({"toString":1}) never throw and fall back', () => {
+  const evil = { toString: 1 };
+  const s = sanitize({
+    player: { name: 'A', level: evil },
+    progress: { regionExplore: { r1: evil }, defeatedBosses: [evil, 'r1'], clearedReadings: [evil] },
+    skills: { vocab_insight: evil },
+    npc: { mayor: { affection: evil, talkedIds: [evil] } },
+    stats: { encounteredEnemies: [evil] },
+    wrongNotes: { q1: { id: 'q1', srsLevel: evil, nextReviewAt: evil } },
+    achievements: [evil]
+  });
+  assert.strictEqual(s.player.level, 1);
+  same(s.progress.defeatedBosses, ['r1']);
+  same(s.achievements, []);
+  allNumbersFinite(s);
+});
+
+test('S-3: lists are capped and unknown inventory ids are dropped', () => {
+  const many = Array.from({ length: 5000 }, (_, i) => `rd_x_${i}`);
+  const s = sanitize({ player: {}, progress: { clearedReadings: many }, inventory: [{ id: 'not_an_item', qty: 3 }, { id: 'con_herb', qty: 2 }] });
+  assert.ok(s.progress.clearedReadings.length <= 2000);
+  same(s.inventory.map((it) => it.id), ['con_herb']);
+});
+
+test('S-3: oversized import is refused before parsing', () => {
+  const huge = JSON.stringify({ player: { name: 'A' }, pad: 'x'.repeat(1100000) });
+  assert.strictEqual(Game.importSaveJsonCode(huge, { skipConfirm: true }), false);
 });
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
