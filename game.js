@@ -921,7 +921,8 @@
       mayor: 'assets/portraits/npc_mayor.webp',
       merchant: 'assets/portraits/npc_merchant.webp',
       scholar: 'assets/portraits/npc_scholar.webp',
-      priest: 'assets/portraits/npc_priest.webp'
+      priest: 'assets/portraits/npc_priest.webp',
+      guide: 'assets/portraits/npc_guide.png'
     }
   };
 
@@ -1119,6 +1120,7 @@
         regionExplore: { r1: 0, r2: 0, r3: 0, r4: 0, r5: 0, r6: 0 },
         defeatedBosses: [],
         defeatedElites: [],
+        tutorialStep: 0,
         unlockedAllOverride: false,
         clearedReadings: [],
         shrineBest: {},
@@ -1380,6 +1382,20 @@
     });
     out.stats.encounteredEnemies = Array.isArray(rst.encounteredEnemies) ? Array.from(new Set(toStrList(rst.encounteredEnemies))) : [];
     out.stats.defeatedEnemies = Array.isArray(rst.defeatedEnemies) ? Array.from(new Set(toStrList(rst.defeatedEnemies))) : [];
+
+    // Onboarding tutorial progress (pre-v1.6 saves with existing play history skip straight to 'done')
+    const rawTut = rpr.tutorialStep;
+    if (rawTut === 0 || rawTut === 1 || rawTut === 2 || rawTut === 'done') {
+      out.progress.tutorialStep = rawTut;
+    } else {
+      const hasHistory =
+        out.stats.battlesWon > 0 ||
+        out.stats.totalCorrect > 0 ||
+        out.stats.npcTalks > 0 ||
+        out.player.level > 1 ||
+        out.progress.defeatedBosses.length > 0;
+      out.progress.tutorialStep = hasHistory ? 'done' : 0;
+    }
 
     // Mistakes (legacy array)
     if (Array.isArray(raw.mistakes)) {
@@ -1664,6 +1680,7 @@
     stopShrineTimer();
     applyFuriganaSetting();
     closeModal('modal-save');
+    closeModal('modal-tutorial');
     Audio.playSFX('confirm');
     showToast(`✨ 記憶書卷展開——歡迎歸來，${state.player.name}（Lv.${state.player.level}）！`, 'success');
     switchView('town');
@@ -2345,19 +2362,60 @@
     return { total: list.length, unmastered, dueCount, mastered, entries: list };
   }
 
+  function countClaimableJournalRewards() {
+    if (!state) return 0;
+    let count = 0;
+    const claimedQ = Array.isArray(state.quests && state.quests.claimedIds) ? state.quests.claimedIds : [];
+    getQuests().forEach((q) => {
+      if (!q || claimedQ.includes(q.id)) return;
+      const prog = evaluateGoalProgress(q);
+      if (prog && prog.done) count += 1;
+    });
+    const dt = ensureDailyTrainingFresh(state);
+    DAILY_TRAINING_DEFS.forEach((task) => {
+      if (!dt.claimedIds.includes(task.id) && Number(dt[task.metric] || 0) >= task.target) {
+        count += 1;
+      }
+    });
+    return count;
+  }
+
+  function hasSpendableSkillPoint() {
+    if (!state || !state.player || Number(state.player.sp || 0) <= 0) return false;
+    return getSkills().some((sk) => {
+      const lv = (state.skills && state.skills[sk.id]) || 0;
+      const maxLv = Number(sk.maxLevel || 3);
+      const cost = Number(sk.spCost || 1);
+      return lv < maxLv && state.player.sp >= cost;
+    });
+  }
+
   function updateNavMistakeBadge() {
     const badge = $('nav-notes-badge');
     const dockBadge = $('dock-notes-badge');
-    if (!badge && !dockBadge) return;
+    const journalBadge = $('dock-journal-badge');
     const { dueCount } = getWrongNotesSummary();
     if (badge) {
       badge.textContent = dueCount > 0 ? `(${dueCount})` : '(0)';
       badge.classList.toggle('hidden', dueCount <= 0);
     }
-    // Mirror the due count on the 修練 dock slot so it is visible from any screen
+    // Mirror the due count on the 修練 dock slot; if no due notes, show "SP" when a skill can be upgraded
     if (dockBadge) {
-      dockBadge.textContent = dueCount > 99 ? '99+' : String(dueCount);
-      dockBadge.classList.toggle('hidden', dueCount <= 0);
+      if (dueCount > 0) {
+        dockBadge.textContent = dueCount > 99 ? '99+' : String(dueCount);
+        dockBadge.classList.remove('hidden');
+      } else if (hasActiveSession && hasSpendableSkillPoint()) {
+        dockBadge.textContent = 'SP';
+        dockBadge.classList.remove('hidden');
+      } else {
+        dockBadge.textContent = '0';
+        dockBadge.classList.add('hidden');
+      }
+    }
+    if (journalBadge) {
+      const claimable = hasActiveSession ? countClaimableJournalRewards() : 0;
+      journalBadge.textContent = claimable > 99 ? '99+' : String(claimable);
+      journalBadge.classList.toggle('hidden', claimable <= 0);
     }
   }
 
@@ -2398,6 +2456,178 @@
     if (bodyEl) bodyEl.innerHTML = bodyHtml;
     genericModalCallback = typeof onClose === 'function' ? onClose : null;
     openModal('modal-generic');
+  }
+
+  // ---- Kotoha (コトハ) Onboarding Tutorial & Quick-Guide ----
+  const VALID_TUTORIAL_STEPS = new Set([0, 1, 2, 'done']);
+  let uiMapDiffOpen = false;
+
+  function renderGuidePortraitImg(extraClass = '') {
+    const src = (PORTRAIT_IMAGES.npc && PORTRAIT_IMAGES.npc.guide) || 'assets/portraits/npc_guide.png';
+    return `<img class="guide-portrait-img ${extraClass}" src="${src}" alt="言靈引路使・コトハ" draggable="false">`;
+  }
+
+  function getTutorialStep() {
+    const step = state && state.progress ? state.progress.tutorialStep : 'done';
+    return VALID_TUTORIAL_STEPS.has(step) ? step : 'done';
+  }
+
+  function setTutorialStep(step, { silent = false } = {}) {
+    if (!state || !state.progress) return;
+    const next = VALID_TUTORIAL_STEPS.has(step) ? step : 'done';
+    state.progress.tutorialStep = next;
+    if (hasActiveSession) autoSave();
+    renderBattleTutorialBanner();
+    renderExploreTutorialBanner();
+    if (!silent && next === 'done') {
+      showToast('🦊 コトハ：新手引導完成！隨時可依頂部「目前目標」前進，或在 ⚙ 查看玩法速覽！', 'gold');
+    }
+  }
+
+  function startFirstTutorialBattle() {
+    closeModal('modal-tutorial');
+    state.progress.currentRegionId = 'r1';
+    state.progress.tutorialStep = 1;
+    autoSave();
+    const normals = getRegionNormalEnemies('r1');
+    const starterEnemy = getEnemyById('en_r1_slime') || normals[0];
+    if (starterEnemy) {
+      addExploreLog(`🦊 コトハ引領你迎戰第一隻魔物【${starterEnemy.name}】！`, 'battle');
+      startBattle(starterEnemy, { returnView: 'explore', isFirstTutorialBattle: true });
+    } else {
+      switchView('explore');
+    }
+  }
+
+  function openKotohaModal(mode = 'intro') {
+    const titleEl = $('tutorial-modal-title');
+    const bodyEl = $('tutorial-modal-body');
+    const footerEl = $('tutorial-modal-footer');
+    if (!bodyEl || !footerEl) return;
+
+    const isIntro = mode === 'intro';
+    if (titleEl) {
+      titleEl.textContent = isIntro ? '🦊 言靈引路使・コトハ' : '❓ コトハ的玩法速覽';
+    }
+
+    const pName = escapeHtml((state && state.player && state.player.name) || '旅人');
+    const jpLine = isIntro
+      ? `はじめまして、${pName}さん！<ruby>言葉<rt>ことば</rt></ruby>を<ruby>食<rt>た</rt></ruby>べる<ruby>魔物<rt>まもの</rt></ruby>を、<ruby>正<rt>ただ</rt></ruby>しい<ruby>日本語<rt>にほんご</rt></ruby>で<ruby>撃退<rt>げきたい</rt></ruby>しよう！`
+      : `<ruby>旅<rt>たび</rt></ruby>の<ruby>心得<rt>こころえ</rt></ruby>を<ruby>確認<rt>かくにん</rt></ruby>しよう！いつでも<ruby>私<rt>わたし</rt></ruby>が<ruby>案内<rt>あんない</rt></ruby>するよ！`;
+    const zhLine = isIntro
+      ? `初次見面，${pName}！我是引路精靈「コトハ」。魔物正在吞噬語言——我先帶你打一場實戰，1 分鐘就能上手！`
+      : '隨時忘記規則都可以打開這裡！記住下面四個重點就能暢遊言靈大陸：';
+
+    bodyEl.innerHTML = `
+      <div class="tutorial-intro-layout">
+        <div class="tutorial-guide-portrait-wrap">${renderGuidePortraitImg()}</div>
+        <div class="tutorial-speech-col">
+          <div class="tutorial-speech-jp jp-text force-furigana">${jpLine}</div>
+          <div class="tutorial-speech-zh">${zhLine}</div>
+          <ul class="tutorial-cue-list">
+            <li>⚔️ <strong>答題即攻擊</strong>：選出正確日文發動言靈；10 秒內答對可削弱魔物護盾，連對 3 題啟動 FEVER！</li>
+            <li>🧭 <strong>探索與首領</strong>：選路線前進累積探索度，50% 迎戰精英、100% 挑戰區域首領。</li>
+            <li>📓 <strong>錯題與技能</strong>：答錯會自動收入「修練 → 錯題筆記」；升級獲得的 SP 可在技能樹解鎖輔助技。</li>
+            ${isIntro ? '' : '<li>🌸 <strong>難度與沉浸</strong>：頂部可切換「假名+中 / 無假名 / 全日文」；⚙ 選單隨時可換 N4～N1 難度。</li>'}
+          </ul>
+        </div>
+      </div>
+    `;
+
+    if (isIntro) {
+      footerEl.innerHTML = `
+        <button id="btn-tutorial-first-battle" type="button" class="btn btn-gold btn-lg btn-block tutorial-pulse">⚔️ 迎戰第一隻魔物（新手實戰）</button>
+        <button id="btn-tutorial-skip" type="button" class="btn btn-secondary btn-block">先自由逛村莊（略過教學）</button>
+      `;
+      const goBtn = $('btn-tutorial-first-battle');
+      if (goBtn) {
+        goBtn.onclick = () => {
+          Audio.playSFX('confirm');
+          startFirstTutorialBattle();
+        };
+      }
+      const skipBtn = $('btn-tutorial-skip');
+      if (skipBtn) {
+        skipBtn.onclick = () => {
+          Audio.playSFX('click');
+          closeModal('modal-tutorial');
+          setTutorialStep('done', { silent: true });
+          showToast('🦊 コトハ：已略過教學！隨時可點右上角 ⚙ →「❓ 玩法」呼喚我喔！', 'info');
+        };
+      }
+    } else {
+      footerEl.innerHTML = `
+        <button id="btn-tutorial-ok" type="button" class="btn btn-gold btn-block">✔ 我明白了</button>
+        <button id="btn-tutorial-replay" type="button" class="btn btn-secondary btn-sm btn-block">🔁 重新進行新手實戰引導</button>
+      `;
+      const okBtn = $('btn-tutorial-ok');
+      if (okBtn) okBtn.onclick = () => { Audio.playSFX('click'); closeModal('modal-tutorial'); };
+      const replayBtn = $('btn-tutorial-replay');
+      if (replayBtn) {
+        replayBtn.onclick = () => {
+          Audio.playSFX('confirm');
+          startFirstTutorialBattle();
+        };
+      }
+    }
+
+    openModal('modal-tutorial');
+  }
+
+  function renderBattleTutorialBanner() {
+    const el = $('battle-tutorial-banner');
+    if (!el) return;
+    if (!battle.active || battle.isWrongNoteTraining || getTutorialStep() !== 1) {
+      el.classList.add('hidden');
+      el.innerHTML = '';
+      return;
+    }
+    const msg = battle.consecutiveCorrect >= 1
+      ? '<strong>【教學 2/3】</strong>漂亮！連續答對 <strong>3 題</strong>會啟動 FEVER，傷害與獎勵都會提升！'
+      : '<strong>【教學 1/3】</strong>選出正確日文即可攻擊！上方 <strong>10 秒倒數</strong>內答對還能削弱魔物護盾！';
+    el.innerHTML = `
+      <div class="tutorial-banner-avatar">${renderGuidePortraitImg()}</div>
+      <div class="tutorial-banner-text">${msg}</div>
+      <button type="button" class="btn btn-secondary btn-sm tutorial-banner-skip" id="btn-battle-tut-skip">略過</button>
+    `;
+    el.classList.remove('hidden');
+    const skipBtn = $('btn-battle-tut-skip');
+    if (skipBtn) {
+      skipBtn.onclick = () => {
+        Audio.playSFX('click');
+        setTutorialStep('done', { silent: true });
+      };
+    }
+  }
+
+  function renderExploreTutorialBanner() {
+    const el = $('explore-tutorial-banner');
+    const stepBtn = $('btn-explore-step');
+    const riskyBtn = $('btn-explore-risky');
+    const active = getTutorialStep() === 2;
+    if (stepBtn) stepBtn.classList.toggle('tutorial-pulse', active);
+    if (riskyBtn) riskyBtn.classList.toggle('tutorial-pulse', active && !riskyBtn.classList.contains('hidden'));
+    if (!el) return;
+    if (!active) {
+      el.classList.add('hidden');
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = `
+      <div class="tutorial-banner-avatar">${renderGuidePortraitImg()}</div>
+      <div class="tutorial-banner-text">
+        <strong>【教學 3/3】</strong>首戰告捷！點下方發光的<strong>「安全小路」或「危險捷徑」</strong>繼續探索（50% 精英・100% 首領），也能點底部<strong>「城鎮」</strong>跟居民學日語！
+      </div>
+      <button type="button" class="btn btn-gold btn-sm tutorial-banner-skip" id="btn-explore-tut-done">知道了</button>
+    `;
+    el.classList.remove('hidden');
+    const doneBtn = $('btn-explore-tut-done');
+    if (doneBtn) {
+      doneBtn.onclick = () => {
+        Audio.playSFX('confirm');
+        setTutorialStep('done');
+      };
+    }
   }
 
   // First sentence of the explanation (HTML-safe: data HTML is trusted ruby markup and
@@ -2774,6 +3004,9 @@
     if (viewName === 'inv') viewName = 'inventory';
 
     if (currentView !== viewName) {
+      if (currentView === 'explore' && viewName !== 'battle' && hasActiveSession && getTutorialStep() === 2) {
+        setTutorialStep('done');
+      }
       stopTypewriter();
       Audio.stopSpeak();
       if (currentView === 'battle' && viewName !== 'battle') {
@@ -2960,6 +3193,14 @@
       });
     }
 
+    const summaryLabel = $('create-diff-summary-label');
+    if (summaryLabel) {
+      const selCfg = getDifficultyModeConfig(createSelectedDifficultyMode);
+      summaryLabel.textContent = selCfg.id === 'adaptive'
+        ? `動態自適應・${createAdaptiveStartJlpt} 起步`
+        : selCfg.label;
+    }
+
     const startRow = $('create-adaptive-start-row');
     if (startRow) {
       startRow.classList.toggle('hidden', createSelectedDifficultyMode !== 'adaptive');
@@ -2995,6 +3236,7 @@
     state.player.equipment.weapon = starterWeapon;
     state.settings.difficultyMode = getDifficultyModeConfig(createSelectedDifficultyMode).id;
     state.settings.adaptiveStartJlpt = createAdaptiveStartJlpt === 'N3' ? 'N3' : 'N4';
+    state.progress.tutorialStep = 0;
 
     // Ensure full derived HP/MP including starter weapon bonus
     const total = getTotalStats();
@@ -3011,6 +3253,7 @@
     autoSave();
     showToast(`✨ 記憶甦醒！${name}（${job.name}）以【${modeCfg.label}】踏上言霊大陸！`, 'gold');
     switchView('town');
+    openKotohaModal('intro');
   }
 
   // ============================================================================
@@ -3823,37 +4066,51 @@
     bar.classList.toggle('mode-n1-active', modeId === 'fixed_n1');
 
     bar.innerHTML = `
-      <div class="map-diff-top-row">
-        <div class="map-diff-title">
-          <span>🎯 題庫難度模式</span>
-          ${modeId === 'fixed_n1' ? '<span class="badge badge-crimson">🔥 EXP ×2・掉落 ×2</span>' : ''}
-        </div>
-        <div class="map-diff-pills" role="group" aria-label="切換難度模式">
-          ${DIFFICULTY_MODES.map((m) => `
-            <button type="button" class="map-diff-pill ${m.id === modeId ? 'active' : ''} ${m.id === 'fixed_n1' ? 'pill-n1' : ''}" data-map-diff="${m.id}">
-              ${escapeHtml(m.shortLabel)}
-            </button>
-          `).join('')}
-        </div>
-      </div>
-      <div class="map-diff-meta">
-        <span>${escapeHtml(cfg.label)}：${escapeHtml(cfg.desc)}</span>
-        ${modeId === 'adaptive' ? `
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span class="adaptive-start-label">起步：</span>
-            <button type="button" class="btn btn-sm adaptive-start-btn ${startJlpt === 'N4' ? 'active' : ''}" data-map-start="N4">N4 起步</button>
-            <button type="button" class="btn btn-sm adaptive-start-btn ${startJlpt === 'N3' ? 'active' : ''}" data-map-start="N3">N3 起步</button>
+      <details class="map-diff-details" ${uiMapDiffOpen ? 'open' : ''}>
+        <summary class="map-diff-summary">
+          <span>🎯 難度：<b>${escapeHtml(cfg.shortLabel)}</b>${modeId === 'fixed_n1' ? ' <span class="badge badge-crimson">EXP・掉落 ×2</span>' : ''}</span>
+          <span>📚 已破 <b>${qProgress.solved}/${qProgress.total}</b> 題</span>
+          <span class="map-diff-summary-toggle">${uiMapDiffOpen ? '收合 ▴' : '切換 ▾'}</span>
+        </summary>
+        <div class="map-diff-details-body">
+          <div class="map-diff-top-row">
+            <div class="map-diff-pills" role="group" aria-label="切換難度模式">
+              ${DIFFICULTY_MODES.map((m) => `
+                <button type="button" class="map-diff-pill ${m.id === modeId ? 'active' : ''} ${m.id === 'fixed_n1' ? 'pill-n1' : ''}" data-map-diff="${m.id}">
+                  ${escapeHtml(m.shortLabel)}
+                </button>
+              `).join('')}
+            </div>
           </div>
-        ` : ''}
-      </div>
-      <div class="qbank-progress-box">
-        <div class="qbank-progress-label">📚 ${qProgress.summaryText}</div>
-        <div class="stat-bar qbank-bar">
-          <div class="stat-bar-fill" style="width: ${qProgress.pct}%;"></div>
-          <span class="stat-bar-text">${qProgress.pct}% (${qProgress.solved}/${qProgress.total})</span>
+          <div class="map-diff-meta">
+            <span>${escapeHtml(cfg.label)}：${escapeHtml(cfg.desc)}</span>
+            ${modeId === 'adaptive' ? `
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="adaptive-start-label">起步：</span>
+                <button type="button" class="btn btn-sm adaptive-start-btn ${startJlpt === 'N4' ? 'active' : ''}" data-map-start="N4">N4 起步</button>
+                <button type="button" class="btn btn-sm adaptive-start-btn ${startJlpt === 'N3' ? 'active' : ''}" data-map-start="N3">N3 起步</button>
+              </div>
+            ` : ''}
+          </div>
+          <div class="qbank-progress-box">
+            <div class="qbank-progress-label">📚 ${qProgress.summaryText}</div>
+            <div class="stat-bar qbank-bar">
+              <div class="stat-bar-fill" style="width: ${qProgress.pct}%;"></div>
+              <span class="stat-bar-text">${qProgress.pct}% (${qProgress.solved}/${qProgress.total})</span>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
     `;
+
+    const detailsEl = bar.querySelector('.map-diff-details');
+    if (detailsEl) {
+      detailsEl.addEventListener('toggle', () => {
+        uiMapDiffOpen = detailsEl.open;
+        const hint = detailsEl.querySelector('.map-diff-summary-toggle');
+        if (hint) hint.textContent = detailsEl.open ? '收合 ▴' : '切換 ▾';
+      });
+    }
 
     bar.querySelectorAll('[data-map-diff]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -4080,6 +4337,7 @@
       if ($('explore-event-choices')) $('explore-event-choices').innerHTML = '';
     }
 
+    renderExploreTutorialBanner();
     renderExploreLog();
   }
 
@@ -4087,6 +4345,9 @@
   // After 100% (patrol) the route no longer matters and 'normal' is always used.
   function handleExploreStep(routeKey) {
     if (explorePendingEvent) return;
+    if (getTutorialStep() === 2) {
+      setTutorialStep('done');
+    }
     const region = getRegionById(state.progress.currentRegionId);
     if (!region) return;
 
@@ -4632,7 +4893,8 @@
       // Explore route bonus (危險捷徑 ×1.3); 1 for every other battle
       rewardMult: Number(options.rewardMult) > 0 ? Number(options.rewardMult) : 1,
       rewardLabel: typeof options.rewardLabel === 'string' ? options.rewardLabel : '',
-      scrollUsed: false
+      scrollUsed: false,
+      isFirstTutorialBattle: Boolean(options.isFirstTutorialBattle)
     };
 
     const viewEl = $('view-battle');
@@ -4984,6 +5246,12 @@
       }
     }
 
+    // Gentle onboarding first question: avoid 'unnatural' or 'reorder' on the very first battle question
+    if ((battle.isFirstTutorialBattle || getTutorialStep() === 1) && battle.usedQuestionIds.length === 0) {
+      const gentle = activeTier.find((q) => q.type === 'reading' || q.type === 'particle');
+      if (gentle) return normalizeQuestion(gentle);
+    }
+
     // Draw deterministically from shuffled bag order, lightly favoring enemy weakness within top shuffled window
     let chosen = activeTier[0];
     if (activeTier.length > 1 && battle.enemy && battle.enemy.weakness && Math.random() < 0.42) {
@@ -5042,6 +5310,7 @@
     }
 
     renderBattleQuestionOptions(q);
+    renderBattleTutorialBanner();
     updateBattleUI();
     startBattleSpeedTimer();
 
@@ -5600,6 +5869,9 @@
     Audio.playSFX('victory');
     setBattlePoses('victory', 'defeat');
     battle.active = false;
+    if (getTutorialStep() === 1) {
+      state.progress.tutorialStep = 2;
+    }
     checkAchievements();
     autoSave();
     updateHUD();
@@ -7966,6 +8238,13 @@
         syncAudioButtons();
       });
     }
+    if ($('btn-open-guide')) {
+      $('btn-open-guide').addEventListener('click', () => {
+        Audio.playSFX('click');
+        setHudSettingsOpen(false);
+        openKotohaModal('guide');
+      });
+    }
     if ($('hud-difficulty-select')) {
       $('hud-difficulty-select').addEventListener('change', (e) => {
         Audio.playSFX('click');
@@ -8230,6 +8509,13 @@
 
     if ($('btn-shop-close')) $('btn-shop-close').addEventListener('click', () => { Audio.playSFX('click'); closeModal('modal-shop'); });
     if ($('btn-save-close')) $('btn-save-close').addEventListener('click', () => { Audio.playSFX('click'); closeModal('modal-save'); });
+    if ($('btn-tutorial-close')) {
+      $('btn-tutorial-close').addEventListener('click', () => {
+        Audio.playSFX('click');
+        closeModal('modal-tutorial');
+        if (getTutorialStep() === 0) setTutorialStep('done', { silent: true });
+      });
+    }
     if ($('btn-generic-close')) {
       $('btn-generic-close').addEventListener('click', () => {
         Audio.playSFX('click');
@@ -8241,12 +8527,15 @@
     }
 
     // Backdrop click closes ONLY non-mandatory modals (never #modal-explain!)
-    ['modal-shop', 'modal-save', 'modal-generic'].forEach((mid) => {
+    ['modal-shop', 'modal-save', 'modal-generic', 'modal-tutorial'].forEach((mid) => {
       const overlay = $(mid);
       if (!overlay) return;
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
           closeModal(mid);
+          if (mid === 'modal-tutorial' && getTutorialStep() === 0) {
+            setTutorialStep('done', { silent: true });
+          }
           if (mid === 'modal-generic' && genericModalCallback) {
             const cb = genericModalCallback;
             genericModalCallback = null;
@@ -8343,6 +8632,7 @@
         closeModal('modal-shop');
         closeModal('modal-save');
         closeModal('modal-generic');
+        closeModal('modal-tutorial');
         Audio.playSFX('cancel');
         showToast('🗑️ 已清空所有本機存檔並回到標題畫面。', 'warning');
         switchView('title');
@@ -8422,6 +8712,9 @@
     getEnemyById,
     formatBattleSpeedText,
     getQuestionSpeakText,
+    openKotohaModal,
+    getTutorialStep,
+    setTutorialStep,
     applyMobileHudCollapseState
   };
 

@@ -368,5 +368,39 @@ test('S-3: oversized import is refused before parsing', () => {
   assert.strictEqual(Game.importSaveJsonCode(huge, { skipConfirm: true }), false);
 });
 
+console.log('\nonboarding & UI state');
+
+test('tutorialStep: brand-new save defaults to 0; legacy played saves auto-skip to "done"', () => {
+  assert.strictEqual(def.progress.tutorialStep, 0);
+  assert.strictEqual(sanitize({ player: { name: 'New' } }).progress.tutorialStep, 0);
+  assert.strictEqual(sanitize({ player: { name: 'Vet', level: 3 } }).progress.tutorialStep, 'done');
+  assert.strictEqual(sanitize({ player: { name: 'Vet' }, stats: { battlesWon: 1 } }).progress.tutorialStep, 'done');
+  assert.strictEqual(sanitize({ player: { name: 'Vet' }, stats: { totalCorrect: 1 } }).progress.tutorialStep, 'done');
+  assert.strictEqual(sanitize({ player: { name: 'Vet' }, progress: { defeatedBosses: ['r1'] } }).progress.tutorialStep, 'done');
+});
+
+test('tutorialStep: valid steps preserved, malformed values fall back safely', () => {
+  assert.strictEqual(sanitize({ player: {}, progress: { tutorialStep: 0 } }).progress.tutorialStep, 0);
+  assert.strictEqual(sanitize({ player: {}, progress: { tutorialStep: 1 } }).progress.tutorialStep, 1);
+  assert.strictEqual(sanitize({ player: {}, progress: { tutorialStep: 2 } }).progress.tutorialStep, 2);
+  assert.strictEqual(sanitize({ player: {}, progress: { tutorialStep: 'done' } }).progress.tutorialStep, 'done');
+  assert.strictEqual(sanitize({ player: {}, progress: { tutorialStep: 99 } }).progress.tutorialStep, 0);
+  assert.strictEqual(sanitize({ player: {}, progress: { tutorialStep: '<script>' } }).progress.tutorialStep, 0);
+  assert.strictEqual(sanitize({ player: { level: 5 }, progress: { tutorialStep: '<script>' } }).progress.tutorialStep, 'done');
+});
+
+test('setTutorialStep / getTutorialStep enforce allowed transitions', () => {
+  Game.setTutorialStep(0, { silent: true });
+  assert.strictEqual(Game.getTutorialStep(), 0);
+  Game.setTutorialStep(1, { silent: true });
+  assert.strictEqual(Game.getTutorialStep(), 1);
+  Game.setTutorialStep(2, { silent: true });
+  assert.strictEqual(Game.getTutorialStep(), 2);
+  Game.setTutorialStep('invalid', { silent: true });
+  assert.strictEqual(Game.getTutorialStep(), 'done');
+  Game.setTutorialStep('done', { silent: true });
+  assert.strictEqual(Game.getTutorialStep(), 'done');
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
