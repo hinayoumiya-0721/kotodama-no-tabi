@@ -402,5 +402,72 @@ test('setTutorialStep / getTutorialStep enforce allowed transitions', () => {
   assert.strictEqual(Game.getTutorialStep(), 'done');
 });
 
+console.log('\nsave file download/upload & XSS defense');
+
+test('validateSaveJsonFile blocks non-JSON extensions, dangerous MIME types, empty and >1MB files', () => {
+  assert.strictEqual(Game.validateSaveJsonFile(null).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'evil.html', type: 'text/html', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'evil.svg', type: 'image/svg+xml', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'evil.js', type: 'application/javascript', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'save.json.html', type: 'application/json', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'save.txt', type: 'text/plain', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'spoof.json', type: 'text/html', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'spoof.json', type: 'image/svg+xml', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'spoof.json', type: 'application/javascript', size: 120 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'empty.json', type: 'application/json', size: 0 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'huge.json', type: 'application/json', size: 1000001 }).ok, false);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'kotodama.json', type: 'application/json', size: 2048 }).ok, true);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'KOTODAMA.JSON', type: '', size: 512 }).ok, true);
+  assert.strictEqual(Game.validateSaveJsonFile({ name: 'backup.json', type: 'text/plain;charset=utf-8', size: 512 }).ok, true);
+});
+
+test('importSaveJsonCode blocks binary NUL bytes, HTML docs, arrays, and clears textarea after success', () => {
+  assert.strictEqual(Game.importSaveJsonCode('{"player":{"name":"A"}}\u0000PNG', { skipConfirm: true }), false);
+  assert.strictEqual(Game.importSaveJsonCode('<!DOCTYPE html><script>alert(1)</script>', { skipConfirm: true }), false);
+  assert.strictEqual(Game.importSaveJsonCode('[1, 2, 3]', { skipConfirm: true }), false);
+
+  const mockTa = { value: '\uFEFF{"player":{"name":"旅人A","level":4,"gold":300}}' };
+  const mockInput = { value: 'C:\\fakepath\\save.json' };
+  const mockDetails = { open: true };
+  const prevGetById = ctx.document.getElementById;
+  const prevScrollTo = ctx.window.scrollTo;
+  ctx.window.scrollTo = () => {};
+  ctx.document.getElementById = (id) => {
+    if (id === 'save-json-textarea') return mockTa;
+    if (id === 'input-import-save-file') return mockInput;
+    if (id === 'save-code-details') return mockDetails;
+    return null;
+  };
+  try {
+    const ok = Game.importSaveJsonCode(null, { skipConfirm: true });
+    assert.strictEqual(ok, true);
+    assert.strictEqual(mockTa.value, '', 'textarea must be cleared automatically after successful import');
+    assert.strictEqual(mockInput.value, '', 'file input must be reset after import');
+    assert.strictEqual(mockDetails.open, false, 'manual code details should collapse after import');
+    assert.strictEqual(Game.getState().player.name, '旅人A');
+    assert.strictEqual(Game.getState().player.level, 4);
+  } finally {
+    ctx.document.getElementById = prevGetById;
+    ctx.window.scrollTo = prevScrollTo;
+  }
+});
+
+test('buildSafeSaveFilename strips path/HTML/control characters and XSS payloads in JSON stay neutralized', () => {
+  const fn = Game.buildSafeSaveFilename({ player: { name: '../<script>:\r\n', level: 7 } });
+  assert.ok(/^kotodama-save-[^\\/:*?"<>|\x00-\x1f]+-Lv7-\d{8}\.json$/.test(fn), `unsafe filename: ${fn}`);
+  assert.ok(!fn.includes('<') && !fn.includes('>') && !fn.includes('/'));
+
+  const s = sanitize({
+    player: {
+      name: 'A\u0000\n<img src=x>',
+      activeTitle: '<svg onload=alert(1)>',
+      unlockedTitles: ['<svg onload=alert(1)>', '初醒的旅人']
+    }
+  });
+  assert.strictEqual(s.player.name.includes('\u0000'), false);
+  assert.strictEqual(s.player.name.includes('\n'), false);
+  assert.strictEqual(s.player.activeTitle, '初醒的旅人');
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

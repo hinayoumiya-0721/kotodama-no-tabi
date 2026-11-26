@@ -1222,7 +1222,10 @@
 
     // Player
     const rp = raw.player && typeof raw.player === 'object' && !Array.isArray(raw.player) ? raw.player : {};
-    out.player.name = typeof rp.name === 'string' && rp.name.trim() ? rp.name.trim().slice(0, 12) : def.player.name;
+    const cleanName = typeof rp.name === 'string'
+      ? rp.name.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 12)
+      : '';
+    out.player.name = cleanName || def.player.name;
     // getJobById() falls back to jobs[0] (always truthy), so validate against the real id list
     const validJobIds = new Set(getJobs().map((j) => j.id));
     out.player.jobId = typeof rp.jobId === 'string' && validJobIds.has(rp.jobId) ? rp.jobId : def.player.jobId;
@@ -7922,8 +7925,18 @@
   // ============================================================================
   // 17. Save / Load Modal
   // ============================================================================
+  function clearSaveTransferInputs() {
+    const ta = $('save-json-textarea');
+    if (ta) ta.value = '';
+    const fi = $('input-import-save-file');
+    if (fi) fi.value = '';
+    const details = $('save-code-details');
+    if (details) details.open = false;
+  }
+
   function openSaveModal(loadOnly = false) {
     saveModalLoadOnly = Boolean(loadOnly || !hasActiveSession);
+    clearSaveTransferInputs();
     renderSaveModal();
     openModal('modal-save');
   }
@@ -7991,7 +8004,9 @@
     });
   }
 
-  function exportSaveJsonCode() {
+  const ALLOWED_SAVE_MIME_TYPES = new Set(['', 'application/json', 'text/json', 'text/plain']);
+
+  function buildExportSavePayload() {
     let payload = null;
     if (hasActiveSession) {
       payload = JSON.parse(JSON.stringify(state));
@@ -8000,10 +8015,126 @@
     } else {
       const latestKey = findLatestSaveKey();
       if (latestKey) {
-        payload = readRawSlot(latestKey);
+        const raw = readRawSlot(latestKey);
+        if (raw && raw.player && typeof raw.player === 'object') {
+          try {
+            payload = sanitizeSaveData(raw);
+          } catch (_) {
+            payload = null;
+          }
+        }
       }
     }
-    if (!payload || !payload.player) {
+    return payload && payload.player ? payload : null;
+  }
+
+  function buildSafeSaveFilename(payload) {
+    const rawName = (payload && payload.player && typeof payload.player.name === 'string')
+      ? payload.player.name
+      : 'traveler';
+    const safeName = rawName
+      .replace(/[\\/:*?"<>|\x00-\x1f\x7f\s]+/g, '')
+      .slice(0, 12) || 'traveler';
+    const lv = Math.max(1, Math.floor(safeNum(payload && payload.player && payload.player.level) || 1));
+    const d = new Date();
+    const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    return `kotodama-save-${safeName}-Lv${lv}-${ymd}.json`;
+  }
+
+  function validateSaveJsonFile(file) {
+    if (!file || typeof file !== 'object') {
+      return { ok: false, reason: '未選擇存檔檔案。' };
+    }
+    const name = typeof file.name === 'string' ? file.name.trim() : '';
+    if (!name || !/\.json$/i.test(name)) {
+      return { ok: false, reason: '僅支援 .json 格式的存檔檔案，已拒絕匯入。' };
+    }
+    const rawType = typeof file.type === 'string' ? file.type.split(';')[0].trim().toLowerCase() : '';
+    if (!ALLOWED_SAVE_MIME_TYPES.has(rawType)) {
+      return { ok: false, reason: '檔案類型不是合法 JSON，已拒絕匯入。' };
+    }
+    const size = Number(file.size);
+    if (!Number.isFinite(size) || size <= 0) {
+      return { ok: false, reason: '存檔檔案內容為空，未覆蓋現有存檔。' };
+    }
+    if (size > IMPORT_MAX_CHARS) {
+      return { ok: false, reason: '存檔檔案超過 1 MB 上限，未覆蓋現有存檔。' };
+    }
+    return { ok: true };
+  }
+
+  function exportSaveJsonFile() {
+    const payload = buildExportSavePayload();
+    if (!payload) {
+      showToast('尚未開始冒險且本機無可下載的存檔。', 'warning');
+      return '';
+    }
+    const jsonStr = JSON.stringify(payload, null, 2);
+    const filename = buildSafeSaveFilename(payload);
+    try {
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }, 1000);
+      Audio.playSFX('confirm');
+      showToast(`💾 已下載存檔檔案：${filename}`, 'success');
+    } catch (_) {
+      Audio.playSFX('wrong');
+      showToast('❌ 瀏覽器無法觸發檔案下載，請改用下方「進階：手動複製引繼碼」。', 'error');
+    }
+    return jsonStr;
+  }
+
+  function readFileAsUtf8Text(file) {
+    if (file && typeof file.text === 'function') {
+      return file.text();
+    }
+    return new Promise((resolve, reject) => {
+      if (typeof FileReader !== 'function') {
+        reject(new Error('FileReader unavailable'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(reader.error || new Error('File read failed'));
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
+  async function importSaveJsonFile(file, options = {}) {
+    const fi = $('input-import-save-file');
+    try {
+      const check = validateSaveJsonFile(file);
+      if (!check.ok) {
+        Audio.playSFX('wrong');
+        showToast(`❌ ${check.reason}`, 'error');
+        return false;
+      }
+      let text = '';
+      try {
+        text = await readFileAsUtf8Text(file);
+      } catch (_) {
+        Audio.playSFX('wrong');
+        showToast('❌ 讀取存檔檔案失敗，未覆蓋現有存檔。', 'error');
+        return false;
+      }
+      return importSaveJsonCode(text, options);
+    } finally {
+      if (fi) fi.value = '';
+    }
+  }
+
+  function exportSaveJsonCode() {
+    const payload = buildExportSavePayload();
+    if (!payload) {
       showToast('尚未開始冒險且本機無可匯出的存檔。', 'warning');
       return '';
     }
@@ -8044,14 +8175,26 @@
     const rawText = typeof rawJsonOverride === 'string'
       ? rawJsonOverride
       : (ta ? ta.value : '');
-    const trimmed = String(rawText || '').trim();
+    const stripped = String(rawText || '').replace(/^\uFEFF/, '');
+    if (stripped.indexOf('\u0000') !== -1) {
+      Audio.playSFX('wrong');
+      showToast('❌ 檔案內容包含非法二進位資料（非純文字 JSON），已拒絕匯入。', 'error');
+      return false;
+    }
+    const trimmed = stripped.trim();
     if (!trimmed) {
-      showToast('❌ 請先貼上 JSON 存檔碼後再點擊匯入。', 'error');
+      showToast('❌ 請先選擇 .json 存檔檔，或於進階區貼上 JSON 存檔碼。', 'error');
       return false;
     }
     // QA S-3: a real save is ~10–200 KB; refuse anything absurdly large before parsing it
     if (trimmed.length > IMPORT_MAX_CHARS) {
-      showToast('❌ 存檔碼過大，未覆蓋現有存檔。', 'error');
+      showToast('❌ 存檔資料過大（超過 1 MB），未覆蓋現有存檔。', 'error');
+      return false;
+    }
+    // Must be a JSON object payload (immediately rejects HTML/SVG/JS documents & non-object JSON)
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+      Audio.playSFX('wrong');
+      showToast('❌ 僅支援 JSON 物件格式的存檔，未覆蓋現有存檔。', 'error');
       return false;
     }
 
@@ -8060,13 +8203,13 @@
       parsed = JSON.parse(trimmed);
     } catch (_) {
       Audio.playSFX('wrong');
-      showToast('❌ 存檔碼格式錯誤（無效的 JSON），未覆蓋現有存檔。', 'error');
+      showToast('❌ 存檔格式錯誤（無效的 JSON），未覆蓋現有存檔。', 'error');
       return false;
     }
 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !parsed.player || typeof parsed.player !== 'object' || Array.isArray(parsed.player)) {
       Audio.playSFX('wrong');
-      showToast('❌ 存檔碼缺少必要角色資料（player），未覆蓋現有存檔。', 'error');
+      showToast('❌ 存檔缺少必要角色資料（player），未覆蓋現有存檔。', 'error');
       return false;
     }
 
@@ -8076,12 +8219,16 @@
       nextState = sanitizeSaveData(parsed);
     } catch (err) {
       Audio.playSFX('wrong');
-      showToast('❌ 存檔碼內容損毀，無法解析，未覆蓋現有存檔。', 'error');
+      showToast('❌ 存檔內容損毀，無法解析，未覆蓋現有存檔。', 'error');
       return false;
     }
 
     // Confirm before replacing the live session / auto slot (autoSave writes SAVE_KEYS.auto).
-    const existing = hasActiveSession ? state : readRawSlot(SAVE_KEYS.auto);
+    const rawExisting = hasActiveSession ? state : readRawSlot(SAVE_KEYS.auto);
+    let existing = null;
+    if (rawExisting && rawExisting.player && typeof rawExisting.player === 'object') {
+      try { existing = sanitizeSaveData(rawExisting); } catch (_) { existing = null; }
+    }
     if (!skipConfirm && existing && existing.player && typeof global.confirm === 'function') {
       const describe = (s) => {
         const p = s.player || {};
@@ -8120,9 +8267,11 @@
     reading.active = false;
     crossRegionNotifiedKeys = new Set();
 
+    clearSaveTransferInputs();
     applyFuriganaSetting();
     updateHUD();
     closeModal('modal-save');
+    closeModal('modal-tutorial');
     Audio.playSFX('levelup');
     showToast(`📥 存檔匯入成功！歡迎回來，${state.player.name}（Lv.${state.player.level}）！`, 'gold');
 
@@ -8487,6 +8636,21 @@
     if ($('btn-clear-mastered-notes')) {
       $('btn-clear-mastered-notes').addEventListener('click', clearMasteredWrongNotes);
     }
+    if ($('btn-download-save-json')) {
+      $('btn-download-save-json').addEventListener('click', () => exportSaveJsonFile());
+    }
+    if ($('btn-upload-save-json') && $('input-import-save-file')) {
+      $('btn-upload-save-json').addEventListener('click', () => {
+        Audio.playSFX('click');
+        $('input-import-save-file').value = '';
+        $('input-import-save-file').click();
+      });
+      $('input-import-save-file').addEventListener('change', (e) => {
+        const file = e.target && e.target.files && e.target.files[0];
+        if (!file) return;
+        importSaveJsonFile(file);
+      });
+    }
     if ($('btn-export-save-json')) {
       $('btn-export-save-json').addEventListener('click', () => exportSaveJsonCode());
     }
@@ -8508,7 +8672,7 @@
     }
 
     if ($('btn-shop-close')) $('btn-shop-close').addEventListener('click', () => { Audio.playSFX('click'); closeModal('modal-shop'); });
-    if ($('btn-save-close')) $('btn-save-close').addEventListener('click', () => { Audio.playSFX('click'); closeModal('modal-save'); });
+    if ($('btn-save-close')) $('btn-save-close').addEventListener('click', () => { Audio.playSFX('click'); clearSaveTransferInputs(); closeModal('modal-save'); });
     if ($('btn-tutorial-close')) {
       $('btn-tutorial-close').addEventListener('click', () => {
         Audio.playSFX('click');
@@ -8533,6 +8697,9 @@
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
           closeModal(mid);
+          if (mid === 'modal-save') {
+            clearSaveTransferInputs();
+          }
           if (mid === 'modal-tutorial' && getTutorialStep() === 0) {
             setTutorialStep('done', { silent: true });
           }
@@ -8702,6 +8869,10 @@
     cycleImmersionMode,
     exportSaveJsonCode,
     importSaveJsonCode,
+    exportSaveJsonFile,
+    importSaveJsonFile,
+    validateSaveJsonFile,
+    buildSafeSaveFilename,
     ensureDailyTrainingFresh,
     claimDailyTrainingTask,
     renderDailyTrainingPanel,
