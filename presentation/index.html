@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>言霊の旅｜自主學習成果發表</title>
+<!-- 沒有網路時會自動改用電腦內建字型，簡報照樣能用 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --bg: #100e26; --panel: #1d1a45; --panel2: #262158; --border: #4a4290; --ink: #0b0a18;
+    --cream: #f4ecd0; --cream-dk: #c9bf9c; --dim: #8a83b8;
+    --gold: #f6c445; --gold-dk: #a8741a; --green: #5ec269; --green-lt: #a6e88a; --red: #e8543c; --red-lt: #ff8a6b; --cyan: #8fd4ff;
+    --sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif;
+    --pix: "DotGothic16", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #07060f; overflow: hidden; }
+  body { font-family: var(--sans); color: var(--cream); }
+
+  /* 1920×1080 stage, scaled to fit any screen / projector */
+  #deck { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  .slide {
+    position: absolute; inset: 0; padding: 110px 140px 120px;
+    display: flex; flex-direction: column;
+    background:
+      radial-gradient(2px 2px at 12% 18%, rgba(244,236,208,.35) 50%, transparent 51%),
+      radial-gradient(2px 2px at 78% 12%, rgba(244,236,208,.25) 50%, transparent 51%),
+      radial-gradient(3px 3px at 64% 84%, rgba(244,236,208,.2) 50%, transparent 51%),
+      radial-gradient(2px 2px at 30% 72%, rgba(244,236,208,.22) 50%, transparent 51%),
+      radial-gradient(2px 2px at 90% 58%, rgba(244,236,208,.25) 50%, transparent 51%),
+      radial-gradient(2px 2px at 46% 8%, rgba(244,236,208,.2) 50%, transparent 51%),
+      linear-gradient(180deg, #100e26 0%, #17143a 100%);
+    opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s linear .35s;
+  }
+  .slide.active { opacity: 1; visibility: visible; transition: opacity .35s ease; }
+  .slide > aside.notes { display: none; }
+
+  .kicker { font-family: var(--pix); font-size: 32px; color: var(--gold); letter-spacing: .06em; margin: 0 0 18px; }
+  h1 { font-size: 78px; line-height: 1.25; font-weight: 700; margin: 0; letter-spacing: .01em; }
+  h1 .soft { color: var(--cream-dk); font-weight: 500; }
+  .lead { font-size: 40px; line-height: 1.6; color: var(--cream-dk); margin: 28px 0 0; }
+  .grow { flex: 1; min-height: 0; }
+  .row { display: flex; gap: 64px; align-items: center; }
+
+  /* Pixel window like the game UI */
+  .frame { background: var(--panel); border: 4px solid var(--border); box-shadow: 0 0 0 6px var(--ink); }
+  .frame img, .frame video { display: block; width: 100%; height: auto; }
+
+  /* Page number + progress */
+  #hud { position: fixed; right: 18px; bottom: 12px; font: 14px var(--sans); color: #6f68a3; z-index: 10; user-select: none; }
+  #progress { position: fixed; left: 0; bottom: 0; height: 4px; background: var(--gold-dk); transition: width .3s ease; z-index: 10; }
+
+  /* ---- 01 cover ---- */
+  .cover { flex-direction: row; align-items: center; gap: 40px; }
+  .cover .left { flex: 1; }
+  .logo-ruby { font-family: var(--pix); font-size: 44px; color: var(--cream-dk); margin-left: 8px; }
+  .logo { font-family: var(--pix); font-size: 190px; line-height: 1.05; margin: 4px 0 18px; }
+  .rule { width: 460px; height: 5px; background: var(--gold-dk); margin: 10px 0 34px; }
+  .cover .sub { font-size: 46px; color: var(--cream); font-weight: 500; margin: 0; }
+  .presenter { margin-top: 70px; font-size: 32px; color: var(--cream-dk); display: flex; flex-wrap: wrap; gap: 14px 28px; }
+  .presenter span[contenteditable] { color: var(--cream); border-bottom: 2px dashed transparent; outline: none; padding: 0 4px; min-width: 2em; display: inline-block; }
+  .presenter span[contenteditable]:hover, .presenter span[contenteditable]:focus { border-bottom-color: var(--border); }
+  .presenter .sep { color: var(--border); }
+  .cover .right img { width: 620px; display: block; }
+  .hint { position: absolute; left: 140px; bottom: 60px; font-size: 22px; color: #5d5791; }
+
+  /* ---- 02 motivation ---- */
+  .quote { font-size: 96px; line-height: 1.35; font-weight: 700; margin: 40px 0 0; }
+  .quote .hl { color: var(--gold); }
+  .then { margin-top: 70px; display: flex; align-items: center; gap: 36px; font-size: 44px; color: var(--cream-dk); }
+  .then img { width: 190px; image-rendering: auto; }
+
+  /* ---- 03 video ---- */
+  .video-wrap { margin-top: 40px; width: 1180px; align-self: center; }
+  /* Cropped scene images (only the part that matters) */
+  .crop { position: relative; overflow: hidden; flex: none; }
+  .crop img { position: absolute; max-width: none; width: auto; }
+  .v-center { justify-content: center; }
+  .v-center .quote { margin-top: 0; }
+  .pairs.fill { flex: 1; justify-content: center; margin-top: 0; }
+
+  /* "學到" takeaway line under each difficulty */
+  .learned { margin: 40px 0 0; text-align: center; font-size: 40px; color: var(--cream-dk); }
+  .learned b { color: var(--gold); font-weight: 700; }
+
+  /* Difficulty 2: save-file attack */
+  .atk { display: grid; grid-template-columns: 1fr 90px 600px; align-items: stretch; margin-top: 48px; }
+  .atk .frame { padding: 36px 44px; }
+  .atk .bad { border-color: #7a3328; }
+  .atk .good { border-color: #2f7a3c; }
+  .atk .arrow { align-self: center; }
+  .atk .lead2 { font-size: 38px; margin: 6px 0 28px; }
+  .atk-row { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: center; margin-top: 18px; }
+  .atk-row code { display: block; text-align: center; font: 24px Consolas, "Courier New", monospace; color: var(--red-lt); background: #2a1420; border: 2px solid #5a2a30; padding: 14px 10px; }
+  .atk-row span { font-size: 32px; color: var(--cream-dk); }
+  .atk .good code { font: 34px Consolas, "Courier New", monospace; color: var(--gold); }
+  .checks { list-style: none; margin: 34px 0 0; padding: 0; display: flex; flex-direction: column; gap: 34px; }
+  .checks li { display: flex; gap: 24px; align-items: flex-start; font-size: 32px; line-height: 1.45; color: var(--cream-dk); }
+  .checks li i { flex: none; width: 54px; height: 54px; display: grid; place-items: center; font-style: normal; font-size: 30px; color: var(--cream); background: #2f7a3c; border-radius: 50%; margin-top: -4px; }
+
+  /* Difficulty 4: AI memory & interference */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 54px; margin-top: 48px; }
+  .duo .frame { padding: 36px 44px; }
+  .duo p.say { font-size: 34px; line-height: 1.5; margin: 6px 0 34px; }
+  .mini-flow { display: grid; grid-template-columns: 1fr 50px 1fr 50px 1fr; align-items: center; margin-top: 14px; }
+  .mini-flow div { text-align: center; padding: 18px 8px; font-size: 30px; font-weight: 700; background: var(--panel2); border: 4px solid var(--border); line-height: 1.3; }
+  .mini-flow div small { display: block; font-size: 24px; font-weight: 400; color: var(--cream-dk); }
+  .mini-flow div.hl { border-color: var(--gold-dk); color: var(--gold); }
+  .mini-flow div.ok { border-color: #2f7a3c; color: var(--green-lt); }
+  .mini-flow .arrow { font-size: 40px; }
+  .duo .cap { font-size: 30px; color: var(--cream-dk); margin-top: 30px; }
+
+  /* Pain-point cards (motivation) */
+  .pains { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 56px; }
+  .pain { padding: 40px 42px; }
+  .pain b { display: block; font-size: 42px; margin-bottom: 12px; }
+  .pain span { font-size: 32px; color: var(--cream-dk); line-height: 1.6; }
+
+  /* Feature cards with icon (game systems) */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 36px 44px; margin-top: 52px; }
+  .card { display: flex; gap: 34px; align-items: flex-start; padding: 38px 42px; }
+  .card > img.ico { width: 72px; height: 72px; flex: none; image-rendering: pixelated; margin-top: 4px; }
+  .card h3 { font-size: 46px; margin: 0 0 10px; }
+  .card p { font-size: 32px; line-height: 1.55; color: var(--cream-dk); margin: 0; }
+  .card .heroes { display: flex; gap: 12px; margin-top: 14px; }
+  .card .heroes img { width: 96px; height: 96px; background: var(--panel2); box-shadow: 0 0 0 3px var(--ink); }
+
+  /* Small facts row */
+  .facts { display: flex; justify-content: center; gap: 28px; margin-top: 46px; flex-wrap: wrap; }
+  .facts span { font-size: 32px; color: var(--cream-dk); padding: 14px 28px; background: var(--panel2); box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--border); }
+
+  /* Process strip */
+  .flow { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 50px; }
+  .flow span { font-size: 32px; padding: 16px 26px; background: var(--panel2); box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--border); }
+  .flow span.hl { box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--gold-dk); color: var(--gold); }
+  .flow i { font-style: normal; font-family: var(--pix); color: var(--gold); font-size: 34px; }
+  .stats { display: flex; justify-content: center; gap: 70px; margin-top: 46px; font-size: 34px; color: var(--cream-dk); }
+  .stats b { font-family: var(--pix); font-size: 64px; color: var(--cream); font-weight: 400; margin-right: 8px; }
+
+  /* Feedback cards: quote → change */
+  .fb { display: grid; grid-template-columns: 1fr 1fr; gap: 34px 44px; margin-top: 50px; }
+  .fb .frame { padding: 34px 40px; }
+  .fb q { display: block; font-size: 36px; line-height: 1.5; font-weight: 500; quotes: "「" "」"; }
+  .fb .to { display: block; margin-top: 16px; font-size: 30px; line-height: 1.55; color: var(--green-lt); }
+  .fb .to::before { content: "▶ "; font-family: var(--pix); color: var(--gold); }
+
+  /* ---- 04 / 05 scene + steps ---- */
+  .scene { width: 1040px; flex: none; }
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 46px; }
+  .steps li { display: flex; align-items: center; gap: 28px; font-size: 44px; font-weight: 500; }
+  .num { flex: none; width: 76px; height: 76px; display: grid; place-items: center; font-family: var(--pix); font-size: 40px; color: var(--ink); background: var(--gold); box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--gold-dk); }
+  .steps .small { display: block; font-size: 30px; color: var(--cream-dk); font-weight: 400; margin-top: 6px; }
+
+  /* SRS timeline */
+  .timeline { display: flex; align-items: center; gap: 0; margin-top: 10px; }
+  .tl-node { display: flex; flex-direction: column; align-items: center; gap: 16px; font-size: 34px; font-weight: 500; }
+  .tl-dot { width: 40px; height: 40px; background: var(--gold); box-shadow: 0 0 0 5px var(--ink), 0 0 0 9px var(--border); }
+  .tl-node.done .tl-dot { background: var(--green); }
+  .tl-line { width: 110px; height: 6px; background: var(--border); margin-bottom: 52px; }
+
+  /* ---- 06 numbers ---- */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; margin-top: 80px; }
+  .tile { padding: 56px 30px 48px; text-align: center; }
+  .tile .big { font-family: var(--pix); font-size: 124px; line-height: 1; color: var(--cream); }
+  .tile .big small { font-size: 56px; }
+  .tile .label { font-size: 36px; color: var(--cream-dk); margin-top: 22px; }
+  .footnote { margin-top: 64px; font-size: 38px; color: var(--cream-dk); text-align: center; }
+  .footnote b { color: var(--cyan); font-weight: 500; }
+
+  /* ---- 07 roles ---- */
+  .roles { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 40px; margin-top: 46px; }
+  .role { padding: 34px 44px; }
+  .role.me { border-color: var(--gold-dk); }
+  .role h3 { font-size: 50px; margin: 0 0 8px; }
+  .role .who { font-size: 28px; color: var(--dim); margin-bottom: 26px; font-family: var(--pix); }
+  .role ul { margin: 0; padding-left: 1.1em; font-size: 34px; line-height: 1.6; color: var(--cream-dk); }
+
+  /* ---- 08–09 problem → fix ---- */
+  .pairs { display: flex; flex-direction: column; gap: 44px; margin-top: 64px; }
+  .pair { display: grid; grid-template-columns: 1fr 90px 1fr; align-items: center; }
+  .pair .box { padding: 38px 44px; font-size: 40px; line-height: 1.5; }
+  .pair .bad { border-color: #7a3328; }
+  .pair .good { border-color: #2f7a3c; }
+  .tag { display: block; font-size: 28px; font-weight: 700; margin-bottom: 10px; font-family: var(--pix); }
+  .bad .tag { color: var(--red-lt); }
+  .good .tag { color: var(--green-lt); }
+  .arrow { text-align: center; font-family: var(--pix); font-size: 64px; color: var(--gold); }
+
+  /* ---- 10 split ---- */
+  .split { display: grid; grid-template-columns: 560px 160px 1fr; align-items: center; margin-top: 70px; }
+  .monolith { height: 520px; display: grid; place-items: center; text-align: center; font-size: 44px; font-weight: 700; background: #3a2a5a; border: 4px solid #6b4f9a; box-shadow: 0 0 0 6px var(--ink); }
+  .monolith small { display: block; font-size: 30px; font-weight: 400; color: var(--cream-dk); margin-top: 12px; }
+  .blocks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+  .blocks div { height: 104px; display: grid; place-items: center; font-size: 22px; color: var(--cream-dk); background: var(--panel2); border: 3px solid var(--border); box-shadow: 0 0 0 4px var(--ink); }
+  .blocks div.q { background: #1f3550; border-color: #3f6fa5; }
+  .legend { margin-top: 26px; font-size: 30px; color: var(--cream-dk); display: flex; gap: 40px; }
+  .legend i { display: inline-block; width: 26px; height: 26px; vertical-align: -4px; margin-right: 10px; box-shadow: 0 0 0 3px var(--ink); }
+
+  /* ---- 11 lessons ---- */
+  .lessons { list-style: none; margin: 50px 0 0; padding: 0; display: flex; flex-direction: column; gap: 36px; }
+  .lessons li { display: flex; align-items: baseline; gap: 36px; font-size: 50px; font-weight: 700; }
+  .lessons .n { font-family: var(--pix); font-size: 64px; color: var(--gold); width: 80px; flex: none; }
+  .lessons .why { display: block; font-size: 34px; font-weight: 400; color: var(--cream-dk); margin-top: 12px; }
+
+  /* ---- 12 end ---- */
+  .end { align-items: center; justify-content: center; text-align: center; }
+  .end .logo { font-size: 150px; }
+  .end .url { font-size: 46px; color: var(--cyan); margin-top: 30px; font-weight: 500; }
+  .end .qa { font-family: var(--pix); font-size: 64px; margin-top: 70px; color: var(--gold); }
+  .end .kotoha { position: absolute; right: 80px; bottom: 0; width: 470px; }
+
+  /* Toolbar: slides down when the mouse reaches the top edge (always visible while editing) */
+  #toolbar { position: fixed; top: 0; left: 50%; transform: translate(-50%, -110%); display: flex; gap: 8px; padding: 8px 10px; background: rgba(11,10,24,.95); border: 2px solid var(--border); border-top: none; z-index: 30; transition: transform .2s ease; font: 15px var(--sans); }
+  #toolbar.show, body.editing #toolbar { transform: translate(-50%, 0); }
+  #toolbar button { font: inherit; color: var(--cream); background: var(--panel2); border: 2px solid var(--border); padding: 6px 14px; cursor: pointer; }
+  #toolbar button:hover { border-color: var(--gold); }
+  #toolbar button.on { border-color: var(--gold); color: var(--gold); }
+  #toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); padding: 10px 18px; background: rgba(11,10,24,.95); border: 2px solid var(--gold-dk); color: var(--cream); font: 16px var(--sans); z-index: 31; display: none; }
+  body.editing [data-eid] { outline: 2px dashed rgba(246,196,69,.45); outline-offset: 6px; cursor: text; }
+  body.editing [data-eid]:focus { outline-color: var(--gold); }
+  body.editing #notes-body { outline: 2px dashed rgba(246,196,69,.45); outline-offset: 4px; min-height: 2em; }
+
+  /* Speaker notes panel (N) — on your own screen only */
+  #notes { position: fixed; left: 0; right: 0; bottom: 0; max-height: 38vh; overflow: auto; background: rgba(11,10,24,.96); border-top: 3px solid var(--gold-dk); padding: 16px 28px 22px; font-size: 18px; line-height: 1.7; color: var(--cream); z-index: 20; display: none; }
+  #notes.open { display: block; }
+  #notes .meta { color: var(--gold); font-size: 15px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+
+  @media print {
+    @page { size: 1920px 1080px; margin: 0; }
+    html, body { overflow: visible; height: auto; background: none; }
+    #deck { position: static; transform: none !important; }
+    .slide { position: relative; opacity: 1; visibility: visible; page-break-after: always; height: 1080px; }
+    #hud, #progress, #notes, .hint, #toolbar, #toast { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+
+  <!-- 01 封面 -->
+  <section class="slide cover" data-sec="30">
+    <div class="left">
+      <div class="logo-ruby">ことだまのたび</div>
+      <div class="logo">言霊の旅</div>
+      <div class="rule"></div>
+      <p class="sub">用一款 RPG 學日文　—　自主學習成果發表</p>
+      <div class="presenter">
+        <span contenteditable="true" spellcheck="false" data-meta-key="class" data-ph="班級"></span>
+        <span contenteditable="true" spellcheck="false" data-meta-key="seat" data-ph="座號"></span>
+        <span contenteditable="true" spellcheck="false" data-meta-key="name" data-ph="姓名"></span>
+        <span class="sep">｜</span>
+        <span>指導老師</span><span contenteditable="true" spellcheck="false" data-meta-key="advisor" data-ph="（填寫）"></span>
+        <span class="sep">｜</span>
+        <span contenteditable="true" spellcheck="false" data-meta-key="date" data-ph="發表日期"></span>
+      </div>
+    </div>
+    <div class="right"><img src="assets/npc_guide.png" alt="引路精靈コトハ"></div>
+    <div class="hint">← → 換頁　・　F 全螢幕　・　N 講稿（點姓名欄位可直接修改）</div>
+    <aside class="notes">各位老師、同學好，我是（班級、座號、姓名）。今天要分享的是我的自主學習成果——一款叫做《言霊の旅》的日文學習 RPG。我會先說為什麼想做它、它怎麼幫助學日文，再分享製作過程中遇到的五個困難，以及我從中學到的事。</aside>
+  </section>
+
+  <!-- 02 動機 -->
+  <section class="slide" data-sec="40">
+    <p class="kicker">為什麼做這個</p>
+    <h1>背單字很難撐下去，<br>但<span style="color:var(--gold)">打電動</span>我每天都會打</h1>
+    <div class="pains">
+      <div class="frame pain"><b>背完就忘</b><span>題庫刷過一次，<br>過幾天又想不起來</span></div>
+      <div class="frame pain"><b>錯了不知道為什麼</b><span>只知道答案錯，<br>不知道錯在哪裡</span></div>
+      <div class="frame pain"><b>一個人撐不久</b><span>沒有目標和回饋，<br>三天打魚兩天曬網</span></div>
+    </div>
+    <div class="then" style="margin-top:56px;"><img src="assets/en_r1_slime.webp" alt="" style="width:140px;"><span>所以我想：能不能讓「答對日文」本身就是遊戲？</span></div>
+    <aside class="notes">我在自學日文時遇到三個問題：題庫刷過一次，過幾天就忘了；答錯時只知道錯，不知道錯在哪；一個人讀也很難撐下去。可是遊戲，我每天都會主動打開。所以我想：如果「答對日文」本身就是遊戲的玩法，是不是就比較能撐下去？這就是這個作品的起點。</aside>
+  </section>
+
+  <!-- 03 影片 -->
+  <section class="slide" data-sec="40" data-video="1">
+    <p class="kicker">先看成果</p>
+    <h1>30 秒認識《言霊の旅》</h1>
+    <div class="frame video-wrap"><video src="assets/promo.mp4" poster="assets/promo-poster.png" preload="auto" playsinline controls></video></div>
+    <aside class="notes">先用 30 秒的影片讓大家看看整體樣子。（影片會自動播放；沒有聲音的話按一下影片。）影片裡看到的是最基本的「答對就攻擊」，接下來我說明影片裡沒演到、讓人想繼續玩的設計，以及答錯時怎麼幫助學習。</aside>
+  </section>
+
+  <!-- 04 遊戲系統（影片沒演到的） -->
+  <section class="slide" data-sec="45">
+    <p class="kicker">影片沒演到的部分</p>
+    <h1>讓人想一直玩下去的設計</h1>
+    <div class="cards">
+      <div class="frame card"><img class="ico" src="assets/sword.svg" alt=""><div><h3>速答破盾</h3><p>10 秒內答對，能削弱魔物的護盾；<br>逼自己反應要快，不能慢慢猜。</p></div></div>
+      <div class="frame card"><img class="ico" src="assets/star.svg" alt=""><div><h3>連對 FEVER</h3><p>連續答對 3 題進入 FEVER，<br>傷害和獎勵都提升。</p></div></div>
+      <div class="frame card"><img class="ico" src="assets/map.svg" alt=""><div><h3>探索路線</h3><p>安全小路：穩穩前進<br>危險捷徑：遇敵多、獎勵 ×1.3<br>走到一半有精英，最後是首領。</p></div></div>
+      <div class="frame card"><img class="ico" src="assets/person.svg" alt=""><div><h3>三種職業</h3><p>言靈劍士・古籍學者・音韻旅藝人<br>能力不同，可以隨時切換。</p>
+        <div class="heroes"><img src="assets/hero_swordsman.webp" alt=""><img src="assets/hero_scholar.webp" alt=""><img src="assets/hero_bard.webp" alt=""></div></div></div>
+    </div>
+    <aside class="notes">影片裡看到的是最基本的「答對就攻擊」，但只有這樣很快就會膩，所以我加了幾個讓人想繼續玩的設計。第一是速答破盾：10 秒內答對才能削弱魔物的護盾，逼自己反應要快。第二是連對 FEVER：連續答對三題，傷害和獎勵都會提升。第三是探索路線：可以選安全小路，或是遇敵比較多、但獎勵乘 1.3 的危險捷徑；走到一半會遇到精英，最後才是首領。第四是三種職業，能力各有不同，可以隨時切換。</aside>
+  </section>
+
+  <!-- 05 答錯 -->
+  <section class="slide" data-sec="45">
+    <p class="kicker">答錯怎麼辦</p>
+    <h1>答錯不是失敗，是多學一次</h1>
+    <div class="row grow" style="margin-top:48px;">
+      <div class="frame crop" style="width:1040px;height:364px;"><img src="assets/scene-learn.png" alt="答錯後的解說畫面" style="width:1664px;left:-312px;top:-130px;"></div>
+      <div>
+        <p class="lead" style="margin:0 0 48px;color:var(--cream);font-size:44px;">一定看完解說才能繼續，<br>錯的題目之後會再出現：</p>
+        <div class="timeline">
+          <div class="tl-node"><span class="tl-dot"></span>1 天後</div><span class="tl-line"></span>
+          <div class="tl-node"><span class="tl-dot"></span>3 天後</div><span class="tl-line"></span>
+          <div class="tl-node"><span class="tl-dot"></span>7 天後</div>
+        </div>
+        <p class="lead" style="font-size:34px;">也可以到「浸式刷題」<br>專心練錯題。</p>
+      </div>
+    </div>
+    <div class="facts" style="margin-top:40px;"><span>假名＋中文</span><span style="background:none;box-shadow:none;padding:14px 0;">▶</span><span>無假名</span><span style="background:none;box-shadow:none;padding:14px 0;">▶</span><span>全日文</span><span style="background:none;box-shadow:none;color:var(--cream-dk);">三段提示，程度變好就逐步拿掉</span></div>
+    <aside class="notes">很多學習遊戲答錯只會扣血，玩家不知道自己錯在哪。我的設計是：答錯一定要看完解說才能繼續；錯的題目會被收進錯題筆記，在 1 天、3 天、7 天後重新出現，這是依照遺忘曲線的間隔複習。不想打怪的時候，也可以到「浸式刷題」專心練錯題。另外，畫面上的提示分成三段：一開始有假名和中文，程度變好之後可以拿掉假名，最後變成全日文。</aside>
+  </section>
+
+  <!-- 06 規模 -->
+  <section class="slide" data-sec="30">
+    <p class="kicker">目前的規模</p>
+    <h1>從 N4 一路到 N1</h1>
+    <div class="tiles">
+      <div class="frame tile"><div class="big">744</div><div class="label">道題目</div></div>
+      <div class="frame tile"><div class="big">4</div><div class="label">個程度 N4～N1</div></div>
+      <div class="frame tile"><div class="big">6</div><div class="label">種題型</div></div>
+      <div class="frame tile"><div class="big">18</div><div class="label">種魔物</div></div>
+    </div>
+    <div class="facts"><span>6 個區域</span><span>24 道聽力題</span><span>10 篇長文閱讀</span><span>限時模擬考「試煉神殿」</span></div>
+    <p class="footnote" style="margin-top:46px;">免費・免安裝・手機電腦都能玩・<b>可以安裝成 App 離線玩</b></p>
+    <aside class="notes">目前一共有 744 道題目，從日檢 N4 到 N1 四個程度，六種題型，其中包含 24 道聽力題；遊戲裡有六個區域、18 種魔物，還有 10 篇長文閱讀，和計時的模擬考「試煉神殿」。它是網頁遊戲，免費、免安裝，手機電腦都能玩，也可以安裝成 App，沒有網路也能玩。</aside>
+  </section>
+
+  <!-- 07 分工 -->
+  <section class="slide" data-sec="45">
+    <p class="kicker">怎麼做出來的</p>
+    <h1>我當企劃，AI 當工程師</h1>
+    <div class="roles">
+      <div class="frame role me"><h3>我</h3><div class="who">企劃・決策・驗收</div><ul><li>決定要做什麼</li><li>親自試玩、找問題</li><li>判斷改得好不好</li></ul></div>
+      <div class="frame role"><h3>Claude</h3><div class="who">寫程式</div><ul><li>實作功能</li><li>修 bug</li><li>寫自動測試</li></ul></div>
+      <div class="frame role"><h3>其他 AI</h3><div class="who">試玩・美術</div><ul><li>Gemini：挑毛病</li><li>Codex：生成美術</li></ul></div>
+    </div>
+    <div class="flow"><span>我提出需求</span><i>▶</i><span>AI 實作</span><i>▶</i><span>自動測試</span><i>▶</i><span class="hl">朋友試玩・回饋</span><i>▶</i><span>再修改</span></div>
+    <div class="stats"><span><b>4</b>天</span><span><b>34</b>次修改合併</span><span><b>7</b>個版本發佈</span></div>
+    <aside class="notes">這個作品我是和 AI 一起做的。我的角色像企劃和驗收者：決定要做什麼、親自試玩、判斷改得好不好。程式主要由 Claude 撰寫，另外請 Gemini 扮演挑剔的玩家找問題，角色和魔物的圖則是用 Codex 生成的。流程是：我提出需求，AI 實作，跑過自動測試，再給朋友試玩、收集回饋，然後再修改。不同 AI 之間靠一份「工作日誌」交接。四天裡一共合併了 34 次修改、發佈了 7 個版本。其中最重要的一環，是朋友的試玩回饋。</aside>
+  </section>
+
+  <!-- 08 試玩回饋 -->
+  <section class="slide" data-sec="50">
+    <p class="kicker">試玩回饋</p>
+    <h1>朋友玩過之後，遊戲改了哪些地方</h1>
+    <div class="fb">
+      <div class="frame"><q>打首領前只是一直按『前進』</q><span class="to">加入路線選擇和中途精英；模擬 20 萬次，確認不會再「一場都沒打」</span></div>
+      <div class="frame"><q>說明文字太多，還沒看完就想關</q><span class="to">解說先只顯示正解和一句重點，想看再展開</span></div>
+      <div class="frame"><q>任務、冒險、城鎮太分散，不知道去哪</q><span class="to">任務加上「前往」按鈕，畫面上方顯示目前目標</span></div>
+      <div class="frame"><q>表情符號在不同手機長得不一樣</q><span class="to">換成 34 個統一的像素圖示</span></div>
+    </div>
+    <p class="footnote" style="margin-top:44px;">遊戲裡也放了「回報」按鈕，玩家隨時能回報問題</p>
+    <aside class="notes">朋友試玩之後給了很多回饋，這裡舉四個。第一，他說打首領前只是一直按「前進」，幾乎沒有阻礙。我們用程式模擬了 20 萬次，發現大約 9% 的旅程一場戰鬥都沒有，所以加入了路線選擇和中途的精英怪。第二，他說說明文字太多，還沒看完就想關，所以解說改成先只顯示正解和一句重點。第三，任務、冒險、城鎮太分散，不知道該去哪，所以任務加上「前往」按鈕，畫面上方也會顯示目前目標。第四，表情符號在不同手機長得不一樣，所以全部換成統一的像素圖示。遊戲裡也放了回報按鈕，讓玩家隨時能回報問題。這讓我發現：使用者的感受，常常比我自己想像的更準。</aside>
+  </section>
+
+  <!-- 08 挫折 1 -->
+  <section class="slide" data-sec="40">
+    <p class="kicker">困難 1</p>
+    <h1>好玩了，卻學不到東西？</h1>
+    <div class="pairs fill">
+      <div class="pair"><div class="frame box bad"><span class="tag">問題（AI 試玩時發現）</span>朗讀按鈕會直接把答案唸出來</div><div class="arrow">▶</div><div class="frame box good"><span class="tag">改法</span>作答時，空格改唸成「なになに」</div></div>
+      <div class="pair"><div class="frame box bad"><span class="tag">問題</span>裝備太強，一題就能打倒首領</div><div class="arrow">▶</div><div class="frame box good"><span class="tag">改法</span>每場戰鬥都要答對一定題數才能贏</div></div>
+    </div>
+    <p class="learned"><b>學到</b>　遊戲機制要一直回頭檢查：這樣還有在學嗎？</p>
+    <aside class="notes">第一個困難是「好玩」和「學習」會互相打架。例如朗讀按鈕原本會把整句連答案一起唸出來，等於直接洩題，所以我們改成作答時把空格唸成「なになに」。另一個是裝備太強時，一題就能打倒首領，玩家反而不用答題；後來改成每場戰鬥都必須答對一定題數才能贏。我學到：遊戲機制要一直回頭檢查「這樣還有在學嗎」。</aside>
+  </section>
+
+  <!-- 困難 2：存檔安全 -->
+  <section class="slide" data-sec="50">
+    <p class="kicker">困難 2</p>
+    <h1>存檔也能拿來攻擊？</h1>
+    <div class="atk">
+      <div class="frame bad">
+        <span class="tag" style="color:var(--red-lt);">問題</span>
+        <p class="lead2">玩家能匯入別人給的存檔，遊戲卻直接相信內容</p>
+        <div class="atk-row"><code>&lt;img onerror=…&gt;</code><span>藏一段 HTML，開存檔清單就執行</span></div>
+        <div class="atk-row"><code>"__proto__": {…}</code><span>污染整個程式的物件</span></div>
+        <div class="atk-row"><code>{"toString": 1}</code><span>遊戲一啟動就當掉</span></div>
+        <div class="atk-row"><code>{ …超大存檔… }</code><span>卡死；空間滿了還說「匯入成功」</span></div>
+      </div>
+      <div class="arrow">▶</div>
+      <div class="frame good">
+        <span class="tag" style="color:var(--green-lt);">改法</span>
+        <p class="lead2">先過一道 <code>sanitizeSaveData</code></p>
+        <ul class="checks">
+          <li><i>✓</i><span>只收白名單欄位，<br>數字和清單重新驗證</span></li>
+          <li><i>✓</i><span>存檔大小上限 1 MB</span></li>
+          <li><i>✓</i><span>寫入失敗就自動還原，<br>不會再顯示假的成功</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="learned"><b>學到</b>　從外面進來的資料，一律不能直接相信</p>
+    <aside class="notes">第二個困難跟資安有關。遊戲可以匯入別人給的存檔，但原本程式完全相信存檔內容。結果發現：存檔裡藏一段 HTML，打開存檔清單時就會被執行，這叫 XSS；塞入 __proto__ 這種特殊欄位，會污染整個程式的物件；只要放一個 toString 等於 1，遊戲一啟動就當掉；超大的存檔會讓畫面卡死，瀏覽器空間滿了還會顯示匯入成功。所以我們讓所有存檔先經過 sanitizeSaveData 清理：只接受白名單裡的欄位，數字和清單全部重新驗證；存檔限制在 1 MB 以內；寫入失敗就自動還原，不會顯示假的成功。我學到：任何從外面進來的資料，都不能直接相信。</aside>
+  </section>
+
+  <!-- 困難 3：AI 也會出錯 -->
+  <section class="slide" data-sec="40">
+    <p class="kicker">困難 3</p>
+    <h1>AI 也會出錯</h1>
+    <div class="pairs fill">
+      <div class="pair"><div class="frame box bad"><span class="tag">問題</span>題目讀音標錯、格式少寫一半</div><div class="arrow">▶</div><div class="frame box good"><span class="tag">改法</span>寫檢查程式，744 題逐題自動檢查</div></div>
+      <div class="pair"><div class="frame box bad"><span class="tag">問題</span>修好一個地方，別的地方壞掉</div><div class="arrow">▶</div><div class="frame box good"><span class="tag">改法</span>42 項自動測試，每次修改先跑過</div></div>
+    </div>
+    <p class="learned"><b>學到</b>　用 AI 不是不用檢查，而是要有方法地檢查</p>
+    <aside class="notes">第三個困難是 AI 也會犯錯。AI 產生的題目曾經把讀音標錯，或是格式只寫了一半；修 bug 時也常常修好一個地方、另一個地方又壞掉。所以我們寫了檢查程式，744 題逐題自動檢查；也建立了 42 項自動測試，每次修改都要先全部通過才能放上去。我學到：用 AI 不是不用檢查，而是要有方法地檢查。</aside>
+  </section>
+
+  <!-- 困難 4：多個 AI 協作 -->
+  <section class="slide" data-sec="50">
+    <p class="kicker">困難 4</p>
+    <h1>AI 會失憶，還會互相干擾</h1>
+    <div class="duo">
+      <div class="frame">
+        <span class="tag" style="color:var(--red-lt);">問題</span>
+        <p class="say">每次開新對話，AI 都會「失憶」，<br>不記得之前做過什麼</p>
+        <span class="tag" style="color:var(--green-lt);">改法</span>
+        <div class="mini-flow"><div>工作階段<small>A</small></div><span class="arrow">▶</span><div class="hl">HANDOFF<small>工作日誌</small></div><span class="arrow">▶</span><div>工作階段<small>B</small></div></div>
+        <p class="cap">做完先寫交接，下一個 AI 讀完再開工</p>
+      </div>
+      <div class="frame">
+        <span class="tag" style="color:var(--red-lt);">問題</span>
+        <p class="say">有個工作階段中途被取消，<br>留下沒提交的修改，還誤刪了 CI 設定檔</p>
+        <span class="tag" style="color:var(--green-lt);">改法</span>
+        <div class="mini-flow"><div>送出修改<small>(PR)</small></div><span class="arrow">▶</span><div>42 項<small>自動測試</small></div><span class="arrow">▶</span><div class="ok">✓ 通過<small>才能合併</small></div></div>
+        <p class="cap">GitHub Actions 每次自動檢查，沒過就擋下</p>
+      </div>
+    </div>
+    <p class="learned"><b>學到</b>　別靠 AI 的記憶，要靠寫下來的交接和自動檢查</p>
+    <aside class="notes">第四個困難是多個 AI 一起工作時會出狀況。第一，AI 每次開新對話都會失憶，不記得之前做過什麼，所以我們用一份 HANDOFF 工作日誌交接：做完的人先寫下做了什麼、還剩什麼，下一個 AI 讀完再開工。第二，有一次另一個工作階段中途被取消，留下沒提交的修改，還誤刪了 CI 設定檔。所以我們建立了 42 項自動測試，在 Node 裡模擬瀏覽器環境來跑遊戲；GitHub Actions 會在每個 PR 自動檢查，沒通過就不能合併。我學到：不要靠 AI 的記憶，要靠寫下來的交接和自動檢查。</aside>
+  </section>
+
+  <!-- 困難 5：檔案太大 -->
+  <section class="slide" data-sec="40">
+    <p class="kicker">困難 5</p>
+    <h1>檔案太大，AI 記不住</h1>
+    <div class="split">
+      <div class="monolith"><div>兩個大檔案<small>加起來超過 3 萬行</small></div></div>
+      <div class="arrow">▶</div>
+      <div>
+        <div class="blocks">
+          <div>核心</div><div>狀態</div><div>介面</div><div>城鎮</div><div>探索</div><div>戰鬥</div>
+          <div>閱讀</div><div>職業</div><div>刷題</div><div>選單</div><div>存檔</div><div>啟動</div>
+          <div class="q">區域1</div><div class="q">區域2</div><div class="q">區域3</div><div class="q">區域4</div><div class="q">區域5</div><div class="q">區域6</div>
+          <div class="q">N3</div><div class="q">N2</div><div class="q">N1</div><div class="q">聽力</div>
+        </div>
+        <div class="legend"><span><i style="background:var(--panel2)"></i>程式 12 個檔案</span><span><i style="background:#1f3550"></i>題庫 10 個檔案</span></div>
+      </div>
+    </div>
+    <p class="learned" style="margin-top:54px;"><b>學到</b>　把大問題拆小，不只對人有用，對 AI 也是</p>
+    <aside class="notes">最後一個困難是檔案越長越大。程式和題庫兩個大檔案加起來超過三萬行，AI 每次都要讀一大堆內容，容易漏看、也容易改錯。後來我們把程式按功能拆成 12 個檔案，題庫拆成 10 個檔案，每次只需要讀相關的那一份。這讓我體會到：把大問題拆成小問題，不只對人有用，對 AI 也是。</aside>
+  </section>
+
+  <!-- 11 學到什麼 -->
+  <section class="slide" data-sec="40">
+    <p class="kicker">我學到的事</p>
+    <h1>四個收穫</h1>
+    <ol class="lessons">
+      <li><span class="n">1</span><span>把大問題拆成小問題<span class="why">一次只解決一件事，就不會卡住</span></span></li>
+      <li><span class="n">2</span><span>AI 會犯錯，所以要會檢查<span class="why">測試和檢查程式比「感覺對了」可靠</span></span></li>
+      <li><span class="n">3</span><span>使用者的感受，比我的想像更準<span class="why">自己覺得清楚的地方，朋友一玩就卡住</span></span></li>
+      <li><span class="n">4</span><span>好的學習工具，要讓人願意每天打開<span class="why">學習效果和好不好玩一樣重要</span></span></li>
+    </ol>
+    <aside class="notes">總結這次的學習，我有四個收穫。第一，把大問題拆成小問題，一次解決一件事就不會卡住。第二，AI 會犯錯，所以要學會檢查，測試比「感覺對了」可靠。第三，使用者的感受比我的想像更準，我自己覺得很清楚的地方，朋友一玩就卡住，所以要早點給人試玩。第四，好的學習工具要讓人願意每天打開，學習效果和好不好玩一樣重要。</aside>
+  </section>
+
+  <!-- 12 結尾 -->
+  <section class="slide end" data-sec="15">
+    <div class="logo">言霊の旅</div>
+    <div class="url">hinayoumiya-0721.github.io/kotodama-no-tabi</div>
+    <div class="qa">謝謝聆聽・Q&amp;A</div>
+    <img class="kotoha" src="assets/npc_guide.png" alt="">
+    <aside class="notes">遊戲現在就可以在這個網址免費遊玩，歡迎大家試試看。謝謝大家聆聽，接下來是提問時間。</aside>
+  </section>
+
+</div>
+
+<div id="progress"></div>
+<div id="hud"></div>
+<div id="notes"><div class="meta"><span id="notes-title"></span><span id="notes-timer">00:00</span></div><div id="notes-body"></div></div>
+<div id="toolbar" aria-label="簡報工具">
+  <button type="button" id="tb-edit" title="E">編輯文字</button>
+  <button type="button" id="tb-reset">還原原始內容</button>
+  <button type="button" id="tb-pptx">下載 PPTX</button>
+  <button type="button" id="tb-notes" title="N">講稿</button>
+  <button type="button" id="tb-full" title="F">全螢幕</button>
+</div>
+<div id="toast" role="status"></div>
+
+<!-- 發表人資料放在 presenter.local.js（不進 git，避免個資公開）；沒有這個檔案時封面顯示空白欄位 -->
+<script src="presenter.local.js" onerror="this.remove()"></script>
+<script>
+(function () {
+  'use strict';
+  const deck = document.getElementById('deck');
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const hud = document.getElementById('hud');
+  const progress = document.getElementById('progress');
+  const notes = document.getElementById('notes');
+  let idx = 0;
+
+  // Scale the 1920×1080 stage to fit the window
+  function fit() {
+    const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    deck.style.transform = `translate(-50%, -50%) scale(${s})`;
+    deck.style.transformOrigin = 'center center';
+  }
+
+  function show(n) {
+    idx = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    hud.textContent = `${idx + 1} / ${slides.length}`;
+    progress.style.width = `${((idx + 1) / slides.length) * 100}%`;
+    document.querySelectorAll('video').forEach((v) => {
+      if (v.closest('.slide') === slides[idx]) {
+        v.currentTime = 0;
+        const p = v.play();
+        if (p && p.catch) p.catch(() => {});
+      } else {
+        v.pause();
+      }
+    });
+    const n2 = slides[idx].querySelector('aside.notes');
+    document.getElementById('notes-title').textContent = `第 ${idx + 1} 頁・建議約 ${slides[idx].dataset.sec || '?'} 秒`;
+    document.getElementById('notes-body').textContent = n2 ? n2.textContent : '';
+    try { history.replaceState(null, '', '#' + (idx + 1)); } catch (_) {}
+  }
+
+  const editing = (e) => e.target && e.target.isContentEditable;
+  document.addEventListener('keydown', (e) => {
+    if (editing(e)) { if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); e.target.blur(); } return; }
+    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(idx + 1); }
+    else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); show(idx - 1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'f' || e.key === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    } else if (e.key === 'n' || e.key === 'N') notes.classList.toggle('open');
+    else if (e.key === 'e' || e.key === 'E') setEditing(!document.body.classList.contains('editing'));
+  });
+  // Click right two-thirds → next, left third → previous (not on video / editable fields / tools)
+  document.addEventListener('click', (e) => {
+    if (document.body.classList.contains('editing')) return;
+    if (e.target.closest('video, [contenteditable], #notes, #toolbar, #toast')) return;
+    if (e.clientX > window.innerWidth / 3) show(idx + 1); else show(idx - 1);
+  });
+
+  // Speaker timer (starts when you leave the cover)
+  const t0 = { at: null };
+  setInterval(() => {
+    if (idx > 0 && !t0.at) t0.at = Date.now();
+    const s = t0.at ? Math.floor((Date.now() - t0.at) / 1000) : 0;
+    document.getElementById('notes-timer').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')} / 10:00`;
+  }, 500);
+
+  // Presenter info on the cover (same storage key as the previous version, so earlier input is kept)
+  const META_KEY = 'kotodama_pres_meta_v1';
+  let meta = {};
+  try { meta = JSON.parse(localStorage.getItem(META_KEY) || '{}') || {}; } catch (_) { meta = {}; }
+  document.querySelectorAll('[data-meta-key]').forEach((el) => {
+    const k = el.dataset.metaKey;
+    const v = typeof meta[k] === 'string' ? meta[k].trim() : '';
+    const stored = /^請輸入|^（/.test(v) ? '' : v;
+    const value = stored || (window.PRESENTER_DEFAULTS || {})[k] || '';
+    el.textContent = value || el.dataset.ph;
+    el.style.color = value ? '' : 'var(--dim)';
+    el.addEventListener('focus', () => { if (el.textContent === el.dataset.ph) { el.textContent = ''; el.style.color = ''; } });
+    el.addEventListener('blur', () => {
+      const val = el.textContent.trim().slice(0, 40);
+      meta[k] = val;
+      try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (_) {}
+      if (!val) { el.textContent = el.dataset.ph; el.style.color = 'var(--dim)'; }
+    });
+  });
+
+  /* ================= Text blocks (shared by edit mode and PPTX export) ================= */
+  // A "text block" is the outermost element that directly contains text (h1, p, card text, chips…)
+  const hasOwnText = (el) => Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim());
+  function textBlocks(slide) {
+    const out = [];
+    slide.querySelectorAll('*').forEach((el) => {
+      if (el.closest('aside, video') || el.tagName === 'SCRIPT') return;
+      if (!hasOwnText(el)) return;
+      if (out.some((b) => b.contains(el))) return;
+      out.push(el);
+    });
+    return out;
+  }
+
+  /* ================= Edit mode ================= */
+  const EDIT_KEY = 'kotodama_pres_edits_v2';
+  let edits = {};
+  try { edits = JSON.parse(localStorage.getItem(EDIT_KEY) || '{}') || {}; } catch (_) { edits = {}; }
+  const saveEdits = () => { try { localStorage.setItem(EDIT_KEY, JSON.stringify(edits)); } catch (_) {} };
+
+  // Only keep simple formatting from saved edits (text, <br>, and the deck's own spans/classes)
+  const ALLOWED = new Set(['BR', 'SPAN', 'B', 'SMALL', 'I']);
+  function sanitizeInto(el, html) {
+    const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+    const clean = (node) => {
+      Array.from(node.childNodes).forEach((c) => {
+        if (c.nodeType === 1) {
+          if (!ALLOWED.has(c.tagName)) { c.replaceWith(...Array.from(c.childNodes)); clean(node); return; }
+          Array.from(c.attributes).forEach((a) => { if (a.name !== 'class') c.removeAttribute(a.name); });
+          clean(c);
+        } else if (c.nodeType !== 3) c.remove();
+      });
+    };
+    const root = doc.body.firstChild;
+    clean(root);
+    el.innerHTML = root.innerHTML;
+  }
+
+  slides.forEach((slide, si) => {
+    textBlocks(slide).forEach((el, bi) => {
+      if (el.dataset.metaKey || el.classList.contains('hint')) return;
+      el.dataset.eid = `s${si + 1}-${bi}`;
+      if (typeof edits[el.dataset.eid] === 'string') sanitizeInto(el, edits[el.dataset.eid]);
+    });
+    const aside = slide.querySelector('aside.notes');
+    if (aside && typeof edits[`notes:${si + 1}`] === 'string') aside.textContent = edits[`notes:${si + 1}`];
+  });
+
+  const notesBody = document.getElementById('notes-body');
+  function setEditing(on) {
+    document.body.classList.toggle('editing', on);
+    document.getElementById('tb-edit').classList.toggle('on', on);
+    document.getElementById('tb-edit').textContent = on ? '完成編輯' : '編輯文字';
+    document.querySelectorAll('[data-eid]').forEach((el) => { if (on) el.setAttribute('contenteditable', 'true'); else el.removeAttribute('contenteditable'); });
+    if (on) { notesBody.setAttribute('contenteditable', 'true'); notes.classList.add('open'); }
+    else notesBody.removeAttribute('contenteditable');
+    if (!on && document.activeElement) document.activeElement.blur();
+    toast(on ? '編輯模式：直接點文字修改，講稿在下方。改完按「完成編輯」或 E。' : '已儲存修改');
+  }
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el.dataset && el.dataset.eid) { edits[el.dataset.eid] = el.innerHTML; saveEdits(); }
+    else if (el === notesBody) {
+      const aside = slides[idx].querySelector('aside.notes');
+      if (aside) aside.textContent = notesBody.innerText;
+      edits[`notes:${idx + 1}`] = notesBody.innerText; saveEdits();
+    }
+  });
+  // Paste as plain text only
+  document.addEventListener('paste', (e) => {
+    if (!e.target.isContentEditable) return;
+    e.preventDefault();
+    document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
+  });
+
+  let toastTimer = null;
+  function toast(msg, ms = 2600) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(toastTimer);
+    if (ms) toastTimer = setTimeout(() => { t.style.display = 'none'; }, ms);
+  }
+
+  /* ================= Toolbar ================= */
+  const toolbar = document.getElementById('toolbar');
+  let tbTimer = null;
+  document.addEventListener('mousemove', (e) => {
+    if (e.clientY < 70 || toolbar.matches(':hover')) {
+      toolbar.classList.add('show');
+      clearTimeout(tbTimer);
+      tbTimer = setTimeout(() => { if (!toolbar.matches(':hover')) toolbar.classList.remove('show'); }, 2500);
+    }
+  });
+  document.getElementById('tb-edit').onclick = () => setEditing(!document.body.classList.contains('editing'));
+  document.getElementById('tb-notes').onclick = () => notes.classList.toggle('open');
+  document.getElementById('tb-full').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
+  document.getElementById('tb-reset').onclick = () => {
+    if (!confirm('要清除所有文字與講稿的修改，回到原本的內容嗎？（封面的姓名欄位不受影響）')) return;
+    try { localStorage.removeItem(EDIT_KEY); } catch (_) {}
+    location.reload();
+  };
+  document.getElementById('tb-pptx').onclick = async () => {
+    const btn = document.getElementById('tb-pptx');
+    btn.disabled = true;
+    try {
+      const pptx = await buildPptx();
+      await pptx.writeFile({ fileName: '言霊の旅_成果發表.pptx' });
+      toast('已下載 PPTX');
+    } catch (err) {
+      toast('PPTX 產生失敗：' + err.message, 6000);
+    } finally { btn.disabled = false; }
+  };
+
+  /* ================= PPTX export (native text boxes, shapes, images, speaker notes) ================= */
+  const loadScript = (src) => new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('無法載入 ' + src));
+    document.head.appendChild(s);
+  });
+  function parseColor(c) {
+    const m = String(c).match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return null;
+    const a = m[4] === undefined ? 1 : Number(m[4]);
+    if (a === 0) return null;
+    const hex = [m[1], m[2], m[3]].map((v) => Math.round(Number(v)).toString(16).padStart(2, '0')).join('').toUpperCase();
+    return { hex, transparency: Math.round((1 - a) * 100) };
+  }
+  // Images as PNG data URLs (embedded copy works even when the deck is opened from file://)
+  const imgCache = {};
+  async function imageData(src) {
+    if (imgCache[src]) return imgCache[src];
+    let url = (window.DECK_IMAGES || {})[src];
+    if (!url) {
+      const blob = await (await fetch(src)).blob();
+      url = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+    }
+    const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('圖片 ' + src)); i.src = url; });
+    imgCache[src] = im;
+    return im;
+  }
+  function toPng(im, sx, sy, sw, sh, outW) {
+    const scale = Math.min(4, Math.max(1, outW / sw));
+    const c = document.createElement('canvas');
+    c.width = Math.round(sw * scale); c.height = Math.round(sh * scale);
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = !/\.svg/.test(im.src) && scale < 2;
+    g.drawImage(im, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png');
+  }
+  function runsOf(block) {
+    const runs = [];
+    const style = (el) => {
+      const cs = getComputedStyle(el);
+      const col = parseColor(cs.color) || { hex: 'F4ECD0' };
+      return { fontSize: Math.round(parseFloat(cs.fontSize) * 0.5 * 10) / 10, color: col.hex, bold: Number(cs.fontWeight) >= 600, fontFace: 'Microsoft JhengHei' };
+    };
+    const breakBefore = () => { if (runs.length) runs[runs.length - 1].options.breakLine = true; };
+    const walk = (node) => {
+      node.childNodes.forEach((n) => {
+        if (n.nodeType === 3) {
+          const t = n.textContent.replace(/\s+/g, ' ');
+          if (t.trim()) runs.push({ text: t, options: style(n.parentElement) });
+        } else if (n.nodeType === 1) {
+          if (n.tagName === 'BR') { breakBefore(); return; }
+          const disp = getComputedStyle(n).display;
+          const isBlock = /block|list-item|flex|grid/.test(disp);
+          if (isBlock) breakBefore();
+          walk(n);
+          if (isBlock) breakBefore();
+        }
+      });
+    };
+    walk(block);
+    if (runs.length) {
+      runs[0].text = runs[0].text.replace(/^\s+/, '');
+      runs[runs.length - 1].text = runs[runs.length - 1].text.replace(/\s+$/, '');
+      delete runs[runs.length - 1].options.breakLine;
+    }
+    if (block.tagName === 'Q') { runs[0].text = '「' + runs[0].text; runs[runs.length - 1].text += '」'; }
+    if (block.classList.contains('to')) runs.unshift({ text: '▶ ', options: { ...runs[0].options, color: 'F6C445' } });
+    if (block.tagName === 'LI' && block.parentElement && block.parentElement.tagName === 'UL') runs[0].text = '・' + runs[0].text;
+    return runs;
+  }
+
+  async function buildPptx() {
+    toast('正在產生 PPTX…', 0);
+    // Local copy first (works offline); the CDN is only a fallback if the file is missing
+    if (!window.PptxGenJS) await loadScript('assets/vendor/pptxgen.bundle.js').catch(() => loadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'));
+    if (!window.DECK_IMAGES) await loadScript('assets/embedded-images.js').catch(() => {});
+    const pptx = new window.PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE'; // 13.333 × 7.5 in = 1920 × 1080 px at 144 px/in
+    pptx.title = '言霊の旅｜自主學習成果發表';
+    const wasEditing = document.body.classList.contains('editing');
+    if (wasEditing) setEditing(false);
+
+    for (let si = 0; si < slides.length; si++) {
+      const slide = slides[si];
+      const sl = pptx.addSlide();
+      sl.background = { color: '100E26' };
+      const base = slide.getBoundingClientRect();
+      const k = base.width / 1920;
+      const box = (r) => ({ x: (r.left - base.left) / k / 144, y: (r.top - base.top) / k / 144, w: r.width / k / 144, h: r.height / k / 144 });
+
+      // 1) Panels, color blocks and images, in page order
+      for (const el of slide.querySelectorAll('*')) {
+        if (el.closest('aside, .hint')) continue;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        if (el.tagName === 'IMG' || el.tagName === 'VIDEO') {
+          const src = el.tagName === 'VIDEO' ? el.getAttribute('poster') : el.getAttribute('src');
+          if (!src) continue;
+          const im = await imageData(src);
+          // Visible part only (cropped scene images)
+          const clipEl = el.parentElement && getComputedStyle(el.parentElement).overflow === 'hidden' ? el.parentElement.getBoundingClientRect() : r;
+          const vis = { left: Math.max(r.left, clipEl.left), top: Math.max(r.top, clipEl.top), right: Math.min(r.right, clipEl.right), bottom: Math.min(r.bottom, clipEl.bottom) };
+          vis.width = vis.right - vis.left; vis.height = vis.bottom - vis.top;
+          const nw = im.naturalWidth || 256, nh = im.naturalHeight || 256;
+          const sx = ((vis.left - r.left) / r.width) * nw, sy = ((vis.top - r.top) / r.height) * nh;
+          const sw = (vis.width / r.width) * nw, sh = (vis.height / r.height) * nh;
+          sl.addImage({ data: toPng(im, sx, sy, sw, sh, vis.width / k), ...box(vis) });
+          continue;
+        }
+        const cs = getComputedStyle(el);
+        const bg = parseColor(cs.backgroundColor);
+        const bw = parseFloat(cs.borderTopWidth) || 0;
+        const line = bw > 0 ? parseColor(cs.borderTopColor) : null;
+        if (!bg && !line) continue;
+        sl.addShape(pptx.ShapeType.rect, {
+          ...box(r),
+          fill: bg ? { color: bg.hex, transparency: bg.transparency } : { type: 'none' },
+          line: line ? { color: line.hex, width: bw * 0.5 } : { type: 'none' }
+        });
+      }
+
+      // 2) Text on top, as native editable text boxes
+      textBlocks(slide).forEach((el) => {
+        if (el.classList.contains('hint')) return;
+        const runs = runsOf(el);
+        if (!runs.length) return;
+        const cs = getComputedStyle(el);
+        // Measure only where the text actually is (not padding, icons or dots inside the block)
+        const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        const rg = document.createRange();
+        let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity, lineH = 0;
+        for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+          if (!n.textContent.trim()) continue;
+          rg.selectNodeContents(n);
+          const rr = rg.getBoundingClientRect();
+          if (!rr.width) continue;
+          L = Math.min(L, rr.left); T = Math.min(T, rr.top); R = Math.max(R, rr.right); B = Math.max(B, rr.bottom);
+          const pcs = getComputedStyle(n.parentElement);
+          lineH = Math.max(lineH, parseFloat(pcs.lineHeight) || parseFloat(pcs.fontSize) * 1.3);
+        }
+        if (!Number.isFinite(L)) return;
+        const lines = Math.max(1, Math.round((B - T) / (lineH || 1)));
+        // Multi-line text, or text with CSS-added quotes / arrows, uses the block's own content width
+        // so a slightly wider PowerPoint font wraps inside the card instead of spilling over its border
+        if (lines > 1 || el.tagName === 'Q' || el.tagName === 'LI' || el.classList.contains('to')) {
+          const er = el.getBoundingClientRect();
+          const pad = (p) => (parseFloat(cs[p]) || 0) * (er.width / el.offsetWidth || 1);
+          L = er.left + pad('paddingLeft') + pad('borderLeftWidth');
+          R = er.right - pad('paddingRight') - pad('borderRightWidth');
+        }
+        const r = box({ left: L, top: T, width: R - L, height: B - T });
+        const align = /center/.test(cs.textAlign) || (/flex|grid/.test(cs.display) && /center/.test(cs.justifyContent + cs.placeItems)) ? 'center'
+          : /right|end/.test(cs.textAlign) ? 'right' : 'left';
+        // Single lines get spare width so a slightly wider font never wraps them
+        const extraW = lines === 1 && el.tagName !== 'Q' && el.tagName !== 'LI' && !el.classList.contains('to') ? r.w * 0.15 + 0.15 : 0;
+        const x = align === 'center' ? r.x - extraW / 2 : align === 'right' ? r.x - extraW : r.x;
+        const lh = parseFloat(cs.lineHeight) / parseFloat(cs.fontSize);
+        sl.addText(runs, {
+          x, y: r.y, w: r.w + extraW, h: r.h + 0.05,
+          align, valign: 'top', margin: 0, wrap: true, fit: 'none',
+          lineSpacingMultiple: Number.isFinite(lh) ? Math.max(0.9, Math.min(2, lh)) : 1.2,
+          fontFace: 'Microsoft JhengHei'
+        });
+      });
+
+      const aside = slide.querySelector('aside.notes');
+      let note = aside ? aside.textContent.trim() : '';
+      if (slide.querySelector('video')) note += '\n\n（影片檔：assets/promo.mp4。可在 PowerPoint 用「插入 ▸ 視訊」放到這一頁。）';
+      if (note) sl.addNotes(note);
+    }
+    if (wasEditing) setEditing(true);
+    return pptx;
+  }
+  window.__buildPptx = buildPptx; // used by the export test
+
+  window.addEventListener('resize', fit);
+  fit();
+  const start = parseInt((location.hash || '').slice(1), 10);
+  show(Number.isFinite(start) ? start - 1 : 0);
+})();
+</script>
+</body>
+</html>
