@@ -68,7 +68,7 @@ npx serve .        # 或任何靜態檔案伺服器，例如 python -m http.serv
 node tests/save-and-srs.test.js
 ```
 
-共 17 項測試，涵蓋存檔匯入防護、SRS 規則與任務目的地。只需要 Node.js，不用安裝其他套件。
+共 26 項測試，涵蓋存檔匯入防護、SRS 規則、任務目的地與朗讀防洩題。只需要 Node.js，不用安裝其他套件。
 
 ### 重新產生像素圖示
 
