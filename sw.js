@@ -5,7 +5,7 @@
  */
 
 // <precache> 由 tools/gen-sw-precache.js 產生，請勿手動編輯
-const CACHE_VERSION = 'bfdf3c7d2f58';
+const CACHE_VERSION = 'f97cc47cb028';
 const PRECACHE = [
   "./",
   "assets/app/icon-180.png",
@@ -77,6 +77,7 @@ const PRECACHE = [
   "data/questions/jlpt-n1.js",
   "data/questions/jlpt-n2.js",
   "data/questions/jlpt-n3.js",
+  "data/questions/listening.js",
   "data/questions/r1.js",
   "data/questions/r2.js",
   "data/questions/r3.js",

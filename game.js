@@ -867,6 +867,14 @@
 
   // Safe Audio wrapper
   const Audio = {
+    canSpeakJapanese() {
+      try {
+        if (global.AudioEngine && typeof global.AudioEngine.canSpeakJapanese === 'function') {
+          return global.AudioEngine.canSpeakJapanese();
+        }
+      } catch (_) {}
+      return false;
+    },
     init() {
       try { if (global.AudioEngine && global.AudioEngine.init) global.AudioEngine.init(); } catch (_) {}
     },
@@ -5419,7 +5427,7 @@
     if ($('battle-q-prompt-zh')) $('battle-q-prompt-zh').innerHTML = q.promptZh;
     if ($('battle-q-prompt-jp')) {
       $('battle-q-prompt-jp').innerHTML = q.type === 'listening'
-        ? '<span class="text-cyan">🎧 請點擊上方「🔊 朗讀」聆聽日文語音並選出正確答案</span>'
+        ? getListeningPromptHtml(q, '🎧 請點擊上方「🔊 朗讀」聆聽日文語音並選出正確答案')
         : q.promptJp;
     }
 
@@ -6098,6 +6106,15 @@
   // gives the answer away. While a question is open we speak only the stem: blanks and the
   // reading-target word become 「なになに」. Stems with no Japanese (e.g. Chinese reorder
   // prompts) return '' (nothing to read). Full q.tts stays for the explanation modal / notes.
+  // Listening prompt: a "press 🔊" cue when the device has a Japanese voice; otherwise the
+  // transcript is shown as text so the question stays answerable.
+  function getListeningPromptHtml(q, hearCue) {
+    const canHear = typeof Audio.canSpeakJapanese === 'function' ? Audio.canSpeakJapanese() : true;
+    if (canHear) return `<span class="text-cyan">${escapeHtml(hearCue)}</span>`;
+    const transcript = q.promptJp || q.fullRubyJp || escapeHtml(q.tts || '');
+    return `<span class="text-muted" style="font-size:0.8rem;">（這台裝置沒有日文語音，改為閱讀文字）</span><br>${transcript}`;
+  }
+
   function getQuestionSpeakText(q) {
     if (!q) return '';
     if (q.type === 'listening') return q.tts || stripRubyHtml(q.fullRubyJp || '');
@@ -6711,7 +6728,7 @@
     if ($('shrine-q-prompt-zh')) $('shrine-q-prompt-zh').innerHTML = q.promptZh;
     if ($('shrine-q-prompt-jp')) {
       $('shrine-q-prompt-jp').innerHTML = q.type === 'listening'
-        ? '<span class="text-cyan">🎧 聽力試題：點擊上方「🔊 朗讀題目」後作答</span>'
+        ? getListeningPromptHtml(q, '🎧 聽力試題：點擊上方「🔊 朗讀題目」後作答')
         : q.promptJp;
     }
 
@@ -7191,7 +7208,7 @@
     const acc = done > 0 ? Math.round((correct / done) * 100) : 0;
     const num = drill.answered ? done : done + 1;
     const promptJp = q.type === 'listening' && !drill.answered
-      ? '<span class="text-cyan">🎧 聽力題：按「🔊 朗讀」聽完再作答</span>'
+      ? getListeningPromptHtml(q, '🎧 聽力題：按「🔊 朗讀」聽完再作答')
       : q.promptJp;
 
     el.innerHTML = `

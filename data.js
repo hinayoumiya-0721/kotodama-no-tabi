@@ -1806,7 +1806,7 @@
    * 720 道地道自然日語題庫（JLPT N4–N1，含 N3/N2/N1 歷屆仿真擴充各 100 題）
    * ========================================================================== */
   // 題庫本體拆在 data/questions/*.js（index.html 需先於 data.js 載入），這裡依固定順序組裝
-  const QUESTION_PART_ORDER = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'jlpt-n3', 'jlpt-n2', 'jlpt-n1'];
+  const QUESTION_PART_ORDER = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'jlpt-n3', 'jlpt-n2', 'jlpt-n1', 'listening'];
   const QUESTION_PARTS = window.KOTODAMA_QUESTION_PARTS || {};
   const missingQuestionParts = QUESTION_PART_ORDER.filter((k) => !Array.isArray(QUESTION_PARTS[k]));
   if (missingQuestionParts.length && typeof console !== 'undefined') {
