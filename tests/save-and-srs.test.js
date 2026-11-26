@@ -601,5 +601,20 @@ test('drill: pool filters by JLPT/type/wrong-only; wrong answers go to notes; fi
   Game.finishDrill();
 });
 
+test('PWA: sw.js precache list matches the game files (run tools/gen-sw-precache.js if this fails)', () => {
+  const { buildPrecache } = require(path.join(ROOT, 'tools', 'gen-sw-precache.js'));
+  const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+  const m = sw.match(/const PRECACHE = (\[[\s\S]*?\]);/);
+  assert.ok(m, 'PRECACHE block found in sw.js');
+  const listed = JSON.parse(m[1]);
+  const expected = buildPrecache().files;
+  assert.deepStrictEqual(listed, expected);
+  ['./', 'index.html', 'game.js', 'data.js', 'manifest.webmanifest', 'assets/app/icon-192.png', 'data/questions/r1.js']
+    .forEach((f) => assert.ok(listed.includes(f), `${f} is precached`));
+  assert.ok(!listed.some((f) => /^(tests|tools)\/|\.md$|_source|preview\.html$/.test(f)), 'no dev-only files');
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
+  manifest.icons.forEach((icon) => assert.ok(fs.existsSync(path.join(ROOT, icon.src)), `${icon.src} exists`));
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

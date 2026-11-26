@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "言霊の旅（ことだまのたび）",
+  "short_name": "言霊の旅",
+  "description": "邊冒險邊學日文的 16-bit 像素 RPG（JLPT N4–N1）",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#141230",
+  "theme_color": "#1d1a45",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "assets/app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
