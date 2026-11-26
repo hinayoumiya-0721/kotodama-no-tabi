@@ -834,7 +834,7 @@ function buildPreview(entries) {
 </head>
 <body>
   <h1>像素圖示預覽（${entries.length} 個，16×16）</h1>
-  <p class="note">每個圖示依序顯示 1×、2×、4×。上方為現有手繪頭像，用來比對畫風。原始格子定義在 tools/gen-pixel-icons.js。</p>
+  <p class="note">每個圖示依序顯示 1×、2×、4×。上方為現有立繪頭像，用來比對畫風。原始格子定義在 tools/gen-pixel-icons.js。</p>
   <div class="portraits">
     <img src="../portraits/hero_swordsman.webp" alt="">
     <img src="../portraits/npc_mayor.webp" alt="">

@@ -34,7 +34,7 @@
 - 閱讀副本（長文測驗）、試煉神殿（限時綜合測驗）、每日特訓。
 
 ### 🎨 16-bit 像素風
-- 主角、城鎮居民與 18 隻怪物都是手繪像素立繪。
+- 主角、城鎮居民與 18 隻怪物都是像素風立繪。
 - 統一的 16×16 像素圖示，不同裝置看起來都一樣。
 - 城鎮 NPC 有好感度與 AVG 式對話，可以練習在不同場合使用敬語。
 
@@ -110,7 +110,7 @@ manifest.webmanifest  PWA 安裝設定
 style.css             基礎版面與響應式排版
 pixel-theme.css       16-bit 像素風主題（載入在 style.css 之後）
 audio.js              Web Audio 音效與語音朗讀
-svg_art.js            向量備援圖（沒有手繪圖時使用）
+svg_art.js            向量備援圖（沒有立繪圖檔時使用）
 assets/portraits/     主角與城鎮居民立繪
 assets/monsters/      怪物立繪與生圖提示詞（PROMPTS.md）
 assets/icons/         像素 UI 圖示
