@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="pixel-theme.css">
 </head>
 <body>
-  <!-- Pixel-art filters for character SVGs. game.js pixelArt() wraps the art in <g class="px-g">;
+  <!-- Pixel-art filters for character SVGs. js/core.js pixelArt() wraps the art in <g class="px-g">;
        pixel-theme.css (P17) opts specific containers in, picking a filter by rendered size.
        Units are the art's own viewBox units (~320 wide):
        - region is userSpaceOnUse 0..100% (a bbox region starts at e.g. (14,20) and clips the sample dot)
@@ -101,7 +101,7 @@
         <div class="hud-toggles">
           <button id="btn-toggle-furigana" type="button" class="btn-hud active" title="切換三段式日文沉浸模式">標準: 假名+中</button>
           <button id="btn-open-save" type="button" class="btn-hud" title="存檔與讀取"><img class="px-icon" src="assets/icons/save.svg" alt="" aria-hidden="true" draggable="false"> 存檔</button>
-          <!-- Desktop: secondary settings live behind ⚙ (game.js toggles #top-hud.settings-open).
+          <!-- Desktop: secondary settings live behind ⚙ (js/ui.js toggles #top-hud.settings-open).
                Mobile: the menu renders inline inside the collapsible HUD body. -->
           <button id="btn-hud-settings" type="button" class="btn-hud hud-settings-btn" aria-haspopup="true" aria-expanded="false" aria-controls="hud-settings-menu" title="設定" aria-label="設定"><img class="px-icon" src="assets/icons/gear.svg" alt="" aria-hidden="true" draggable="false"></button>
           <div id="hud-settings-menu" class="hud-settings-menu" role="group" aria-label="設定">
@@ -129,7 +129,7 @@
     </header>
 
     <!-- Navigation Bar -->
-    <!-- Sub-tab strip: shows only the tabs of the active dock group (game.js syncNavGroups) -->
+    <!-- Sub-tab strip: shows only the tabs of the active dock group (js/ui.js syncNavGroups) -->
     <nav id="nav-bar" class="nav-bar hidden" aria-label="分頁">
       <button type="button" class="nav-btn active" data-view="town" data-group="town"><img class="px-icon" src="assets/icons/house.svg" alt="" aria-hidden="true" draggable="false"> 城鎮據點</button>
       <button type="button" class="nav-btn" data-view="map" data-group="adventure"><img class="px-icon" src="assets/icons/map.svg" alt="" aria-hidden="true" draggable="false"> 世界地圖</button>
@@ -736,7 +736,7 @@
           <!-- One-line key point (first sentence of q.explanation) — what most players need -->
           <p id="explain-keypoint" class="explain-keypoint"></p>
 
-          <!-- Full analysis stays available but folded; game.js closes it on every open -->
+          <!-- Full analysis stays available but folded; js/battle.js closes it on every open -->
           <details id="explain-more" class="explain-more">
             <summary>📖 展開言靈詳解</summary>
             <div class="explain-section">
@@ -993,6 +993,17 @@
   <script src="data.js"></script>
   <script src="audio.js"></script>
   <script src="svg_art.js"></script>
-  <script src="game.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/town.js"></script>
+  <script src="js/explore.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/reading-shrine.js"></script>
+  <script src="js/jobs.js"></script>
+  <script src="js/drill-faq-pwa.js"></script>
+  <script src="js/menus.js"></script>
+  <script src="js/save-ui.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

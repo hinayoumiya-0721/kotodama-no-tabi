@@ -90,9 +90,23 @@ node tools/gen-pixel-icons.js
 
 ```
 index.html            主頁面
-game.js               遊戲邏輯（戰鬥、探索、任務、SRS、存檔）
+js/                   遊戲程式（依功能分檔，載入順序見 index.html）
+  core.js             常數、工具函式、音效包裝、立繪
+  state.js            存檔結構與清理、儲存、能力值、道具與成長
+  ui.js               提示與視窗、HUD、畫面切換、標題與創角
+  town.js             城鎮、NPC 對話、商店
+  explore.js          世界地圖與區域探索
+  battle.js           戰鬥、動態難度、解說視窗
+  reading-shrine.js   閱讀副本與試煉神殿
+  jobs.js             職業切換
+  drill-faq-pwa.js    浸式刷題、PWA 安裝、FAQ
+  menus.js            角色、技能樹、背包、任務、圖鑑
+  save-ui.js          存檔視窗、問題回報、開發測試工具
+  main.js             事件綁定、啟動、window.Game
 data.js               區域、敵人、道具、NPC 等資料（組裝題庫）
-data/questions/       題庫（依區域 r1–r6 ＋ JLPT 模擬題 N3/N2/N1 分檔）
+data/questions/       題庫（依區域 r1–r6、JLPT 模擬題 N3/N2/N1、聽力題分檔）
+sw.js                 離線快取（Service Worker）
+manifest.webmanifest  PWA 安裝設定
 style.css             基礎版面與響應式排版
 pixel-theme.css       16-bit 像素風主題（載入在 style.css 之後）
 audio.js              Web Audio 音效與語音朗讀

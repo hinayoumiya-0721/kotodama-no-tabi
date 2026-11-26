@@ -5,7 +5,7 @@
  */
 
 // <precache> 由 tools/gen-sw-precache.js 產生，請勿手動編輯
-const CACHE_VERSION = 'f97cc47cb028';
+const CACHE_VERSION = '91e9d100d3ee';
 const PRECACHE = [
   "./",
   "assets/app/icon-180.png",
@@ -84,8 +84,19 @@ const PRECACHE = [
   "data/questions/r4.js",
   "data/questions/r5.js",
   "data/questions/r6.js",
-  "game.js",
   "index.html",
+  "js/battle.js",
+  "js/core.js",
+  "js/drill-faq-pwa.js",
+  "js/explore.js",
+  "js/jobs.js",
+  "js/main.js",
+  "js/menus.js",
+  "js/reading-shrine.js",
+  "js/save-ui.js",
+  "js/state.js",
+  "js/town.js",
+  "js/ui.js",
   "manifest.webmanifest",
   "pixel-theme.css",
   "style.css",
